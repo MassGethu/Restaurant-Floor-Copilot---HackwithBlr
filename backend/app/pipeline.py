@@ -69,6 +69,7 @@ class Detector(Protocol):
 class Results:
     """Latest detection results, shared with the frame thread and the API."""
 
+    entrance: list = field(default_factory=list)
     tables: list[TableDef] = field(default_factory=list)  # scaled to the live frame size
     states: list[TableState] = field(default_factory=list)  # copies, safe to read anywhere
     detections: sv.Detections = field(default_factory=sv.Detections.empty)
@@ -515,6 +516,10 @@ class Pipeline:
             processing_fps=self._processing.rate,
             source_status=source_status,
         )
+        if results.entrance:
+            contour=np.array(results.entrance,dtype=np.int32)
+            cv2.polylines(image,[contour],True,(230,180,30),2)
+            cv2.putText(image,'ENTRANCE - HOST REVIEW',(int(contour[:,0].min()),max(20,int(contour[:,1].min()))),cv2.FONT_HERSHEY_SIMPLEX,.45,(230,180,30),1)
         ok, buffer = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, self.settings.stream_jpeg_quality])
         if ok:
             with self._lock:
@@ -564,7 +569,7 @@ class Pipeline:
                 if config is None or not config.tables:
                     tracker = tracker_config = None
                 elif config is not tracker_config or size != tracker_size:  # new outlines or frame size
-                    tables = config.tables_for_frame(*size)
+                    tables = [table for table in config.tables_for_frame(*size) if table.kind == "table"]
                     if tracker is None:
                         tracker = OccupancyTracker(tables, config.occupancy)
                     else:
@@ -580,6 +585,7 @@ class Pipeline:
                 self._processing.tick()
 
                 results = Results(
+                    entrance=next((t.polygon for t in config.tables_for_frame(*size) if t.kind=="entrance"),[]) if config else [],
                     tables=list(tracker.tables) if tracker else [],
                     states=[dataclasses.replace(state) for state in tracker.states] if tracker else [],
                     detections=detections,
@@ -593,6 +599,7 @@ class Pipeline:
                     self._last_detection_at = time.monotonic()
                     if self.operations is not None:
                         self.operations.observe(video_id, results.states, max(0.0, frame_time - self._clock_origin), observation_time=frame_time)
+                        self.operations.observe_entrance(detections,results.entrance,max(0.0,frame_time-self._clock_origin))
                 if events:
                     self._record_events(video_id, events, {table.id: table.name for table in results.tables})
                 self._publish_status(force=bool(events))

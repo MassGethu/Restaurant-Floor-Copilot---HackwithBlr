@@ -485,6 +485,9 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
                       <Trash className="h-4 w-4" />
                     </button>
                   </div>
+                  <label className="mt-2 flex items-center gap-2 text-xs text-slate-600">Region
+                    <select aria-label={`Region type of ${table.id}`} value={table.kind ?? 'table'} onChange={event => changeTables(current => current.map(item => item.id===table.id ? {...item,kind:event.target.value as 'table'|'entrance'}:item))} className="rounded border border-slate-200 px-2 py-1"><option value="table">Dining table</option><option value="entrance">Entrance crossing zone</option></select>
+                  </label>
                   <label className="mt-2 flex items-center gap-2 text-xs text-slate-600">Seats
                     <input aria-label={`Capacity of ${table.id}`} type="number" min={1} max={20} value={table.capacity ?? 2}
                       onChange={event => changeTables(current => current.map(item => item.id === table.id ? { ...item, capacity: Number(event.target.value) } : item))}

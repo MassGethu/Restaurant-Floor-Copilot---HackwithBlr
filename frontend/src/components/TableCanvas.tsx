@@ -6,6 +6,7 @@ import { centroid, clampPoint, insertCorner, movePolygon, type Point, type Size 
 
 export interface EditorTable {
   capacity?: number;
+  kind?: "table" | "entrance";
   id: string;
   name: string;
   /** Corners in pixels of the editor frame. */

@@ -29,6 +29,7 @@ class TableDef(BaseModel):
     name: str = Field(min_length=1, max_length=64)
     polygon: list[Point] = Field(min_length=3)
     capacity: int = Field(default=2, ge=1, le=20)
+    kind: Literal["table", "entrance"] = "table"
 
 
 class OccupancySettings(BaseModel):
@@ -60,6 +61,8 @@ class TableConfig(BaseModel):
     @field_validator("tables")
     @classmethod
     def _table_ids_are_unique(cls, tables: list[TableDef]) -> list[TableDef]:
+        if sum(table.kind == "entrance" for table in tables) > 1:
+            raise ValueError("Configure at most one entrance region per camera")
         ids = [table.id for table in tables]
         if len(ids) != len(set(ids)):
             raise ValueError("table ids must be unique")
