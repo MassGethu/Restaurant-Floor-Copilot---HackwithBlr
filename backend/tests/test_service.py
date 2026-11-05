@@ -95,3 +95,21 @@ def test_analytics_archive_and_assumptions_persist_on_restart(floor):
     floor.configure("new", [], reset=True)
     assert floor.state["assumptions"]["dining_min"] == 10
     assert len(floor.operational_analytics()["history"]) == 1
+
+
+def test_dismissing_checkin_suppresses_immediate_recreation(floor):
+    floor.action("T1", "hold_occupied")
+    floor.state["policy"]["check_in_minutes"] = 1
+    floor.observe("demo", [observation("T1", "AVAILABLE")], 61)
+    task = next(t for t in floor.state["tasks"] if t["kind"] == "check_in")
+    floor.update_task(task["id"], "cancel")
+    assert not [t for t in floor.state["tasks"] if t["status"] == "open"]
+    floor.observe("demo", [observation("T1", "AVAILABLE")], 90)
+    assert not [t for t in floor.state["tasks"] if t["status"] == "open"]
+
+
+def test_removed_table_closes_its_tasks(floor):
+    floor.action("T1", "hold_occupied")
+    floor.request_service("T1", "Help requested")
+    floor.configure("demo", [])
+    assert all(t["status"] == "cancelled" for t in floor.state["tasks"])
