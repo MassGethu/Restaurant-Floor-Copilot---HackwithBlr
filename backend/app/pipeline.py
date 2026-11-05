@@ -44,7 +44,7 @@ from app.schemas import (
     TablesUpdate,
     TableStatusOut,
 )
-from app.settings import Settings
+from app.settings import Settings, BACKEND_DIR
 from app.sources import FrameSource, SourceStatus, redact
 
 STATUS_HEARTBEAT_SECONDS = 1.0  # status is pushed at least this often
@@ -237,6 +237,9 @@ class Pipeline:
         source_url = None
         if video_id:
             source_url = source_override or (config.source if config else self.settings.fake_camera_rtsp_url).strip()
+            if '://' not in source_url and not source_url.isdigit():
+                from pathlib import Path
+                source_url=str((BACKEND_DIR / Path(source_url)).resolve())
 
         with self._lock:
             old_source = None
@@ -313,6 +316,8 @@ class Pipeline:
                     self.operations.configure(video_id, new_config.tables)
                 # Reprocess the current frame even when playback is paused.
                 # In-flight results from the old config are discarded below.
+                if self.operations is not None:
+                    self.operations._entrance_tracks={}
                 self._last_detection_at = 0.0
                 self._last_detection_seq = -1
                 self._frame_seq += 1

@@ -55,10 +55,10 @@ tables=[]
 for i, capacity in enumerate([2,4,4,6]):
     x=5+(i%2)*480; y=27+(i//2)*265
     tables.append(dict(id=f'T{i+1}',name=f'Table {i+1}',capacity=capacity,polygon=[[x,y],[x+470,y],[x+470,y+242],[x,y+242]]))
-config = dict(video_id='controlled-floor-demo', source=str(path), frame_width=960,frame_height=560,tables=tables,
+config = dict(video_id='controlled-floor-demo', source='../fake_camera/videos/controlled-floor-demo.mp4', frame_width=960,frame_height=560,tables=tables,
               occupancy=dict(confidence_threshold=.3,enter_seconds=3,leave_seconds=6,reference_point='center',presence_hold_seconds=1))
 (ROOT/'backend/configs/controlled-floor-demo.json').write_text(json.dumps(config,indent=2))
-original = dict(video_id='restaurant-stock',source=str(source),frame_width=960,frame_height=506,
+original = dict(video_id='restaurant-stock',source='../fake_camera/videos/restaurant-stock.mp4',frame_width=960,frame_height=506,
     tables=[dict(id='T1',name='Stock dining table',capacity=6,polygon=[[0,40],[690,40],[690,506],[0,506]])],
     occupancy=dict(confidence_threshold=.3,enter_seconds=3,leave_seconds=6,reference_point='center',presence_hold_seconds=1))
 (ROOT/'backend/configs/restaurant-stock.json').write_text(json.dumps(original,indent=2))

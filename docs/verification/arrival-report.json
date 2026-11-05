@@ -1,0 +1,122 @@
+{
+  "passed": true,
+  "input": "Permitted stock frame translated across a configured ROI; synthetic calibration, not natural arrival accuracy.",
+  "samples": [
+    {
+      "at": 0.0,
+      "detected": 5,
+      "arrival_candidates": 0
+    },
+    {
+      "at": 0.5,
+      "detected": 5,
+      "arrival_candidates": 0
+    },
+    {
+      "at": 1.0,
+      "detected": 5,
+      "arrival_candidates": 0
+    },
+    {
+      "at": 1.5,
+      "detected": 5,
+      "arrival_candidates": 0
+    },
+    {
+      "at": 2.0,
+      "detected": 5,
+      "arrival_candidates": 0
+    },
+    {
+      "at": 2.5,
+      "detected": 5,
+      "arrival_candidates": 0
+    },
+    {
+      "at": 3.0,
+      "detected": 5,
+      "arrival_candidates": 0
+    },
+    {
+      "at": 3.5,
+      "detected": 5,
+      "arrival_candidates": 0
+    },
+    {
+      "at": 4.0,
+      "detected": 5,
+      "arrival_candidates": 1
+    },
+    {
+      "at": 4.5,
+      "detected": 5,
+      "arrival_candidates": 1
+    },
+    {
+      "at": 5.0,
+      "detected": 5,
+      "arrival_candidates": 1
+    },
+    {
+      "at": 5.5,
+      "detected": 5,
+      "arrival_candidates": 1
+    },
+    {
+      "at": 6.0,
+      "detected": 5,
+      "arrival_candidates": 1
+    },
+    {
+      "at": 6.5,
+      "detected": 5,
+      "arrival_candidates": 1
+    },
+    {
+      "at": 7.0,
+      "detected": 5,
+      "arrival_candidates": 1
+    },
+    {
+      "at": 7.5,
+      "detected": 5,
+      "arrival_candidates": 1
+    },
+    {
+      "at": 8.0,
+      "detected": 5,
+      "arrival_candidates": 1
+    },
+    {
+      "at": 8.5,
+      "detected": 5,
+      "arrival_candidates": 1
+    },
+    {
+      "at": 9.0,
+      "detected": 5,
+      "arrival_candidates": 1
+    },
+    {
+      "at": 9.5,
+      "detected": 5,
+      "arrival_candidates": 1
+    },
+    {
+      "at": 10.0,
+      "detected": 5,
+      "arrival_candidates": 1
+    }
+  ],
+  "candidates": [
+    {
+      "id": "132e14bf-893b-4f14-9d67-d79d55d5a745",
+      "observed_at": 4.0,
+      "observed_people": 1,
+      "status": "registered",
+      "party_id": "73d3e415-1d21-40e6-b9c1-723ccf839fdf",
+      "note": "Tracked person entered the configured entrance region. Host must confirm party size; staff and passers-by may be included."
+    }
+  ],
+  "host_confirmed_size": 4
+}

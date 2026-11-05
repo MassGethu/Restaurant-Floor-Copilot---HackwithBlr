@@ -1,6 +1,6 @@
 {
   "video_id": "restaurant-stock",
-  "source": "/Users/massgethu/CV AI for restaurants/fake_camera/videos/restaurant-stock.mp4",
+  "source": "../fake_camera/videos/restaurant-stock.mp4",
   "frame_width": 960,
   "frame_height": 506,
   "tables": [

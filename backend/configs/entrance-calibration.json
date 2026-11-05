@@ -1,0 +1,63 @@
+{
+  "video_id": "entrance-calibration",
+  "source": "../fake_camera/videos/entrance-calibration.mp4",
+  "frame_width": 960,
+  "frame_height": 506,
+  "tables": [
+    {
+      "id": "T1",
+      "name": "Calibration table",
+      "capacity": 6,
+      "kind": "table",
+      "polygon": [
+        [
+          0,
+          0
+        ],
+        [
+          200,
+          0
+        ],
+        [
+          200,
+          500
+        ],
+        [
+          0,
+          500
+        ]
+      ]
+    },
+    {
+      "id": "ENTRY",
+      "name": "Entrance crossing",
+      "capacity": 1,
+      "kind": "entrance",
+      "polygon": [
+        [
+          393.3404541015625,
+          400
+        ],
+        [
+          573.3404541015625,
+          400
+        ],
+        [
+          573.3404541015625,
+          505
+        ],
+        [
+          393.3404541015625,
+          505
+        ]
+      ]
+    }
+  ],
+  "occupancy": {
+    "confidence_threshold": 0.3,
+    "enter_seconds": 2,
+    "leave_seconds": 6,
+    "reference_point": "center",
+    "presence_hold_seconds": 1
+  }
+}

@@ -59,3 +59,9 @@ logs/
 Thumbs.db
 desktop.ini
 .idea/
+
+# Camera configs may contain local paths or credentials; retain prepared fixtures only.
+backend/configs/*.json
+!backend/configs/controlled-floor-demo.json
+!backend/configs/restaurant-stock.json
+!backend/configs/entrance-calibration.json
