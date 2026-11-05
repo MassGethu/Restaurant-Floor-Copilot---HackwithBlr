@@ -28,6 +28,7 @@ class TableDef(BaseModel):
     id: str = Field(pattern=ID_PATTERN)
     name: str = Field(min_length=1, max_length=64)
     polygon: list[Point] = Field(min_length=3)
+    capacity: int = Field(default=2, ge=1, le=20)
 
 
 class OccupancySettings(BaseModel):
