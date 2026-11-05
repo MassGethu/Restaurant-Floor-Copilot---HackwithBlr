@@ -41,6 +41,26 @@ class AssumptionsInput(BaseModel):
     cleaning_max: int = Field(ge=1, le=60)
 
 
+class ServiceInput(BaseModel):
+    note: str = Field(default='Staff requested assistance.', max_length=240)
+
+
+class TaskInput(BaseModel):
+    action: Literal['assign','acknowledge','start','complete','cancel']
+    staff_id: str | None = None
+
+
+class StaffInput(BaseModel):
+    name: str = Field(min_length=1,max_length=60)
+    role: Literal['waiter','cleaner','host']
+
+
+class ArrivalInput(BaseModel):
+    action: Literal['register','dismiss']
+    name: str = Field(default='',max_length=60)
+    size: int = Field(default=1,ge=1,le=20)
+
+
 @router.get('')
 def snapshot(request: Request):
     app = request.app.state
@@ -116,4 +136,29 @@ def decline(body: SeatInput, request: Request):
 def table_action(table_id: str, body: TableAction, request: Request):
     snapshot(request)
     request.app.state.operations.action(table_id, body.action)
+    return snapshot(request)
+
+
+@router.post('/tables/{table_id}/service')
+def request_service(table_id: str,body:ServiceInput,request:Request):
+    request.app.state.operations.request_service(table_id,body.note)
+    return snapshot(request)
+
+
+@router.post('/tasks/{task_id}')
+def task_action(task_id:str,body:TaskInput,request:Request):
+    snapshot(request)
+    request.app.state.operations.update_task(task_id,body.action,body.staff_id)
+    return snapshot(request)
+
+
+@router.post('/staff',status_code=201)
+def staff(body:StaffInput,request:Request):
+    request.app.state.operations.add_staff(body.name,body.role)
+    return snapshot(request)
+
+
+@router.post('/arrivals/{arrival_id}')
+def arrival(arrival_id:str,body:ArrivalInput,request:Request):
+    request.app.state.operations.resolve_arrival(arrival_id,body.action,body.name,body.size)
     return snapshot(request)

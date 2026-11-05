@@ -16,20 +16,27 @@ import uuid
 from pathlib import Path
 
 from app.decisions import allocate, compare_tables
+from app.service import ServiceMixin
 
 
 class OperationError(ValueError):
     pass
 
 
-class Operations:
+class Operations(ServiceMixin):
     def __init__(self, path: Path):
         path.parent.mkdir(parents=True, exist_ok=True)
         self.lock = threading.RLock()
         self.db = sqlite3.connect(path, check_same_thread=False, timeout=15)
         self.db.execute("CREATE TABLE IF NOT EXISTS floor_state (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)")
         row = self.db.execute("SELECT payload FROM floor_state WHERE id=1").fetchone()
+        self.db.execute("CREATE TABLE IF NOT EXISTS floor_sessions (id TEXT PRIMARY KEY, payload TEXT NOT NULL)")
         self.state = json.loads(row[0]) if row else self.empty()
+        defaults=self.empty()
+        for key in ('tasks','staff','arrivals','policy','trend','completed_sessions','counters'):
+            self.state.setdefault(key,defaults[key])
+        self._entrance_tracks={}
+        self._arrival_cooldowns={}
         # Persisted observations are never treated as fresh after a process restart.
         self.fresh = False
         self.source = "NO SOURCE"
@@ -38,12 +45,25 @@ class Operations:
     @staticmethod
     def empty():
         return dict(session_id=str(uuid.uuid4()), video_id=None, version=0, now=0.0,
-                    tables=[], parties=[], events=[], declined=[], assumptions=dict(dining_min=30, dining_max=60, cleaning_min=2, cleaning_max=5))
+                    tables=[], parties=[], events=[], declined=[], tasks=[], arrivals=[], trend=[], completed_sessions=[], counters=dict(manager_overrides=0),
+                    staff=[dict(id='waiter-1',name='Waiter 1',role='waiter'),dict(id='cleaner-1',name='Cleaner 1',role='cleaner')],
+                    policy=dict(strategy='fairness',max_wait_minutes=15,check_in_minutes=10), assumptions=dict(dining_min=30, dining_max=60, cleaning_min=2, cleaning_max=5))
+
+    @staticmethod
+    def fail(message):
+        raise OperationError(message)
 
     def close(self):
         self.db.close()
 
     def save(self):
+        self.reconcile_tasks()
+        point=dict(minute=int(self.state['now']//60),occupied=sum(t['status']=='occupied' for t in self.state['tables']),
+                   ready=sum(t['status']=='ready' for t in self.state['tables']),cleaning=sum(t['status']=='cleaning_required' for t in self.state['tables']),
+                   waiting=sum(p['status']=='waiting' for p in self.state['parties']))
+        if self.state['trend'] and self.state['trend'][-1]['minute']==point['minute']:self.state['trend'][-1]=point
+        else:self.state['trend'].append(point)
+        self.state['trend']=self.state['trend'][-720:]
         self.state['version'] += 1
         with self.db:
             self.db.execute("INSERT OR REPLACE INTO floor_state VALUES (1, ?)", (json.dumps(self.state),))
@@ -54,11 +74,18 @@ class Operations:
         del self.state['events'][100:]
 
     def configure(self, video_id, tables, reset=False):
+        tables=[table for table in tables if getattr(table,'kind','table')=='table']
         with self.lock:
             if not reset and self.state['video_id'] == video_id:
                 self.validate_configuration(tables)
             if reset or self.state['video_id'] != video_id:
+                saved_settings={key:copy.deepcopy(self.state[key]) for key in ('policy','staff','assumptions')}
+                if self.state['tables']:
+                    with self.db:self.db.execute('INSERT OR REPLACE INTO floor_sessions VALUES (?,?)',(self.state['session_id'],json.dumps(self.state)))
                 self.state = self.empty()
+                self.state.update(saved_settings)
+                self._entrance_tracks={}
+                self._arrival_cooldowns={}
                 self.state['video_id'] = video_id
                 self.event('New playback session. Confirm initial table readiness.', 'system')
                 self.fresh = False
@@ -83,7 +110,7 @@ class Operations:
 
     def validate_configuration(self, tables):
         """Validate before saving either configuration or operational state."""
-        proposed = {table.id: table for table in tables}
+        proposed = {table.id: table for table in tables if getattr(table,"kind","table")=="table"}
         for party in self.state['parties']:
             if party['status'] != 'seated':
                 continue
@@ -140,13 +167,16 @@ class Operations:
                         table.update(status='needs_verification', note='Seated party not observed after arrival grace period. Verify with staff.')
                         self.event(f"{table['name']}: seating needs verification.", 'vision')
                     changed = True
-            if changed:
+            if changed or self.reconcile_tasks() or not self.state['trend'] or int(now//60)!=self.state['trend'][-1]['minute']:
                 self.save()
 
     def depart(self, table, origin):
         party = next((p for p in self.state['parties'] if p['id'] == table['party_id']), None)
+        if table['occupied_since'] is not None:
+            self.state['completed_sessions'].append(dict(table_id=table['id'],capacity=table['capacity'],started_at=table['occupied_since'],ended_at=self.state['now'],duration_seconds=max(0,self.state['now']-table['occupied_since']),duration_known=table['duration_known'],origin=origin))
         if party:
             party['status'] = 'departed'
+            party['departed_at']=self.state['now']
         table.update(status='cleaning_required', dirty_since=self.state['now'], party_id=None,
                      occupied_since=None, duration_known=False, seen_present=False,
                      note='Departure confirmed. Staff must confirm cleaning.')
@@ -273,7 +303,8 @@ class Operations:
                 raise OperationError('The party or table is no longer eligible for seating.')
             if not override and not any(r['party_id'] == party_id and r['table_id'] == table_id for r in self.recommendations()):
                 raise OperationError('This allocation is no longer eligible.')
-            party.update(status='seated', table_id=table_id)
+            party.update(status='seated', table_id=table_id, seated_at=self.state['now'])
+            if override:self.state['counters']['manager_overrides']+=1
             table.update(status='occupied', party_id=party_id, occupied_since=self.state['now'],
                          duration_known=True, grace_until=self.state['now']+30, seen_present=False,
                          manual_hold=False, note=f"{party['name']} seated by staff; awaiting visual confirmation.")
@@ -330,6 +361,8 @@ class Operations:
             if model is not None:
                 self.model = model
             result = copy.deepcopy(self.state)
+            result['availability']=self.availability()
+            result['analytics']=self.operational_analytics()
             result.update(source_status=self.source, model_state=self.model, observations_fresh=self.fresh,
                           recommendations=self.recommendations(), wait_estimates=self.estimates() if self.fresh and self.source == 'LIVE' and self.model == 'ready' else {})
             waiting = [p for p in self.state['parties'] if p['status'] == 'waiting']
