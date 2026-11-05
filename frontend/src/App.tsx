@@ -8,7 +8,7 @@ import VideosPage from "./pages/VideosPage";
 
 // The table editor and the charts bring big libraries; load them only when opened.
 const TableSetupPage = lazy(() => import("./pages/TableSetupPage"));
-const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
+const OperationsPage = lazy(() => import("./pages/OperationsPage"));
 
 const loading = (page: ReactNode) => (
   <Suspense fallback={<p className="text-sm text-slate-400">Loading…</p>}>{page}</Suspense>
@@ -23,7 +23,8 @@ export default function App() {
         <Route path="videos" element={<VideosPage />} />
         <Route path="live" element={<LiveMonitorPage />} />
         <Route path="setup/:videoId?" element={loading(<TableSetupPage />)} />
-        <Route path="analytics" element={loading(<AnalyticsPage />)} />
+        <Route path="operations" element={loading(<OperationsPage />)} />
+        <Route path="analytics" element={<Navigate to="/operations?tab=analytics" replace />} />
         <Route path="*" element={<Navigate to="/floor" replace />} />
       </Route>
     </Routes>

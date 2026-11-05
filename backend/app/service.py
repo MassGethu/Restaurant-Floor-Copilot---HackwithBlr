@@ -19,6 +19,10 @@ class ServiceMixin:
     def reconcile_tasks(self):
         changed = False
         now = self.state['now']
+        table_ids={t['id'] for t in self.state['tables']}
+        for task in self.state['tasks']:
+            if task['table_id'] not in table_ids and task['status'] in ('open','acknowledged','in_progress'):
+                task.update(status='cancelled',completed_at=now,note='Table region removed.');changed=True
         for table in self.state['tables']:
             active = [t for t in self.state['tasks'] if t['table_id'] == table['id'] and t['status'] in ('open','acknowledged','in_progress')]
             if table['status'] == 'cleaning_required' and not any(t['kind']=='cleaning' for t in active):
@@ -32,7 +36,7 @@ class ServiceMixin:
                 elif task['kind'] in ('check_in','service') and table['status'] not in ('occupied','needs_verification'):
                     task.update(status='cancelled', completed_at=now);changed=True
             if table['status']=='occupied' and table['occupied_since'] is not None:
-                last = max(table['occupied_since'], table.get('last_service_at') or table['occupied_since'])
+                last = max(table['occupied_since'], table.get('last_service_at') or table['occupied_since'],table.get('last_attention_review_at') or table['occupied_since'])
                 if now-last >= self.state['policy']['check_in_minutes']*60 and not any(t['kind'] in ('check_in','service') for t in active):
                     self.ensure_task(table['id'],'check_in','heuristic', f"No staff visit recorded for {int((now-last)/60)} minutes. Check-in suggested; customer intent is unknown.")
                     changed=True
@@ -43,7 +47,9 @@ class ServiceMixin:
             table=self.table(table_id)
             if table['status'] not in ('occupied','needs_verification'):
                 self.fail('Service requests require an occupied or unverified table.')
-            self.ensure_task(table_id,'service','staff',note.strip()[:240] or 'Staff requested a service visit.')
+            check_in=next((t for t in self.state['tasks'] if t['table_id']==table_id and t['kind']=='check_in' and t['status'] in ('open','acknowledged','in_progress')),None)
+            if check_in:check_in.update(kind='service',source='staff',note=note.strip()[:240] or 'Staff requested service.')
+            else:self.ensure_task(table_id,'service','staff',note.strip()[:240] or 'Staff requested a service visit.')
             self.save()
 
     def update_task(self, task_id, action, staff_id=None):
@@ -66,7 +72,10 @@ class ServiceMixin:
                 table=self.table(task['table_id'])
                 table['last_service_at']=self.state['now']
                 task.update(status='completed',completed_at=self.state['now'])
-            elif action=='cancel':task.update(status='cancelled',completed_at=self.state['now'])
+            elif action=='cancel':
+                if task['kind']=='cleaning':self.fail('Confirm cleaning or reassign this task; a dirty table still needs preparation.')
+                self.table(task['table_id'])['last_attention_review_at']=self.state['now']
+                task.update(status='cancelled',completed_at=self.state['now'])
             else:self.fail('Unknown task action.')
             self.event(f"{self.table(task['table_id'])['name']}: task {action}.",'staff')
             self.save()
