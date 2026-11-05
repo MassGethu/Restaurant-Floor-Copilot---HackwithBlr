@@ -34,13 +34,19 @@ import { Banner, Button, Card, ErrorBanner } from "./ui";
 
 const FRAME_STEP_SECONDS = 7; // "Another frame" jumps this far into the video file
 
-const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
+const errorText = (error: unknown) =>
+  error instanceof Error ? error.message : String(error);
 
-const frameSize = (frame: EditorFrame): Size => ({ width: frame.frame_width, height: frame.frame_height });
+const frameSize = (frame: EditorFrame): Size => ({
+  width: frame.frame_width,
+  height: frame.frame_height,
+});
 
 /** Tables in a stable text form, to tell whether anything changed since the last save. */
 const snapshot = (tables: EditorTable[]) =>
-  JSON.stringify(tables.map((table) => ({ ...table, polygon: roundPolygon(table.polygon) })));
+  JSON.stringify(
+    tables.map((table) => ({ ...table, polygon: roundPolygon(table.polygon) })),
+  );
 
 function useHtmlImage(src: string | null): HTMLImageElement | null {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -57,10 +63,17 @@ function useHtmlImage(src: string | null): HTMLImageElement | null {
 }
 
 const isTyping = (target: EventTarget | null) =>
-  target instanceof HTMLElement && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+  target instanceof HTMLElement &&
+  ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
 
 /** Draw, adjust, name and save the table outlines of one video. */
-export default function TableEditor({ video, videos }: { video: Video; videos: Video[] }) {
+export default function TableEditor({
+  video,
+  videos,
+}: {
+  video: Video;
+  videos: Video[];
+}) {
   const [frame, setFrame] = useState<EditorFrame | null>(null);
   const [loading, setLoading] = useState(true);
   const [tables, setTables] = useState<EditorTable[]>([]);
@@ -106,15 +119,25 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
   const anotherFrame = async () => {
     if (!frame) return;
     const duration = video.duration_seconds ?? 0;
-    const at = frame.live ? 1 : duration > 1 ? ((frame.at_seconds ?? 0) + FRAME_STEP_SECONDS) % duration : 1;
+    const at = frame.live
+      ? 1
+      : duration > 1
+        ? ((frame.at_seconds ?? 0) + FRAME_STEP_SECONDS) % duration
+        : 1;
     setLoading(true);
     setError(null);
     try {
       const next = await api.editorFrame(video.id, { at });
-      if (next.frame_width !== frame.frame_width || next.frame_height !== frame.frame_height) {
+      if (
+        next.frame_width !== frame.frame_width ||
+        next.frame_height !== frame.frame_height
+      ) {
         const from = frameSize(frame);
         setTables((current) =>
-          current.map((table) => ({ ...table, polygon: scalePolygon(table.polygon, from, frameSize(next)) })),
+          current.map((table) => ({
+            ...table,
+            polygon: scalePolygon(table.polygon, from, frameSize(next)),
+          })),
         );
       }
       setFrame(next);
@@ -132,8 +155,14 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
   const problems = useMemo(() => {
     const result: Record<string, string | null> = {};
     for (const table of tables) {
-      result[table.id] = frameWidth ? outlineProblem(table.polygon, { width: frameWidth, height: frameHeight }) : null;
-      if (!result[table.id] && !table.name.trim()) result[table.id] = "it needs a name";
+      result[table.id] = frameWidth
+        ? outlineProblem(table.polygon, {
+            width: frameWidth,
+            height: frameHeight,
+          })
+        : null;
+      if (!result[table.id] && !table.name.trim())
+        result[table.id] = "it needs a name";
     }
     return result;
   }, [tables, frameWidth, frameHeight]);
@@ -142,7 +171,8 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
     const result: Record<string, string[]> = {};
     tables.forEach((a, i) =>
       tables.forEach((b, j) => {
-        if (i !== j && polygonsOverlap(a.polygon, b.polygon)) (result[a.id] ??= []).push(b.name);
+        if (i !== j && polygonsOverlap(a.polygon, b.polygon))
+          (result[a.id] ??= []).push(b.name);
       }),
     );
     return result;
@@ -188,10 +218,14 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
   }, []);
 
   const renameTable = (id: string, name: string) =>
-    changeTables((current) => current.map((table) => (table.id === id ? { ...table, name } : table)));
+    changeTables((current) =>
+      current.map((table) => (table.id === id ? { ...table, name } : table)),
+    );
 
   const changePolygon = (id: string, polygon: Point[]) =>
-    changeTables((current) => current.map((table) => (table.id === id ? { ...table, polygon } : table)));
+    changeTables((current) =>
+      current.map((table) => (table.id === id ? { ...table, polygon } : table)),
+    );
 
   useEffect(() => {
     if (!focusId) return;
@@ -204,7 +238,8 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (isTyping(event.target)) {
-        if (event.key === "Enter" || event.key === "Escape") (event.target as HTMLElement).blur();
+        if (event.key === "Enter" || event.key === "Escape")
+          (event.target as HTMLElement).blur();
         return;
       }
       if (draft) {
@@ -229,7 +264,9 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
     const fresh = frame.suggested_tables.filter(
       (outline) =>
         !tables.some(
-          (table) => pointInPolygon(centroid(outline), table.polygon) || pointInPolygon(centroid(table.polygon), outline),
+          (table) =>
+            pointInPolygon(centroid(outline), table.polygon) ||
+            pointInPolygon(centroid(table.polygon), outline),
         ),
     );
     if (fresh.length === 0) {
@@ -278,7 +315,10 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
       }
       const from = { width: config.frame_width, height: config.frame_height };
       changeTables(() =>
-        config.tables.map((table) => ({ ...table, polygon: scalePolygon(table.polygon, from, frameSize(frame)) })),
+        config.tables.map((table) => ({
+          ...table,
+          polygon: scalePolygon(table.polygon, from, frameSize(frame)),
+        })),
       );
       setSelectedId(null);
       setDraft(null);
@@ -292,7 +332,12 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
   };
 
   const clearAll = () => {
-    if (tables.length > 0 && window.confirm(`Remove all ${tables.length} tables? (Nothing is saved until you press Save.)`)) {
+    if (
+      tables.length > 0 &&
+      window.confirm(
+        `Remove all ${tables.length} tables? (Nothing is saved until you press Save.)`,
+      )
+    ) {
       changeTables(() => []);
       setSelectedId(null);
     }
@@ -303,8 +348,17 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
     setSaving(true);
     setError(null);
     try {
-      const payload = tables.map((table) => ({ ...table, name: table.name.trim(), polygon: roundPolygon(table.polygon) }));
-      const config = await api.saveTables(video.id, payload, frame.frame_width, frame.frame_height);
+      const payload = tables.map((table) => ({
+        ...table,
+        name: table.name.trim(),
+        polygon: roundPolygon(table.polygon),
+      }));
+      const config = await api.saveTables(
+        video.id,
+        payload,
+        frame.frame_width,
+        frame.frame_height,
+      );
       const saved = config.tables.map((table) => ({ ...table }));
       setTables(saved);
       setSavedSnapshot(snapshot(saved));
@@ -324,7 +378,9 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
 
   // ------------------------------------------------------------------ view
 
-  const copySources = videos.filter((item) => item.id !== video.id && item.has_tables);
+  const copySources = videos.filter(
+    (item) => item.id !== video.id && item.has_tables,
+  );
   const frameLabel = frame
     ? frame.live
       ? "Live frame"
@@ -337,7 +393,9 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
         {error && <ErrorBanner message={error} />}
         <Card className="flex items-center justify-center gap-3 px-5 py-16 text-sm text-slate-500">
           {loading && <LoaderCircle className="h-5 w-5 animate-spin" />}
-          {loading ? "Loading the frame and looking for people and tables…" : "No frame to draw on."}
+          {loading
+            ? "Loading the frame and looking for people and tables…"
+            : "No frame to draw on."}
         </Card>
       </div>
     );
@@ -402,11 +460,21 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
               onClick={() => setShowPeople((value) => !value)}
               title="People's reference points: a person counts for a table when this dot is inside it"
             >
-              {showPeople ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPeople ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
               {showPeople ? "Hide people" : "Show people"}
             </Button>
-            <Button variant="secondary" onClick={() => void anotherFrame()} disabled={loading || !!draft}>
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <Button
+              variant="secondary"
+              onClick={() => void anotherFrame()}
+              disabled={loading || !!draft}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+              />
               {frame.live ? "Newer frame" : "Another frame"}
             </Button>
           </div>
@@ -422,34 +490,47 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
           people={frame.people}
           showPeople={showPeople}
           onSelect={setSelectedId}
-          onAddCorner={(point) => setDraft((current) => [...(current ?? []), point])}
+          onAddCorner={(point) =>
+            setDraft((current) => [...(current ?? []), point])
+          }
           onFinishDraft={finishDraft}
           onChangePolygon={changePolygon}
         />
 
         <p className="text-xs text-slate-500">
-          {frameLabel} · {frame.frame_width}×{frame.frame_height} · {frame.people.length} people ·{" "}
-          {frame.suggested_tables.length} tables recognised
-          {frame.hints_error && <span className="text-amber-700"> · {frame.hints_error}</span>}
+          {frameLabel} · {frame.frame_width}×{frame.frame_height} ·{" "}
+          {frame.people.length} people · {frame.suggested_tables.length} tables
+          recognised
+          {frame.hints_error && (
+            <span className="text-amber-700"> · {frame.hints_error}</span>
+          )}
         </p>
       </div>
 
       <div className="space-y-3">
-        {error && <ErrorBanner message={error} onClose={() => setError(null)} />}
+        {error && (
+          <ErrorBanner message={error} onClose={() => setError(null)} />
+        )}
         {notice && <Banner tone="success">{notice}</Banner>}
 
         <Card className="space-y-3 p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-800">Tables ({tables.length})</h2>
+            <h2 className="text-sm font-semibold text-slate-800">
+              Tables ({tables.length})
+            </h2>
             {tables.length > 0 && (
-              <button onClick={clearAll} className="text-xs text-slate-500 hover:text-red-600">
+              <button
+                onClick={clearAll}
+                className="text-xs text-slate-500 hover:text-red-600"
+              >
                 Clear all
               </button>
             )}
           </div>
           {tables.length === 0 ? (
             <p className="text-sm text-slate-500">
-              No tables yet. Press <b>Draw table</b>, or <b>Suggest tables</b> to start from the recognised ones.
+              No tables yet. Press <b>Draw table</b>, or <b>Suggest tables</b>{" "}
+              to start from the recognised ones.
             </p>
           ) : (
             <ul className="max-h-105 space-y-1.5 overflow-y-auto pr-1">
@@ -458,18 +539,25 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
                   key={table.id}
                   onClick={() => !draft && setSelectedId(table.id)}
                   className={`cursor-pointer rounded-lg border px-2.5 py-2 ${
-                    table.id === selectedId ? "border-slate-400 bg-slate-50" : "border-slate-200 hover:bg-slate-50"
+                    table.id === selectedId
+                      ? "border-slate-400 bg-slate-50"
+                      : "border-slate-200 hover:bg-slate-50"
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: tableColor(index) }} />
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-full"
+                      style={{ background: tableColor(index) }}
+                    />
                     <input
                       ref={(element) => {
                         nameInputs.current[table.id] = element;
                       }}
                       value={table.name}
                       maxLength={64}
-                      onChange={(event) => renameTable(table.id, event.target.value)}
+                      onChange={(event) =>
+                        renameTable(table.id, event.target.value)
+                      }
                       onFocus={() => !draft && setSelectedId(table.id)}
                       className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 py-0.5 text-sm font-medium text-slate-800 hover:border-slate-200 focus:border-slate-300 focus:bg-white focus:outline-none"
                       aria-label={`Name of ${table.id}`}
@@ -485,25 +573,78 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
                       <Trash className="h-4 w-4" />
                     </button>
                   </div>
-                  <label className="mt-2 flex items-center gap-2 text-xs text-slate-600">Region
-                    <select aria-label={`Region type of ${table.id}`} value={table.kind ?? 'table'} onChange={event => changeTables(current => current.map(item => item.id===table.id ? {...item,kind:event.target.value as 'table'|'entrance'}:item))} className="rounded border border-slate-200 px-2 py-1"><option value="table">Dining table</option><option value="entrance">Entrance crossing zone</option></select>
+                  <label className="mt-2 flex items-center gap-2 text-xs text-slate-600">
+                    Region
+                    <select
+                      aria-label={`Region type of ${table.id}`}
+                      value={table.kind ?? "table"}
+                      onChange={(event) =>
+                        changeTables((current) =>
+                          current.map((item) =>
+                            item.id === table.id
+                              ? {
+                                  ...item,
+                                  kind: event.target.value as
+                                    "table" | "entrance",
+                                }
+                              : item,
+                          ),
+                        )
+                      }
+                      className="rounded border border-slate-200 px-2 py-1"
+                    >
+                      <option value="table">Dining table</option>
+                      <option value="entrance">Entrance crossing zone</option>
+                    </select>
                   </label>
-                  <label className="mt-2 flex items-center gap-2 text-xs text-slate-600">Seats
-                    <input aria-label={`Capacity of ${table.id}`} type="number" min={1} max={20} value={table.capacity ?? 2}
-                      onChange={event => changeTables(current => current.map(item => item.id === table.id ? { ...item, capacity: Number(event.target.value) } : item))}
-                      className="w-16 rounded border border-slate-200 px-2 py-1" />
+                  <label className="mt-2 flex items-center gap-2 text-xs text-slate-600">
+                    Seats
+                    <input
+                      aria-label={`Capacity of ${table.id}`}
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={table.capacity ?? 2}
+                      onChange={(event) =>
+                        changeTables((current) =>
+                          current.map((item) =>
+                            item.id === table.id
+                              ? {
+                                  ...item,
+                                  capacity: Number(event.target.value),
+                                }
+                              : item,
+                          ),
+                        )
+                      }
+                      className="w-16 rounded border border-slate-200 px-2 py-1"
+                    />
                   </label>
-                  {problems[table.id] && <p className="mt-1 pl-5 text-xs text-red-600">Unusable: {problems[table.id]}</p>}
+                  {problems[table.id] && (
+                    <p className="mt-1 pl-5 text-xs text-red-600">
+                      Unusable: {problems[table.id]}
+                    </p>
+                  )}
                   {!problems[table.id] && overlaps[table.id] && (
-                    <p className="mt-1 pl-5 text-xs text-amber-700">Overlaps {overlaps[table.id].join(", ")}</p>
+                    <p className="mt-1 pl-5 text-xs text-amber-700">
+                      Overlaps {overlaps[table.id].join(", ")}
+                    </p>
                   )}
                 </li>
               ))}
             </ul>
           )}
           <div className="flex items-center gap-2 border-t border-slate-100 pt-3">
-            <Button onClick={() => void save()} disabled={saving || !dirty || problemCount > 0 || !!draft}>
-              {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
+            <Button
+              onClick={() => void save()}
+              disabled={saving || !dirty || problemCount > 0 || !!draft}
+            >
+              {saving ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}{" "}
+              Save
             </Button>
             <span className="text-xs text-slate-500">
               {problemCount > 0
@@ -518,16 +659,18 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
         <Card className="space-y-1.5 p-4 text-xs leading-relaxed text-slate-500">
           <p className="font-semibold text-slate-700">How to draw</p>
           <p>
-            <b>Draw table</b>, then click the corners. Click the first corner or press <b>Enter</b> to finish.{" "}
-            <b>Backspace</b> removes the last corner, <b>Esc</b> cancels.
+            <b>Draw table</b>, then click the corners. Click the first corner or
+            press <b>Enter</b> to finish. <b>Backspace</b> removes the last
+            corner, <b>Esc</b> cancels.
           </p>
           <p>
-            Click a table to select it: drag it or its corners. Double-click an edge to add a corner, right-click a
-            corner to remove it, <b>Delete</b> removes the table.
+            Click a table to select it: drag it or its corners. Double-click an
+            edge to add a corner, right-click a corner to remove it,{" "}
+            <b>Delete</b> removes the table.
           </p>
           <p>
-            Include the chairs: a person counts for a table when their pink dot is inside its outline. Outlines should
-            not overlap.
+            Include the chairs: a person counts for a table when their pink dot
+            is inside its outline. Outlines should not overlap.
           </p>
         </Card>
       </div>

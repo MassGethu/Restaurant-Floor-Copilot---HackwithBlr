@@ -1,4 +1,11 @@
-import { Bell, LayoutGrid, MonitorPlay, PenLine, ScanEye, Video } from "lucide-react";
+import {
+  Bell,
+  LayoutGrid,
+  MonitorPlay,
+  PenLine,
+  ScanEye,
+  Video,
+} from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 
 const LINKS = [
@@ -15,7 +22,10 @@ export default function Layout() {
     <div className="min-h-screen">
       <header className="bg-[#132d2d] text-white shadow">
         <div className="mx-auto flex h-14 max-w-[1480px] items-center justify-between px-4">
-          <Link to="/floor" className="flex items-center gap-2 font-semibold tracking-tight">
+          <Link
+            to="/floor"
+            className="flex items-center gap-2 font-semibold tracking-tight"
+          >
             <ScanEye className="h-5 w-5 text-emerald-400" />
             FLOOR <span className="font-normal text-slate-400">/ COPILOT</span>
           </Link>
@@ -26,7 +36,9 @@ export default function Layout() {
                 to={to}
                 className={({ isActive }) =>
                   `flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                    isActive
+                      ? "bg-slate-700 text-white"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
                   }`
                 }
               >

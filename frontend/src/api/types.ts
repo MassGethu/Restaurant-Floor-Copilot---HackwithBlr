@@ -1,6 +1,7 @@
 // Shapes of the backend's JSON (see backend/app/schemas.py).
 
-export type TableStatusName = "AVAILABLE" | "PENDING_OCCUPIED" | "OCCUPIED" | "PENDING_AVAILABLE";
+export type TableStatusName =
+  "AVAILABLE" | "PENDING_OCCUPIED" | "OCCUPIED" | "PENDING_AVAILABLE";
 export type SourceLabel = "LIVE" | "RECONNECTING" | "NO SOURCE";
 export type StreamState = "running" | "stopped" | "error";
 
@@ -80,7 +81,9 @@ export interface UploadLimits {
 }
 
 /** Messages pushed on /ws/status. */
-export type LiveMessage = { type: "status"; data: PipelineStatus } | { type: "event"; data: TableEvent };
+export type LiveMessage =
+  | { type: "status"; data: PipelineStatus }
+  | { type: "event"; data: TableEvent };
 
 export type Point = [number, number];
 

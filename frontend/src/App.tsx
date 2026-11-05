@@ -11,7 +11,9 @@ const TableSetupPage = lazy(() => import("./pages/TableSetupPage"));
 const OperationsPage = lazy(() => import("./pages/OperationsPage"));
 
 const loading = (page: ReactNode) => (
-  <Suspense fallback={<p className="text-sm text-slate-400">Loading…</p>}>{page}</Suspense>
+  <Suspense fallback={<p className="text-sm text-slate-400">Loading…</p>}>
+    {page}
+  </Suspense>
 );
 
 export default function App() {
@@ -24,7 +26,10 @@ export default function App() {
         <Route path="live" element={<LiveMonitorPage />} />
         <Route path="setup/:videoId?" element={loading(<TableSetupPage />)} />
         <Route path="operations" element={loading(<OperationsPage />)} />
-        <Route path="analytics" element={<Navigate to="/operations?tab=analytics" replace />} />
+        <Route
+          path="analytics"
+          element={<Navigate to="/operations?tab=analytics" replace />}
+        />
         <Route path="*" element={<Navigate to="/floor" replace />} />
       </Route>
     </Routes>
