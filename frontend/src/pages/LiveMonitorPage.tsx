@@ -46,7 +46,7 @@ export default function LiveMonitorPage() {
   useEffect(() => {
     if (live && status) setLastLiveAt(status.timestamp);
   }, [live, status]);
-  const cardClock = live || lastLiveAt === null ? now : lastLiveAt;
+  const cardClock = status?.timestamp ?? lastLiveAt ?? now;
 
   const videoName = stream && stream.video_id === videoId ? stream.video_name : null;
   const streamFailed = stream?.state === "error" && stream.video_id !== null && stream.video_id === videoId;
@@ -80,7 +80,7 @@ export default function LiveMonitorPage() {
           {status?.has_tables ? (
             <>
               <span className="text-emerald-600">{status.available_count}</span> / {status.table_count} tables
-              available
+              visually vacant
             </>
           ) : (
             <span className="text-slate-400">No tables</span>

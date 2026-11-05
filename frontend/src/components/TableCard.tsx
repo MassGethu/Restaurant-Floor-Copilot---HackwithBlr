@@ -36,7 +36,7 @@ export default function TableCard({ table, now }: { table: TableStatus; now: num
           table.occupied ? "bg-red-600" : "bg-emerald-600"
         }`}
       >
-        {table.occupied ? "OCCUPIED" : "AVAILABLE"}
+        {table.occupied ? "OCCUPIED" : "VISUALLY VACANT"}
       </div>
       <p className="mt-2 flex h-4 items-center gap-1 text-xs text-slate-600">
         {table.occupied ? (

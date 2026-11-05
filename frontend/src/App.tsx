@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
+import FloorPage from "./pages/FloorPage";
 import Layout from "./components/Layout";
 import LiveMonitorPage from "./pages/LiveMonitorPage";
 import VideosPage from "./pages/VideosPage";
@@ -17,12 +18,13 @@ export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<Navigate to="/videos" replace />} />
+        <Route index element={<Navigate to="/floor" replace />} />
+        <Route path="floor" element={<FloorPage />} />
         <Route path="videos" element={<VideosPage />} />
         <Route path="live" element={<LiveMonitorPage />} />
         <Route path="setup/:videoId?" element={loading(<TableSetupPage />)} />
         <Route path="analytics" element={loading(<AnalyticsPage />)} />
-        <Route path="*" element={<Navigate to="/videos" replace />} />
+        <Route path="*" element={<Navigate to="/floor" replace />} />
       </Route>
     </Routes>
   );

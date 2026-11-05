@@ -5,6 +5,7 @@ import { Circle, Image as KonvaImage, Label, Layer, Line, Stage, Tag, Text } fro
 import { centroid, clampPoint, insertCorner, movePolygon, type Point, type Size } from "../lib/geometry";
 
 export interface EditorTable {
+  capacity?: number;
   id: string;
   name: string;
   /** Corners in pixels of the editor frame. */

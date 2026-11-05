@@ -485,6 +485,11 @@ export default function TableEditor({ video, videos }: { video: Video; videos: V
                       <Trash className="h-4 w-4" />
                     </button>
                   </div>
+                  <label className="mt-2 flex items-center gap-2 text-xs text-slate-600">Seats
+                    <input aria-label={`Capacity of ${table.id}`} type="number" min={1} max={20} value={table.capacity ?? 2}
+                      onChange={event => changeTables(current => current.map(item => item.id === table.id ? { ...item, capacity: Number(event.target.value) } : item))}
+                      className="w-16 rounded border border-slate-200 px-2 py-1" />
+                  </label>
                   {problems[table.id] && <p className="mt-1 pl-5 text-xs text-red-600">Unusable: {problems[table.id]}</p>}
                   {!problems[table.id] && overlaps[table.id] && (
                     <p className="mt-1 pl-5 text-xs text-amber-700">Overlaps {overlaps[table.id].join(", ")}</p>

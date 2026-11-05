@@ -85,6 +85,7 @@ export type LiveMessage = { type: "status"; data: PipelineStatus } | { type: "ev
 export type Point = [number, number];
 
 export interface TableDef {
+  capacity?: number;
   id: string;
   name: string;
   /** Corners in pixels of the config's frame_width x frame_height frame. */

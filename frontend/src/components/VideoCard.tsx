@@ -33,7 +33,7 @@ export default function VideoCard({ video, busy, onStart, onStop, onSetup, onDel
         <img src={apiUrl(video.thumbnail_url)} alt="" className="h-full w-full object-cover" loading="lazy" />
         {video.is_streaming && (
           <span className="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" /> STREAMING
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" /> PLAYBACK
           </span>
         )}
       </div>
@@ -58,7 +58,7 @@ export default function VideoCard({ video, busy, onStart, onStop, onSetup, onDel
             </Button>
           ) : (
             <Button onClick={onStart} disabled={busy}>
-              {busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Start Stream
+              {busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Start playback
             </Button>
           )}
           <Button variant="secondary" onClick={onSetup} disabled={busy}>

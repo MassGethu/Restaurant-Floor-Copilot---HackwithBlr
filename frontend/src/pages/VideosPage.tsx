@@ -2,6 +2,7 @@ import { MonitorPlay, Square } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { floorRequest } from "../api/copilot";
 import { api } from "../api/client";
 import type { StreamStatus, UploadLimits, Video } from "../api/types";
 import UploadDropzone from "../components/UploadDropzone";
@@ -53,9 +54,8 @@ export default function VideosPage() {
 
   const start = (video: Video) =>
     run(video.id, async () => {
-      const status = await api.startStream(video.id);
-      if (status.state === "error") throw new Error(`Could not start "${video.name}": ${status.error}`);
-      navigate(status.has_tables ? "/live" : `/setup/${video.id}`);
+      const status = await floorRequest('/play', { video_id: video.id });
+      navigate(status.tables.length ? "/floor" : `/setup/${video.id}`);
     });
 
   const stop = (videoId: string) =>
@@ -70,7 +70,7 @@ export default function VideosPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Videos" subtitle="Upload restaurant footage and stream it as a live CCTV camera." />
+      <PageHeader title="Videos" subtitle="Upload footage for local analysis, then configure its table regions." />
 
       {stream?.state === "running" && (
         <Banner tone="success" className="flex flex-wrap items-center justify-between gap-3">
