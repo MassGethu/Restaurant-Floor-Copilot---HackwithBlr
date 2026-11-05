@@ -1,0 +1,179 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "check": "Initial cleanliness confirmed by staff; pause freezes media clock",
+      "scenario_time": 0.5999999046325684,
+      "tables": {
+        "T1": "ready",
+        "T2": "ready",
+        "T3": "ready",
+        "T4": "ready"
+      },
+      "processing_fps": 18.3
+    },
+    {
+      "check": "Staff-approved seating, overflow queue and explicit heuristic estimate",
+      "scenario_time": 0.5999999046325684,
+      "tables": {
+        "T1": "occupied",
+        "T2": "occupied",
+        "T3": "occupied",
+        "T4": "occupied"
+      },
+      "processing_fps": 18.3
+    },
+    {
+      "check": "Actual YOLO inference confirms both seated regions",
+      "scenario_time": 30.200000047683716,
+      "tables": {
+        "T1": "occupied",
+        "T2": "occupied",
+        "T3": "occupied",
+        "T4": "occupied"
+      },
+      "processing_fps": 10.0
+    },
+    {
+      "check": "Brief 40\u201342 second absence does not release the table",
+      "scenario_time": 45.09999990463257,
+      "tables": {
+        "T1": "occupied",
+        "T2": "occupied",
+        "T3": "occupied",
+        "T4": "occupied"
+      },
+      "processing_fps": 10.0
+    },
+    {
+      "check": "Sustained visual absence triggers cleaning required",
+      "scenario_time": 71.09999990463257,
+      "tables": {
+        "T1": "cleaning_required",
+        "T2": "occupied",
+        "T3": "occupied",
+        "T4": "occupied"
+      },
+      "processing_fps": 10.0
+    },
+    {
+      "check": "Staff cleaning confirmation re-evaluates queue and enables seating",
+      "scenario_time": 71.09999990463257,
+      "tables": {
+        "T1": "occupied",
+        "T2": "occupied",
+        "T3": "occupied",
+        "T4": "occupied"
+      },
+      "processing_fps": 10.0
+    }
+  ],
+  "footage": "Explicitly synthetic edited stock montage; actual YOLO inference",
+  "events": [
+    {
+      "id": "baff2ff9-c873-413b-aeba-b5f6deaba768",
+      "text": "Waiting pair seated at Table 1.",
+      "origin": "staff",
+      "scenario_time": 71.09999990463257,
+      "recorded_at": 1793902733.336822
+    },
+    {
+      "id": "94bd0535-a6a6-4b3b-bd26-029391ddb2fd",
+      "text": "Table 1: Clean and ready, confirmed by staff.",
+      "origin": "staff",
+      "scenario_time": 71.09999990463257,
+      "recorded_at": 1793902733.3348851
+    },
+    {
+      "id": "938d6f31-9e4d-4f6c-83de-3efdc4eddca8",
+      "text": "Table 1: cleaning required.",
+      "origin": "vision",
+      "scenario_time": 70.90000009536743,
+      "recorded_at": 1793902733.087795
+    },
+    {
+      "id": "4e7c0a88-31b8-436d-a4e1-0caec2ad7759",
+      "text": "Waiting pair joined the queue (2 guests).",
+      "origin": "staff",
+      "scenario_time": 0.5999999046325684,
+      "recorded_at": 1793902662.7259672
+    },
+    {
+      "id": "e9835dfa-3fae-444f-b29f-78026d536dbe",
+      "text": "Table 4: Staff correction: occupied. Camera transitions held until released.",
+      "origin": "staff",
+      "scenario_time": 0.5999999046325684,
+      "recorded_at": 1793902662.7249432
+    },
+    {
+      "id": "e4c60cca-86ac-424b-87d5-1c91c51d8512",
+      "text": "Table 3: Staff correction: occupied. Camera transitions held until released.",
+      "origin": "staff",
+      "scenario_time": 0.5999999046325684,
+      "recorded_at": 1793902662.7239912
+    },
+    {
+      "id": "475dda60-9226-427b-8d34-7fef47c9ae01",
+      "text": "Test group of four seated at Table 2.",
+      "origin": "staff",
+      "scenario_time": 0.5999999046325684,
+      "recorded_at": 1793902662.722962
+    },
+    {
+      "id": "b6ba7d17-1aa8-41d5-90d5-42e912f47f82",
+      "text": "Test group of four joined the queue (4 guests).",
+      "origin": "staff",
+      "scenario_time": 0.5999999046325684,
+      "recorded_at": 1793902662.7218611
+    },
+    {
+      "id": "5c923677-60a5-49ce-9ef2-4ef6150a03ee",
+      "text": "Test pair seated at Table 1.",
+      "origin": "staff",
+      "scenario_time": 0.5999999046325684,
+      "recorded_at": 1793902662.7208252
+    },
+    {
+      "id": "e02d914f-196b-491d-a7e1-e1a42aa496ac",
+      "text": "Test pair joined the queue (2 guests).",
+      "origin": "staff",
+      "scenario_time": 0.5999999046325684,
+      "recorded_at": 1793902662.7193532
+    },
+    {
+      "id": "a5972f21-7b83-4746-9ecc-0d33ff405bda",
+      "text": "Table 4: Clean and ready, confirmed by staff.",
+      "origin": "staff",
+      "scenario_time": 0.5999999046325684,
+      "recorded_at": 1793902662.7180831
+    },
+    {
+      "id": "2baf653c-566e-496a-ae45-0182914bbc63",
+      "text": "Table 3: Clean and ready, confirmed by staff.",
+      "origin": "staff",
+      "scenario_time": 0.5999999046325684,
+      "recorded_at": 1793902662.716991
+    },
+    {
+      "id": "9841b9dc-26ef-473e-bb20-6ed6e1411417",
+      "text": "Table 2: Clean and ready, confirmed by staff.",
+      "origin": "staff",
+      "scenario_time": 0.5999999046325684,
+      "recorded_at": 1793902662.71582
+    },
+    {
+      "id": "2faeef7f-791c-409f-8f9a-7f8faa883e78",
+      "text": "Table 1: Clean and ready, confirmed by staff.",
+      "origin": "staff",
+      "scenario_time": 0.5999999046325684,
+      "recorded_at": 1793902662.714276
+    },
+    {
+      "id": "da18e7da-5c16-4f0f-9d23-86fbc71f4028",
+      "text": "New playback session. Confirm initial table readiness.",
+      "origin": "system",
+      "scenario_time": 0.0,
+      "recorded_at": 1793902661.388194
+    }
+  ]
+}

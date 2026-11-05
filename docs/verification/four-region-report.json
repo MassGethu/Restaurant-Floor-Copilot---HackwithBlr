@@ -1,0 +1,119 @@
+{
+  "passed": true,
+  "model": "yolo26s.pt",
+  "device": "cpu",
+  "input": "Repeated edited stock scene; actual YOLO detections, no mocked outputs.",
+  "limitation": "Tests configured region coverage and independent transitions, not real CCTV accuracy.",
+  "checks": [
+    {
+      "media_seconds": 0,
+      "removed_region": null,
+      "statuses": {
+        "T1": "PENDING_OCCUPIED",
+        "T2": "PENDING_OCCUPIED",
+        "T3": "PENDING_OCCUPIED",
+        "T4": "PENDING_OCCUPIED"
+      },
+      "people_detected": 12
+    },
+    {
+      "media_seconds": 4,
+      "removed_region": null,
+      "statuses": {
+        "T1": "OCCUPIED",
+        "T2": "OCCUPIED",
+        "T3": "OCCUPIED",
+        "T4": "OCCUPIED"
+      },
+      "people_detected": 12
+    },
+    {
+      "media_seconds": 5,
+      "removed_region": 0,
+      "statuses": {
+        "T1": "OCCUPIED",
+        "T2": "OCCUPIED",
+        "T3": "OCCUPIED",
+        "T4": "OCCUPIED"
+      },
+      "people_detected": 9
+    },
+    {
+      "media_seconds": 6.1,
+      "removed_region": 0,
+      "statuses": {
+        "T1": "PENDING_AVAILABLE",
+        "T2": "OCCUPIED",
+        "T3": "OCCUPIED",
+        "T4": "OCCUPIED"
+      },
+      "people_detected": 9
+    },
+    {
+      "media_seconds": 10.1,
+      "removed_region": 0,
+      "statuses": {
+        "T1": "AVAILABLE",
+        "T2": "OCCUPIED",
+        "T3": "OCCUPIED",
+        "T4": "OCCUPIED"
+      },
+      "people_detected": 9
+    },
+    {
+      "media_seconds": 12,
+      "removed_region": null,
+      "statuses": {
+        "T1": "PENDING_OCCUPIED",
+        "T2": "OCCUPIED",
+        "T3": "OCCUPIED",
+        "T4": "OCCUPIED"
+      },
+      "people_detected": 12
+    },
+    {
+      "media_seconds": 16,
+      "removed_region": null,
+      "statuses": {
+        "T1": "OCCUPIED",
+        "T2": "OCCUPIED",
+        "T3": "OCCUPIED",
+        "T4": "OCCUPIED"
+      },
+      "people_detected": 12
+    },
+    {
+      "media_seconds": 17,
+      "removed_region": 1,
+      "statuses": {
+        "T1": "OCCUPIED",
+        "T2": "OCCUPIED",
+        "T3": "OCCUPIED",
+        "T4": "OCCUPIED"
+      },
+      "people_detected": 9
+    },
+    {
+      "media_seconds": 18.1,
+      "removed_region": 1,
+      "statuses": {
+        "T1": "OCCUPIED",
+        "T2": "PENDING_AVAILABLE",
+        "T3": "OCCUPIED",
+        "T4": "OCCUPIED"
+      },
+      "people_detected": 9
+    },
+    {
+      "media_seconds": 22.1,
+      "removed_region": 1,
+      "statuses": {
+        "T1": "OCCUPIED",
+        "T2": "AVAILABLE",
+        "T3": "OCCUPIED",
+        "T4": "OCCUPIED"
+      },
+      "people_detected": 9
+    }
+  ]
+}
