@@ -22,6 +22,8 @@ from loguru import logger
 from pydantic import ValidationError
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from app.copilot_api import router as copilot_router
+from app.operations import Operations, OperationError
 from app.analytics import compute_analytics
 from app.broadcaster import Broadcaster
 from app.config_store import ConfigError, ConfigStore, build_table_config
@@ -104,8 +106,10 @@ def create_app(
         library = VideoLibrary(settings, db, store)
         await asyncio.to_thread(library.import_existing)
         streams = StreamManager(settings, **({"popen": popen} if popen else {}))
+        operations = Operations(settings.data_dir / DB_FILENAME)
+        app.state.operations = operations
         broadcaster = Broadcaster()
-        pipeline = Pipeline(settings, store, db, broadcaster,
+        pipeline = Pipeline(settings, store, db, broadcaster, operations=operations,
                             **({"detector_factory": detector_factory} if detector_factory else {}))
         app.state.store, app.state.db, app.state.library = store, db, library
         app.state.streams, app.state.broadcaster, app.state.pipeline = streams, broadcaster, pipeline
@@ -115,7 +119,7 @@ def create_app(
         await asyncio.to_thread(streams.ensure_mediamtx)
         default_video = settings.default_video_id or None
         pipeline.start(default_video)
-        if default_video and library.get(default_video):  # an uploaded video: stream it as well
+        if default_video and library.get(default_video) and "://" in (pipeline.current_config().source if pipeline.current_config() else settings.fake_camera_rtsp_url):
             await asyncio.to_thread(streams.start, default_video, library.path(default_video))
         logger.info("API ready at http://{}:{}/docs", settings.api_host, settings.api_port)
         try:
@@ -125,16 +129,23 @@ def create_app(
             shutdown_requested.set()
             pipeline.stop()
             streams.shutdown()
+            operations.close()
             db.close()
             logger.info("Shutdown complete")
 
     app = FastAPI(
-        title="Restaurant Table Occupancy",
+        title="Restaurant Floor Copilot",
         description="Live table occupancy from a CCTV stream: videos, fake camera, MJPEG video, "
                     "table status, events and table config.",
         version="0.2.0",
         lifespan=lifespan,
     )
+    app.include_router(copilot_router)
+
+    @app.exception_handler(OperationError)
+    async def operation_error(request: Request, error: OperationError):
+        return JSONResponse(status_code=409, content={'detail': str(error)})
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,
@@ -168,7 +179,7 @@ def create_app(
             uploaded_at=video["uploaded_at"],
             has_tables=bool(config and config.tables),
             table_count=len(config.tables) if config else 0,
-            is_streaming=streams.state.value == "running" and streams.video_id == video["id"],
+            is_streaming=request.app.state.pipeline.video_id == video["id"],
             thumbnail_url=f"/api/videos/{video['id']}/thumbnail",
         )
 
@@ -281,7 +292,7 @@ def create_app(
         """Stop the fake camera (MediaMTX keeps running); the live view goes idle."""
         streams: StreamManager = request.app.state.streams
         pipeline: Pipeline = request.app.state.pipeline
-        if streams.video_id is not None and pipeline.video_id == streams.video_id:
+        if pipeline.video_id is not None:
             pipeline.activate(None)  # first, so the reader does not report the stream as lost
         streams.stop()
         return stream_status(request)

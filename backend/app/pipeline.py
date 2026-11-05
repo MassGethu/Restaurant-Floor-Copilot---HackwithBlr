@@ -16,6 +16,7 @@ webcam: it only gets frames from FrameSource.
 from __future__ import annotations
 
 import dataclasses
+from contextlib import nullcontext
 import threading
 import time
 from collections import deque
@@ -108,7 +109,13 @@ class Pipeline:
         broadcaster: Broadcaster,
         detector_factory: Callable[[Settings], Detector] = PersonDetector.from_settings,
         source_factory: Callable[[str, Settings], FrameSource] = FrameSource.from_settings,
+        operations=None,
     ) -> None:
+        self.operations = operations
+        self._scenario_time = 0.0
+        self._clock_origin = time.time()
+        self._observation_time = time.time()
+        self._source_epoch = 0
         self.settings = settings
         self._store = store
         self._db = db
@@ -142,6 +149,8 @@ class Pipeline:
         self._jpeg_seq = 0
 
         self._detector: Detector | None = None
+        self._last_detection_seq = -1
+        self._last_detection_at = 0.0
         self._model_state = "loading"
         self._processing = RateMeter()
         self._streaming = RateMeter()
@@ -210,7 +219,7 @@ class Pipeline:
 
     # ------------------------------------------------------------------ what to watch
 
-    def activate(self, video_id: str | None) -> None:
+    def activate(self, video_id: str | None, source_override: str | None = None, reset_operations: bool = False) -> None:
         """Watch a video: load its table config and switch to its source.
 
         With video_id None the pipeline is idle (no source, NO SOURCE on the
@@ -226,17 +235,27 @@ class Pipeline:
                 logger.error("Table config of {} is invalid: {}", video_id, error)
         source_url = None
         if video_id:
-            source_url = (config.source if config else self.settings.fake_camera_rtsp_url).strip()
+            source_url = source_override or (config.source if config else self.settings.fake_camera_rtsp_url).strip()
 
         with self._lock:
             old_source = None
             if source_url is None:
                 old_source, self._source, self._frame = self._source, None, None
-            elif self._source is None or self._source.source != source_url or video_id != self._video_id:
+            elif source_override is not None or self._source is None or self._source.source != source_url or video_id != self._video_id:
                 old_source = self._source
                 self._source = self._source_factory(source_url, self.settings)
                 self._frame = None
             self._video_id, self._config = video_id, config
+            self._scenario_time = 0.0
+            self._last_detection_at = 0.0
+            self._last_detection_seq = -1
+            self._clock_origin = time.time()
+            self._observation_time = self._clock_origin
+            self._source_epoch = 0
+            if self.operations is not None and video_id and config:
+                self.operations.configure(video_id, config.tables, reset=reset_operations)
+            if self.operations is not None:
+                self.operations.fresh = False
             self._generation += 1
             self._results = Results()
             self._outage, self._last_frame_at = False, time.time()
@@ -250,6 +269,22 @@ class Pipeline:
             tables = f"{len(config.tables)} tables" if config else "no tables"
             logger.info("Watching {} from {} ({})", video_id, redact(source_url), tables)
         self._publish_status(force=True)
+
+    def playback(self) -> dict:
+        with self._lock:
+            source = self._source
+            return dict(video_id=self._video_id, position_seconds=self._scenario_time,
+                        paused=bool(source and getattr(source, 'paused', False)),
+                        ended=bool(source and source.status is SourceStatus.ENDED),
+                        source_status=self.source_label, model_state=self.model_state,
+                        inference_fresh=self._last_detection_at > 0 and (time.monotonic() - self._last_detection_at < 5 or bool(source and getattr(source, 'paused', False) and self._last_detection_seq == self._frame_seq)),
+                        processing_fps=self.processing_fps, session_id=self._generation)
+
+    def pause(self, paused: bool) -> None:
+        with self._lock:
+            if self._source is None or not getattr(self._source, 'is_file', False):
+                raise ValueError('Pause is available for file playback only.')
+            self._source.pause(paused)
 
     def current_config(self) -> TableConfig | None:
         with self._lock:
@@ -265,10 +300,22 @@ class Pipeline:
         live_size = (frame.shape[1], frame.shape[0]) if frame is not None else None
         new_config = build_table_config(video_id, update, config, source_url, self.settings, live_size)
 
-        self._store.save(new_config)
         with self._lock:
-            if self._video_id == video_id:
-                self._config = new_config  # the detection thread picks it up on its next frame
+            if self._video_id != video_id or self._config is not config:
+                raise ConfigError('Active video or table configuration changed. Reload and try again.')
+            with self.operations.lock if self.operations is not None else nullcontext():
+                if self.operations is not None:
+                    self.operations.validate_configuration(new_config.tables)
+                self._store.save(new_config)
+                self._config = new_config
+                if self.operations is not None:
+                    self.operations.configure(video_id, new_config.tables)
+                # Reprocess the current frame even when playback is paused.
+                # In-flight results from the old config are discarded below.
+                self._last_detection_at = 0.0
+                self._last_detection_seq = -1
+                self._frame_seq += 1
+                self._frame_ready.notify_all()
                 self._sync_run(new_run=False)
         logger.info("Saved {} tables for {}", len(new_config.tables), video_id)
         return new_config
@@ -281,6 +328,9 @@ class Pipeline:
         errors are logged, never raised: they must not stop the live view.
         """
         now = time.time() if at is None else at
+        if new_run:
+            self._clock_origin = now
+            self._observation_time = now
         watching = self._config and self._config.tables and not self._outage and not self._stop.is_set()
         watched = self._video_id if watching else None
         try:
@@ -360,7 +410,7 @@ class Pipeline:
         with self._lock:
             results, video_id, config, frame = self._results, self._video_id, self._config, self._frame
             source_status = self._source.status if self._source else SourceStatus.STOPPED
-        now = time.time()
+        now = self._observation_time if self._source and getattr(self._source, "is_file", False) else time.time()
         tables = [
             TableStatusOut(
                 id=state.table_id,
@@ -403,7 +453,11 @@ class Pipeline:
                 if source is None:
                     self._stop.wait(IDLE_REDRAW_SECONDS)
                 else:
-                    ok, frame = source.read(timeout=IDLE_REDRAW_SECONDS)
+                    if hasattr(source, 'read_packet'):
+                        ok, frame, packet_time, epoch = source.read_packet(timeout=IDLE_REDRAW_SECONDS)
+                    else:
+                        ok, frame = source.read(timeout=IDLE_REDRAW_SECONDS)
+                        packet_time, epoch = time.time(), 0
                     if not ok:
                         frame = None
 
@@ -414,6 +468,18 @@ class Pipeline:
                         self._frame = frame
                         self._frame_seq += 1
                         self._last_frame_at = time.time()
+                        if getattr(source, 'is_file', False):
+                            if epoch != self._source_epoch:
+                                self._source_epoch = epoch
+                                self._generation += 1
+                                self._sync_run(new_run=True)
+                                if self.operations is not None and self._config:
+                                    self.operations.configure(self._video_id, self._config.tables, reset=True)
+                            self._scenario_time = packet_time
+                            self._observation_time = self._clock_origin + packet_time
+                        else:
+                            self._observation_time = self._last_frame_at
+                            self._scenario_time = self._last_frame_at - self._clock_origin
                         if self._outage:
                             self._resume_after_outage()
                         self._frame_ready.notify_all()
@@ -425,7 +491,7 @@ class Pipeline:
                         last_frame = self._frame
                     self._render(last_frame)  # keeps the overlay (RECONNECTING, clock) up to date
                     last_render = time.monotonic()
-                if frame is None:
+                if frame is None and not (source and getattr(source, 'paused', False)):
                     self._check_outage()
                 self._publish_status()
                 self._touch_run()
@@ -486,7 +552,7 @@ class Pipeline:
                     continue
                 frames_waiting = 0
                 frame, frame_time, config, video_id, current_generation = (
-                    self._frame, self._last_frame_at, self._config, self._video_id, self._generation,
+                    self._frame, self._observation_time, self._config, self._video_id, self._generation,
                 )
             try:
                 if current_generation != generation:  # another video: start tracking from scratch
@@ -520,9 +586,13 @@ class Pipeline:
                     reference_point=config.occupancy.reference_point if config else self.settings.reference_point,
                 )
                 with self._lock:
-                    if self._generation != current_generation:
-                        continue  # the video changed during detection: drop these results
+                    if self._generation != current_generation or self._config is not config:
+                        continue  # the video or regions changed during inference
                     self._results = results
+                    self._last_detection_seq = seen_seq
+                    self._last_detection_at = time.monotonic()
+                    if self.operations is not None:
+                        self.operations.observe(video_id, results.states, max(0.0, frame_time - self._clock_origin), observation_time=frame_time)
                 if events:
                     self._record_events(video_id, events, {table.id: table.name for table in results.tables})
                 self._publish_status(force=bool(events))

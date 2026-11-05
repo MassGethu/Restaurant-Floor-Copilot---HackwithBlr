@@ -1,0 +1,119 @@
+"""Staff workflow endpoints. Inputs are validated before operational transitions."""
+from typing import Literal
+
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
+
+from app.config_store import default_occupancy
+from app.schemas import TableConfig
+
+router = APIRouter(prefix='/api/copilot', tags=['floor copilot'])
+
+
+class PartyInput(BaseModel):
+    name: str = Field(default='', max_length=60)
+    size: int = Field(ge=1, le=20)
+
+
+class SeatInput(BaseModel):
+    party_id: str
+    table_id: str
+    version: int
+    override: bool = False
+
+
+class TableAction(BaseModel):
+    action: Literal['clean', 'depart', 'hold_occupied', 'hold_ready', 'release']
+
+
+class PlayInput(BaseModel):
+    video_id: str
+
+
+class PauseInput(BaseModel):
+    paused: bool
+
+
+class AssumptionsInput(BaseModel):
+    dining_min: int = Field(ge=1, le=240)
+    dining_max: int = Field(ge=1, le=240)
+    cleaning_min: int = Field(ge=1, le=60)
+    cleaning_max: int = Field(ge=1, le=60)
+
+
+@router.get('')
+def snapshot(request: Request):
+    app = request.app.state
+    playback = app.pipeline.playback()
+    app.operations.fresh = playback['inference_fresh']
+    state = app.operations.snapshot(playback['source_status'], playback['model_state'])
+    return dict(**state, playback=playback)
+
+
+@router.post('/play')
+def play(body: PlayInput, request: Request):
+    app = request.app.state
+    path = app.library.path(body.video_id)
+    if path is None:
+        raise HTTPException(404, 'Video not found.')
+    info = app.library.get(body.video_id)
+    config = app.store.load(body.video_id)
+    if config is None:
+        config = TableConfig(video_id=body.video_id, source=str(path),
+                             frame_width=info['width'] or 640, frame_height=info['height'] or 360,
+                             tables=[], occupancy=default_occupancy(app.pipeline.settings))
+    else:
+        config = config.model_copy(update={'source': str(path)})
+    app.store.save(config)
+    app.streams.stop()
+    app.pipeline.activate(body.video_id, source_override=str(path), reset_operations=True)
+    return snapshot(request)
+
+
+@router.post('/pause')
+def pause(body: PauseInput, request: Request):
+    try:
+        request.app.state.pipeline.pause(body.paused)
+    except ValueError as error:
+        raise HTTPException(409, str(error)) from error
+    return snapshot(request)
+
+
+@router.post('/parties', status_code=201)
+def add_party(body: PartyInput, request: Request):
+    request.app.state.operations.add_party(body.name, body.size)
+    return snapshot(request)
+
+
+@router.post('/assumptions')
+def assumptions(body: AssumptionsInput, request: Request):
+    request.app.state.operations.set_assumptions(body.model_dump())
+    return snapshot(request)
+
+
+@router.delete('/parties/{party_id}')
+def cancel_party(party_id: str, request: Request):
+    request.app.state.operations.cancel(party_id)
+    return snapshot(request)
+
+
+@router.post('/seat')
+def seat(body: SeatInput, request: Request):
+    # Refresh inference health before validating an approval.
+    snapshot(request)
+    request.app.state.operations.seat(body.party_id, body.table_id, body.version, override=body.override)
+    return snapshot(request)
+
+
+@router.post('/decline')
+def decline(body: SeatInput, request: Request):
+    snapshot(request)
+    request.app.state.operations.decline(body.party_id, body.table_id, body.version)
+    return snapshot(request)
+
+
+@router.post('/tables/{table_id}')
+def table_action(table_id: str, body: TableAction, request: Request):
+    snapshot(request)
+    request.app.state.operations.action(table_id, body.action)
+    return snapshot(request)

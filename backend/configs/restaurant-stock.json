@@ -1,0 +1,38 @@
+{
+  "video_id": "restaurant-stock",
+  "source": "/Users/massgethu/CV AI for restaurants/fake_camera/videos/restaurant-stock.mp4",
+  "frame_width": 960,
+  "frame_height": 506,
+  "tables": [
+    {
+      "id": "T1",
+      "name": "Stock dining table",
+      "polygon": [
+        [
+          0.0,
+          40.0
+        ],
+        [
+          690.0,
+          40.0
+        ],
+        [
+          690.0,
+          506.0
+        ],
+        [
+          0.0,
+          506.0
+        ]
+      ],
+      "capacity": 6
+    }
+  ],
+  "occupancy": {
+    "confidence_threshold": 0.3,
+    "enter_seconds": 3.0,
+    "leave_seconds": 6.0,
+    "reference_point": "center",
+    "presence_hold_seconds": 1.0
+  }
+}

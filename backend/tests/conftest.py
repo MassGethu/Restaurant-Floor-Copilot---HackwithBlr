@@ -154,6 +154,6 @@ def write_video(path: Path, frames: int = 20, size: tuple[int, int] = (320, 180)
     path.parent.mkdir(parents=True, exist_ok=True)
     writer = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*codec), fps, size)
     for i in range(frames):
-        writer.write(np.full((size[1], size[0], 3), 40 + i * 5, np.uint8))
+        writer.write(np.full((size[1], size[0], 3), (40 + i * 5) % 256, np.uint8))
     writer.release()
     return path

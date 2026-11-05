@@ -143,6 +143,9 @@ class FrameSource:
 
         self._cond = threading.Condition()
         self._frame: np.ndarray | None = None
+        self._frame_time = 0.0
+        self._paused = False
+        self._epoch = 0
         self._frame_seq = 0  # increases with every published frame
         self._read_seq = 0   # sequence number of the last frame returned by read()
         self._status = SourceStatus.CONNECTING
@@ -169,7 +172,24 @@ class FrameSource:
 
     # ------------------------------------------------------------------ public API
 
+    def pause(self, paused: bool) -> None:
+        with self._cond:
+            self._paused = paused
+            self._cond.notify_all()
+
+    @property
+    def paused(self) -> bool:
+        return self._paused
+
+    @property
+    def is_file(self) -> bool:
+        return self._kind is _Kind.FILE
+
     def read(self, timeout: float | None = 1.0) -> tuple[bool, np.ndarray | None]:
+        ok, frame, _, _ = self.read_packet(timeout)
+        return ok, frame
+
+    def read_packet(self, timeout: float | None = 1.0) -> tuple[bool, np.ndarray | None, float, int]:
         """Return ``(True, frame)`` with the newest unseen frame, else ``(False, None)``.
 
         Waits up to ``timeout`` seconds for a new frame (``None`` waits forever,
@@ -182,9 +202,9 @@ class FrameSource:
                 timeout,
             )
             if self._frame is None or self._frame_seq <= self._read_seq:
-                return False, None
+                return False, None, self._frame_time, self._epoch
             self._read_seq = self._frame_seq
-            return True, self._frame
+            return True, self._frame, self._frame_time, self._epoch
 
     def is_alive(self) -> bool:
         """True while frames are arriving or the source is still trying to connect."""
@@ -247,12 +267,18 @@ class FrameSource:
                         frames_since_open = 0
                         next_frame_at = time.monotonic()
 
+                    with self._cond:
+                        if self._paused:
+                            self._cond.wait(timeout=0.1)
+                            next_frame_at = time.monotonic()
+                            continue
                     ok, frame = cap.read()
                     if not ok or frame is None:
                         cap.release()
                         cap = None
                         if self._kind is _Kind.FILE:
                             if self._loop_files and frames_since_open > 0:
+                                self._epoch += 1
                                 logger.debug("{} ended, starting it again", self._label)
                                 continue
                             logger.info("{} ended", self._label)
@@ -264,7 +290,12 @@ class FrameSource:
                     frames_since_open += 1
                     if self._kind is _Kind.FILE:
                         next_frame_at = self._wait_for_frame_time(next_frame_at)
-                    self._publish(frame)
+                    media_time = max(0.0, (frames_since_open - 1) / (self._fps or FALLBACK_FILE_FPS))
+                    if self._kind is _Kind.FILE:
+                        pts = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+                        if pts > 0:
+                            media_time = pts
+                    self._publish(frame, media_time if self._kind is _Kind.FILE else time.time())
                 except Exception:  # the reader must never die on an unexpected error
                     logger.exception("Error while reading {}", self._label)
                     if cap is not None:
@@ -323,7 +354,7 @@ class FrameSource:
             next_frame_at = time.monotonic()
         return next_frame_at
 
-    def _publish(self, frame: np.ndarray) -> None:
+    def _publish(self, frame: np.ndarray, timestamp: float = 0.0) -> None:
         with self._cond:
             if self._stop.is_set():
                 return
@@ -332,6 +363,7 @@ class FrameSource:
                 logger.info("{} is live{}", self._label, again)
                 self._failures = 0
             self._frame = frame
+            self._frame_time = timestamp
             self._frame_seq += 1
             self._resolution = (frame.shape[1], frame.shape[0])
             self._status = SourceStatus.LIVE

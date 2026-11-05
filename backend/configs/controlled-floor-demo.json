@@ -1,0 +1,107 @@
+{
+  "video_id": "controlled-floor-demo",
+  "source": "/Users/massgethu/CV AI for restaurants/fake_camera/videos/controlled-floor-demo.mp4",
+  "frame_width": 960,
+  "frame_height": 560,
+  "tables": [
+    {
+      "id": "T1",
+      "name": "Table 1",
+      "polygon": [
+        [
+          5.0,
+          27.0
+        ],
+        [
+          475.0,
+          27.0
+        ],
+        [
+          475.0,
+          269.0
+        ],
+        [
+          5.0,
+          269.0
+        ]
+      ],
+      "capacity": 2
+    },
+    {
+      "id": "T2",
+      "name": "Table 2",
+      "polygon": [
+        [
+          485.0,
+          27.0
+        ],
+        [
+          955.0,
+          27.0
+        ],
+        [
+          955.0,
+          269.0
+        ],
+        [
+          485.0,
+          269.0
+        ]
+      ],
+      "capacity": 4
+    },
+    {
+      "id": "T3",
+      "name": "Table 3",
+      "polygon": [
+        [
+          5.0,
+          292.0
+        ],
+        [
+          475.0,
+          292.0
+        ],
+        [
+          475.0,
+          534.0
+        ],
+        [
+          5.0,
+          534.0
+        ]
+      ],
+      "capacity": 4
+    },
+    {
+      "id": "T4",
+      "name": "Table 4",
+      "polygon": [
+        [
+          485.0,
+          292.0
+        ],
+        [
+          955.0,
+          292.0
+        ],
+        [
+          955.0,
+          534.0
+        ],
+        [
+          485.0,
+          534.0
+        ]
+      ],
+      "capacity": 6
+    }
+  ],
+  "occupancy": {
+    "confidence_threshold": 0.3,
+    "enter_seconds": 3.0,
+    "leave_seconds": 6.0,
+    "reference_point": "center",
+    "presence_hold_seconds": 1.0
+  }
+}

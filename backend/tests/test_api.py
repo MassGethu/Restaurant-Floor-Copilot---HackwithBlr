@@ -36,7 +36,7 @@ def wait_until(condition: Callable[[], Any], timeout: float = 15.0) -> Any:
 @pytest.fixture
 def client(tmp_path: Path) -> Iterator[TestClient]:
     """The "demo" config reads a video file directly, the way a real camera config would."""
-    video = write_video(tmp_path / "camera.avi", size=(WIDTH, HEIGHT))
+    video = write_video(tmp_path / "camera.avi", frames=200, size=(WIDTH, HEIGHT))
     settings = make_settings(tmp_path, default_video_id="demo")
     ConfigStore(settings.configs_dir).save(TableConfig(
         video_id="demo",
