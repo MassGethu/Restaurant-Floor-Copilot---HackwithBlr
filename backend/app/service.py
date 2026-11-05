@@ -22,7 +22,7 @@ class ServiceMixin:
         for table in self.state['tables']:
             active = [t for t in self.state['tasks'] if t['table_id'] == table['id'] and t['status'] in ('open','acknowledged','in_progress')]
             if table['status'] == 'cleaning_required' and not any(t['kind']=='cleaning' for t in active):
-                self.ensure_task(table['id'], 'cleaning', 'vision', 'Vacated table requires staff cleaning confirmation.')
+                self.ensure_task(table['id'], 'cleaning', table.get('dirty_origin','system'), 'Vacated table requires staff cleaning confirmation.')
                 changed = True
             for task in active:
                 if task['kind']=='cleaning' and table['status'] == 'ready':

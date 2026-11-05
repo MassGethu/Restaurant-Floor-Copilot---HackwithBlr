@@ -61,6 +61,19 @@ class ArrivalInput(BaseModel):
     size: int = Field(default=1,ge=1,le=20)
 
 
+class PolicyInput(BaseModel):
+    strategy: Literal['fairness','balanced','throughput']
+    max_wait_minutes: int = Field(default=15,ge=1,le=240)
+    check_in_minutes: int = Field(default=10,ge=1,le=120)
+
+
+class SimulationInput(BaseModel):
+    party_id: str
+    table_id: str
+    delay_minutes: int = Field(default=0,ge=0,le=120)
+    horizon_minutes: int = Field(default=120,ge=1,le=240)
+
+
 @router.get('')
 def snapshot(request: Request):
     app = request.app.state
@@ -162,3 +175,36 @@ def staff(body:StaffInput,request:Request):
 def arrival(arrival_id:str,body:ArrivalInput,request:Request):
     request.app.state.operations.resolve_arrival(arrival_id,body.action,body.name,body.size)
     return snapshot(request)
+
+
+@router.post('/policy')
+def policy(body:PolicyInput,request:Request):
+    operations=request.app.state.operations
+    with operations.lock:
+        operations.state['policy']=body.model_dump()
+        operations.event(f"Allocation policy set to {body.strategy}; overdue protection {body.max_wait_minutes} min.",'staff')
+        operations.save()
+    return snapshot(request)
+
+
+@router.post('/simulate')
+def simulation(body:SimulationInput,request:Request):
+    from app.simulation import simulate
+    state=snapshot(request)
+    try:
+        return dict(**simulate(state,body.party_id,body.table_id,body.delay_minutes,body.horizon_minutes),state_version=state['version'])
+    except ValueError as error:raise HTTPException(409,str(error)) from error
+
+
+@router.get('/export')
+def export(request:Request):
+    import csv
+    import io
+    from fastapi.responses import Response
+    output=io.StringIO();writer=csv.writer(output)
+    writer.writerow(['party','size','status','arrival_s','seated_s','table'])
+    for party in snapshot(request)['parties']:
+        # Prefix spreadsheet formula triggers in user-provided text.
+        name=party['name'];name="'"+name if name.lstrip().startswith(('=','+','-','@')) else name
+        writer.writerow([name,party['size'],party['status'],party['arrived_at'],party.get('seated_at'),party['table_id']])
+    return Response(output.getvalue(),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="floor-parties.csv"'})

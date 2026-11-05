@@ -177,7 +177,7 @@ class Operations(ServiceMixin):
         if party:
             party['status'] = 'departed'
             party['departed_at']=self.state['now']
-        table.update(status='cleaning_required', dirty_since=self.state['now'], party_id=None,
+        table.update(status='cleaning_required', dirty_since=self.state['now'], dirty_origin=origin, party_id=None,
                      occupied_since=None, duration_known=False, seen_present=False,
                      note='Departure confirmed. Staff must confirm cleaning.')
         self.event(f"{table['name']}: cleaning required.", origin)
@@ -264,19 +264,23 @@ class Operations(ServiceMixin):
         result = []
         waiting = [p for p in self.state['parties'] if p['status'] == 'waiting']
         declined = self.state.get('declined', [])
-        allocation = allocate(waiting, self.state['tables'], declined)
+        policy=self.state['policy']
+        effective=policy if len([t for t in self.state['tables'] if t['status']=='ready'])<=8 else {**policy,'strategy':'fairness'}
+        allocation = allocate(waiting, self.state['tables'], declined, effective, self.state['now'])
         for party, table in allocation:
             index = waiting.index(party)
             skipped = [p['name'] for p in waiting[:index] if p['id'] not in {r['party_id'] for r in result}]
             reason = f"{table['name']} is staff-confirmed ready and its {table['capacity']} seats fit {party['size']} guests. Smallest suitable table; oldest feasible party first."
-            if skipped:
+            if effective['strategy']!='fairness':
+                reason=f"{table['name']} fits {party['size']} guests with {table['capacity']-party['size']} unused seats. The {effective['strategy']} preset compares guest count, party count, elapsed wait and unused seats across up to 12 feasible parties and 8 ready tables; overdue parties are protected."
+            if skipped and effective['strategy']=='fairness':
                 reason += f" Earlier waiting parties have no eligible remaining table under capacity and staff decisions: {', '.join(skipped)}."
             if any(pair[0] == party['id'] for pair in self.state.get('declined', [])):
                 reason += ' Previously declined table options are excluded until their next departure/cleaning cycle.'
             result.append(dict(party_id=party['id'], party_name=party['name'], table_id=table['id'],
                                table_name=table['name'], unused_seats=table['capacity']-party['size'],
                                explanation=reason, version=self.state['version'],
-                               alternatives=compare_tables(party, waiting, self.state['tables'], declined, allocation)))
+                               alternatives=compare_tables(party, waiting, self.state['tables'], declined, allocation, effective, self.state['now'])))
         return result
 
     def decline(self, party_id, table_id, version):
