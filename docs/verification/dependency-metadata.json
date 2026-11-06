@@ -788,6 +788,20 @@
       ]
     },
     {
+      "name": "ruff",
+      "version": "0.17.4",
+      "license_expression": "MIT",
+      "declared_license": null,
+      "project_urls": [
+        "Changelog, https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md",
+        "Documentation, https://docs.astral.sh/ruff/",
+        "Repository, https://github.com/astral-sh/ruff"
+      ],
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
       "name": "scipy",
       "version": "1.18.1",
       "license_expression": null,
@@ -1844,6 +1858,11 @@
     {
       "name": "postcss",
       "version": "8.5.32",
+      "declared_license": "MIT"
+    },
+    {
+      "name": "prettier",
+      "version": "3.9.10",
       "declared_license": "MIT"
     },
     {

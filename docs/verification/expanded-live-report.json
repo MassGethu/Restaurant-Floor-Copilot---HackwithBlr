@@ -3,25 +3,25 @@
   "checks": [
     {
       "check": "Approved seating, overflow and pure what-if simulation",
-      "scenario_time": 0.09999990463256836,
+      "scenario_time": 0.40000009536743164,
       "active_tasks": 0,
-      "fps": 10.1
+      "fps": 12.2
     },
     {
       "check": "Real YOLO observes both configured occupied regions",
-      "scenario_time": 32.0,
+      "scenario_time": 32.200000047683716,
       "active_tasks": 0,
       "fps": 10.0
     },
     {
       "check": "Temporary absence retained occupancy",
-      "scenario_time": 45.200000047683716,
+      "scenario_time": 45.09999990463257,
       "active_tasks": 0,
       "fps": 10.0
     },
     {
       "check": "Timed staff suggestion, assignment, acknowledgement and recorded visit",
-      "scenario_time": 60.200000047683716,
+      "scenario_time": 60.40000009536743,
       "active_tasks": 3,
       "fps": 10.0
     },
