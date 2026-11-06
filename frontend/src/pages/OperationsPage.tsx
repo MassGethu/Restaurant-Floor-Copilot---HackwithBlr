@@ -75,6 +75,7 @@ export default function OperationsPage() {
   const [sound, setSound] = useState(false);
   const [notice, setNotice] = useState("");
   const known = useRef<Set<string> | null>(null);
+  const requestId = useRef(0);
   const [staffName, setStaffName] = useState("");
   const [staffRole, setStaffRole] = useState("waiter");
   const [arrivalForms, setArrivalForms] = useState<
@@ -91,6 +92,7 @@ export default function OperationsPage() {
   const [horizon, setHorizon] = useState(120);
   const [simulation, setSimulation] = useState<Simulation | null>(null);
   const load = useCallback(async () => {
+    const id = ++requestId.current;
     try {
       const value = await floorRequest();
       if (!value.policy) {
@@ -99,10 +101,12 @@ export default function OperationsPage() {
         );
         return;
       }
-      setState(value);
-      setConnected(true);
+      if (id === requestId.current) {
+        setState(value);
+        setConnected(true);
+      }
     } catch {
-      setConnected(false);
+      if (id === requestId.current) setConnected(false);
     }
   }, []);
   useEffect(() => {
@@ -121,32 +125,45 @@ export default function OperationsPage() {
     if (!state) return;
     const tasks = (state.tasks ?? []).filter((t) => active(t.status));
     const fresh = tasks.filter(
-      (t) => known.current && !known.current.has(t.id),
+      (t) =>
+        known.current &&
+        !known.current.has(t.id) &&
+        (role === "all" || t.role === role),
     );
     if (fresh.length) {
       setNotice(
-        `${fresh.length} new staff task${fresh.length === 1 ? "" : "s"} require attention.`,
+        `${fresh.length} new staff task${fresh.length === 1 ? " requires" : "s require"} attention.`,
       );
       if (sound) {
-        const context = new AudioContext();
-        const tone = context.createOscillator();
-        const gain = context.createGain();
-        tone.connect(gain);
-        gain.connect(context.destination);
-        gain.gain.value = 0.05;
-        tone.frequency.value = 660;
-        tone.start();
-        tone.stop(context.currentTime + 0.15);
-        tone.onended = () => void context.close();
+        try {
+          const context = new AudioContext();
+          const tone = context.createOscillator();
+          const gain = context.createGain();
+          tone.connect(gain);
+          gain.connect(context.destination);
+          gain.gain.value = 0.05;
+          tone.frequency.value = 660;
+          tone.start();
+          tone.stop(context.currentTime + 0.15);
+          tone.onended = () => void context.close();
+        } catch {
+          setSound(false);
+          setNotice(
+            "New tasks require attention. Sound is unavailable in this browser.",
+          );
+        }
       }
     }
     known.current = new Set(tasks.map((t) => t.id));
-  }, [state, sound]);
+  }, [state, sound, role]);
   const act = async (path: string, body: unknown) => {
     setBusy(true);
     setError("");
+    ++requestId.current;
     try {
-      setState(await floorRequest(path, body));
+      const value = await floorRequest(path, body);
+      ++requestId.current;
+      setState(value);
       return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Action failed");
