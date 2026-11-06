@@ -1,3 +1,11 @@
+# Hindsight edition — 7 November 2026
+
+The current implementation follows the accepted learning-across-shifts plan. See `docs/HINDSIGHT.md` for architecture, service setup, the full hybrid workflow and remaining live-verification gates. New validation uses `hindsight-` report names; inherited reports below remain historical. All implementation and commits are in this independent edition.
+
+Implemented locally: isolated ports, source ledger/outbox, real service adapters, contextual advice, checked approvals, task priority/assignment, logical shifts, feedback, source/dependent supersession, handover, Supervisor workspace and demonstration/evaluation tooling. Actual Hindsight/LLM evaluation passed all defined checks using configured services and synthetic operational inputs; Band AI usage and external submission remain human steps.
+
+---
+
 # Current expansion status — 6 November 2026
 
 The earlier local acceptance below covered a smaller prototype. The user subsequently requested broader implementation and a clean local Git history. This expansion supersedes the earlier deferrals.

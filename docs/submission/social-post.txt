@@ -1,0 +1,15 @@
+A restaurant camera can see occupancy. It cannot explain why the last manager rejected a suitable table.
+
+We added an experience loop to Floor Copilot with Hindsight agent memory:
+
+• Retain the correction and its operating conditions.
+• Record outcomes separately from approvals.
+• Recall relevant experience for the next shift.
+• Supersede old lessons when conditions change.
+• Revalidate every approved action against current floor state.
+
+Our paired evaluation holds the inputs constant and changes only memory evidence. Five live pairs changed the seating choice; normal-service and superseded-lesson controls passed. Inputs were synthetic.
+
+Code: [PROJECT_REPOSITORY_URL]
+
+#AIAgents #Hindsight #AgentMemory #LLM

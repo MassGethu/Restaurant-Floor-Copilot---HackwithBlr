@@ -1,0 +1,85 @@
+{
+  "recorded_at": "2026-11-06T21:04:52.987036+00:00",
+  "client_timezone": "Asia/Kolkata",
+  "passed": true,
+  "backend": {
+    "tests": 189,
+    "failures": 0
+  },
+  "frontend_helper_tests": {
+    "passed": 17,
+    "scope": "inherited helpers; new UI supplemented by browser checks"
+  },
+  "production_build": "passed",
+  "real_service_memory": {
+    "passed": true,
+    "pairs": 5,
+    "checks": {
+      "historical_state_distractor": true,
+      "five_pairs": true,
+      "shift_resets_temporary_context": true,
+      "quiet_does_not_apply_rush_lesson": true,
+      "restart_does_not_restore_visual_freshness": true,
+      "persistence": true,
+      "recovery_priority": true,
+      "recovery_assignment": true,
+      "no_automatic_cleanliness": true,
+      "handover_evidence": true,
+      "superseded_source_excluded": true,
+      "superseded_guidance_revised": true
+    },
+    "report": "hindsight-live-memory-report.json"
+  },
+  "actual_yolo": {
+    "passed": true,
+    "checks": 5,
+    "report": "hindsight-expanded-live-report.json"
+  },
+  "browser_checks": {
+    "staff_context_capture": true,
+    "correction_capture": true,
+    "separate_unknown_outcome": true,
+    "logical_shift_reset_preserves_experience": true,
+    "real_service_comparison_T3_vs_T2": true,
+    "seating_approval_observed_at_T3": true,
+    "priority_and_role_matching_assignment": true,
+    "staff_confirmation_required_for_cleanliness": true,
+    "recorded_task_completion_separate_from_success": true,
+    "real_reflect_handover_with_sources": true,
+    "current_task_list_matches_operations": true,
+    "final_review_action_unapproved": true
+  },
+  "review_state": {
+    "source": "actual YOLO on paused controlled montage",
+    "waiting_parties": 1,
+    "open_tasks": 0,
+    "retained_sources": 6,
+    "with_memory": "T3",
+    "without_memory": "T2",
+    "approval": "pending staff review"
+  },
+  "secrets": "configured server-side; ignored env file; exact-key scan found zero matches in publishable files",
+  "boundaries": {
+    "workspace": "/Users/massgethu/CV_AI_Hindsight",
+    "backend_port": 8001,
+    "frontend_port": 5174,
+    "original_folder": "No writes or server-control actions targeted the original folder.",
+    "remote_publication": "none",
+    "Band_AI_usage": "not verified",
+    "local_Hindsight_deployment": "stretch; not performed"
+  },
+  "source_sha256": {
+    "backend/app/memory_clients.py": "0b96c2ab841454fda2db8b69535a1f483014db613f2042e451bcbfbe092693d7",
+    "backend/app/supervisor.py": "170851a1a131a15c62498b455f6b05b04db5897acdc4ec5702ad2daf68eedbfc",
+    "backend/app/supervisor_api.py": "4709ddcf92d7a1e3164d1c2651221cd15aa4d4ed202f4f6d36e2d1db5cb73869",
+    "backend/app/operations.py": "84514ccc3215fbc1d8b41315903dc50c1f58ff1437da217a59571771e53a32bc",
+    "backend/app/service.py": "e974ebe3510304459ebf545cee552b4d5ab1ca266bf555a08f7dec1a73066e04",
+    "backend/app/settings.py": "dcf96323e3988ce96d1396945d524c50e85a95aafa80366b84060680408d93ff",
+    "frontend/src/components/SupervisorCards.tsx": "4217fdc9fdb8176804a7982b054fdd110144896bd6de9f0cff2ee6b2ccd83e69",
+    "frontend/src/pages/SupervisorPage.tsx": "63516ab8eed3f9add3060013c5537993fe52700f69077b5e8c0a72467e722ef3",
+    "frontend/src/api/supervisor.ts": "a872aa08a9388153fe25ef21a04832de45e5f8a74e211608a1b86b9fac8c2add",
+    "scripts/evaluate_memory.py": "fbf5958371aa0518ce302eac77c084576b22ea8aba59f665a26b90ab918031a9",
+    "backend/requirements-lock.txt": "5f0b81c4c0928be94c886a39779dcf148ef178b9bac863a8befef169aab90e7f"
+  },
+  "disclosure": "Live Hindsight and hosted LLM evidence uses synthetic operational fixtures. YOLO evidence uses disclosed controlled stock footage. Staff outcomes are reports; lifecycle events do not establish causal business improvement. Failed development runs are preserved separately."
+}

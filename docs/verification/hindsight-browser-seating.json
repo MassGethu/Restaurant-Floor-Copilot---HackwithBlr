@@ -1,0 +1,155 @@
+{
+  "id": "429d652a-2c99-4c9a-9c7d-9f6c67a26937",
+  "created_at": "2026-11-06T20:47:39.701320+00:00",
+  "token": [
+    "3c547189-cf3f-4146-a7f1-d30e48dcca5f",
+    7,
+    10,
+    "7a8d51d8759bd72918731eb1"
+  ],
+  "question": "What should we do next?",
+  "summary": "Seat the waiting party at table T3 to avoid delivery\u2011rush interruptions, following the manager\u2019s stated preference for T3 during rush periods.",
+  "proposals": [
+    {
+      "id": "seat:dbef5e84-fa8c-49cd-8778-720c80ac163a:T3",
+      "type": "seat_party",
+      "party_id": "dbef5e84-fa8c-49cd-8778-720c80ac163a",
+      "table_id": "T3",
+      "baseline": false,
+      "unused_seats": 0,
+      "other_parties_seatable_now": 0,
+      "policy_departure": true,
+      "reason": "Manager reports and corrections indicate T3 is the quieter alternative and should be used instead of T2 during delivery rushes; the current context is a delivery rush, so the preference applies.",
+      "memory_ids": [
+        "24f0634f-229c-45a0-bfbe-15ce30c92a7a",
+        "758f03e8-d83e-4f69-b520-7dd6ee36ac68",
+        "829272be-4f7e-432e-b46c-a3732b114598",
+        "0605760d-e571-4425-8bba-da95f148b187"
+      ],
+      "status": "approved"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "1a5ca8ea-3051-4083-a65b-92400d0c78a2",
+      "text": "Operational policy set to fairness strategy with 15-minute max wait and 1-minute check-in. | When: 2026-11-06 | Where: Restaurant",
+      "source_id": "af0cd4e7-2b03-419c-979b-9661894b0ff5",
+      "recorded_at": "2026-11-06T20:09:23.972219+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    },
+    {
+      "id": "24f0634f-229c-45a0-bfbe-15ce30c92a7a",
+      "text": "The manager decided to use table T3 instead of T2 during delivery rushes to avoid interruptions. | When: 2026-11-06 | Where: Restaurant | Involving: Manager | To mitigate interruptions at T2 during delivery rushes.",
+      "source_id": "af0cd4e7-2b03-419c-979b-9661894b0ff5",
+      "recorded_at": "2026-11-06T20:09:23.972219+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    },
+    {
+      "id": "758f03e8-d83e-4f69-b520-7dd6ee36ac68",
+      "text": "The manager decided to use table T3 instead of T2 to avoid interruptions during delivery rushes. | When: 2026-11-06 | Where: T3 | Involving: manager | To avoid interruptions caused by delivery rushes at T2.",
+      "source_id": "1d04e6f1-558f-4ffc-a85c-37cbf983516b",
+      "recorded_at": "2026-11-06T20:09:18.121699+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "829272be-4f7e-432e-b46c-a3732b114598",
+      "text": "Table T3 is designated as the quieter alternative to T2 during delivery rushes. | When: 2026-11-06 | Where: Restaurant | T2 is located beside the pickup area.",
+      "source_id": "1d04e6f1-558f-4ffc-a85c-37cbf983516b",
+      "recorded_at": "2026-11-06T20:09:18.121699+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "abf24713-588e-4f3c-bfec-82878ad393b9",
+      "text": "Table T3 is designated as a manual hold and chosen as a quieter alternative during delivery rushes. | When: 2026-11-06 | Where: Restaurant | Delivery activity is in a rush state.",
+      "source_id": "af0cd4e7-2b03-419c-979b-9661894b0ff5",
+      "recorded_at": "2026-11-06T20:09:23.972219+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    },
+    {
+      "id": "0605760d-e571-4425-8bba-da95f148b187",
+      "text": "During delivery rushes, table T2 located beside the pickup area experiences frequent interruptions. | When: 2026-11-06 | Where: T2",
+      "source_id": "1d04e6f1-558f-4ffc-a85c-37cbf983516b",
+      "recorded_at": "2026-11-06T20:09:18.121699+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "6553192c-ae58-4da5-be14-a3133bb7a70c",
+      "text": "During delivery rushes, table T2 is subject to interruptions due to its proximity to the pickup area. | When: 2026-11-06 | Where: Restaurant",
+      "source_id": "af0cd4e7-2b03-419c-979b-9661894b0ff5",
+      "recorded_at": "2026-11-06T20:09:23.972219+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    },
+    {
+      "id": "2930a6ca-7992-4409-881c-486352e67709",
+      "text": "The restaurant shift outcome is unknown as the walkthrough did not establish real improvement. | When: 2026-11-06 | Where: Restaurant",
+      "source_id": "af0cd4e7-2b03-419c-979b-9661894b0ff5",
+      "recorded_at": "2026-11-06T20:09:23.972219+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    },
+    {
+      "id": "94b18e0f-c9ea-455e-ba9c-ddaef4471252",
+      "text": "Tables T3 and T4 are under manual hold. | When: 2026-11-06 | Where: Restaurant",
+      "source_id": "1d04e6f1-558f-4ffc-a85c-37cbf983516b",
+      "recorded_at": "2026-11-06T20:09:18.121699+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "7da7f675-9b62-4b0f-a2b1-9756060f1094",
+      "text": "Table T4 is under manual hold. | When: 2026-11-06 | Where: Restaurant",
+      "source_id": "af0cd4e7-2b03-419c-979b-9661894b0ff5",
+      "recorded_at": "2026-11-06T20:09:23.972219+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    }
+  ],
+  "without_memory": {
+    "summary": "Seat the waiting party of 4 at table T2, which is ready and matches the party size; this is the baseline eligible action.",
+    "proposals": [
+      {
+        "id": "seat:dbef5e84-fa8c-49cd-8778-720c80ac163a:T2",
+        "type": "seat_party",
+        "party_id": "dbef5e84-fa8c-49cd-8778-720c80ac163a",
+        "table_id": "T2",
+        "baseline": true,
+        "unused_seats": 0,
+        "other_parties_seatable_now": 0,
+        "policy_departure": false,
+        "reason": "Table T2 is ready, has capacity 4, and the party is waiting; no policy departure applies, so the baseline seating is appropriate.",
+        "memory_ids": [],
+        "status": "proposed"
+      }
+    ],
+    "evidence": []
+  },
+  "model": "openai/gpt-oss-120b",
+  "restaurant_id": "demo-restaurant"
+}

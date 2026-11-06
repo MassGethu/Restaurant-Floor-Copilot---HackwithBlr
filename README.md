@@ -1,6 +1,14 @@
-# Restaurant Floor Copilot
+# Restaurant Floor Copilot — Hindsight edition
 
 A local hackathon prototype connecting pretrained person detection to table readiness, a waiting queue, and explained seating decisions.
+
+## Learning across shifts
+
+This independent edition adds an experience ledger and Hindsight retain/recall/reflect integration, contextual seating advice, approved task priority/assignment, logical shifts, feedback, supersession, focused questions and handover. The original `CV AI for restaurants` folder and its servers remain separate.
+
+Open **Supervisor** at http://127.0.0.1:5174/supervisor. Configure Hindsight Cloud and Groq credentials in ignored `backend/.env` to enable real memory and reasoning. Missing service setup is shown honestly; local recording and inherited operations remain available. The actual-service evaluator passed all checks, including five paired memory comparisons, normal-service control, restart persistence, recovery actions, handover and supersession. These are synthetic operational scenarios, not restaurant business benchmarks. Fake-service tests do not establish live memory behavior.
+
+See [setup, architecture, demonstration and limits](docs/HINDSIGHT.md), [live memory evaluator](scripts/evaluate_memory.py), and [local submission drafts](docs/submission/checklist.md). The inherited foundation below remains relevant; its earlier validation and event-specific documents are historical, not new memory evidence.
 
 ## Run on this Mac
 
@@ -10,7 +18,7 @@ The Python 3.14 environment, model, frontend packages, two test videos, and tabl
 ./run_all.sh
 ```
 
-Open http://127.0.0.1:5173/floor. The API listens on http://127.0.0.1:8000; interactive API documentation is at `/docs`. Ctrl+C in the launcher stops both servers.
+Open http://127.0.0.1:5174/floor. The API listens on http://127.0.0.1:8001; interactive API documentation is at `/docs`. Ctrl+C in the launcher stops both servers.
 
 Select `controlled-floor-demo.mp4`, click **Start**, and pause during its initial vacant interval. Confirm each table clean. Add a party and approve the explained recommendation. Resume to observe sustained presence, a temporary absence, and a departure. Confirm cleaning to enable seating from the queue again.
 
@@ -65,7 +73,7 @@ npm test
 npm run build
 ```
 
-Run actual stock-frame inference with `scripts/verify_vision.py`. With the API running, `scripts/smoke_live.py` executes an approximately 75-second model-driven workflow and writes `docs/verification/live-smoke-report.json`. It resets prototype demo data and pauses at the end. These checks distinguish real inference from fake-detector API tests.
+Run actual stock-frame inference with `scripts/verify_vision.py`. With the API running, `scripts/smoke_live.py` executes an approximately 75-second model-driven workflow and writes `docs/verification/hindsight-live-smoke-report.json`. It resets prototype demo data and pauses at the end. These checks distinguish real inference from fake-detector API tests.
 
 ## Documentation and attribution
 
@@ -82,7 +90,7 @@ Built on Zihad’s MIT-licensed Restaurant Table Occupancy Detection, reference 
 
 ## Expanded operations workspace
 
-Open http://127.0.0.1:5173/operations for six linked workflows:
+Open http://127.0.0.1:5174/operations for six linked workflows:
 
 - **Staff desk:** role-filtered cleaning/service tasks, staff roster, assignment, acknowledgement, progress, completion, new-task notices and optional sound.
 - **Arrivals:** review tracked entrance crossings, independently confirm party size, or dismiss. Configure one entrance region in the table editor.

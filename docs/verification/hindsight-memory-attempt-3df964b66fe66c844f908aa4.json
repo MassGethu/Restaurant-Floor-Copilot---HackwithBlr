@@ -1,0 +1,1737 @@
+{
+  "started_at": "2026-11-06T20:31:53.600413+00:00",
+  "passed": true,
+  "status": "completed",
+  "pairs": [
+    {
+      "pair": 1,
+      "memory_effect": true,
+      "result": {
+        "id": "cfe7f967-415c-4b43-9295-abcc0dfe7ade",
+        "created_at": "2026-11-06T20:32:13.809007+00:00",
+        "token": [
+          "6adcf27c-e2b5-498f-8ba6-2c59d8e38454",
+          6,
+          5,
+          "a114ca85fc4bea8a0f6285b7"
+        ],
+        "question": "What should we do next?",
+        "summary": "Seat the waiting party of 4 at table T3, following the manager's correction and staff reports that T3 reduces interruptions during the current delivery\u2011rush context.",
+        "proposals": [
+          {
+            "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T3",
+            "type": "seat_party",
+            "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+            "table_id": "T3",
+            "baseline": false,
+            "unused_seats": 0,
+            "other_parties_seatable_now": 0,
+            "policy_departure": true,
+            "reason": "Manager explicitly directed use of T3 to avoid delivery\u2011rush interruptions and staff reports confirm T3 is preferred in this situation.",
+            "memory_ids": [
+              "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+              "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+              "02892eb7-b402-4246-903a-a68ce72ff747",
+              "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+              "aa6c5308-212a-4602-8f11-f329296d4856"
+            ],
+            "status": "proposed"
+          }
+        ],
+        "evidence": [
+          {
+            "id": "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+            "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational preference during delivery rush.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+            "text": "The manager decided to use table T3 instead of T2 to avoid interruptions. | When: 2026-11-06 | Where: T3 | Involving: manager | To mitigate interruptions for diners during delivery rushes.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+            "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational correction during delivery rush.",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "2537693e-edea-4b12-b176-ab96c2d90ba6",
+            "text": "The restaurant is operating under a synthetic evaluation shift with one cleaner available. | When: 2026-11-06 | Involving: cleaner-1 | Operational context for the shift.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "02892eb7-b402-4246-903a-a68ce72ff747",
+            "text": "The manager reassigned diners from table T2 to table T3 to avoid delivery rush interruptions. | When: 2026-11-06 | Where: Restaurant | Involving: manager | avoid interruptions at T2",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "aa6c5308-212a-4602-8f11-f329296d4856",
+            "text": "Staff reported fewer interruptions after using table T3. | When: 2026-11-06 | Where: T3 | Involving: staff",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "519ac905-ab3a-4556-a2d1-e72c36442d0d",
+            "text": "If table T3 requires cleaning, staff must prioritize its existing cleaning task and confirm cleanliness before seating. | Where: Restaurant | Involving: staff | operational procedure",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "3a2648d2-1ad6-404b-b1c1-fd56de0684f9",
+            "text": "The restaurant is operating under a delivery rush with only one cleaner available. | When: 2026-11-06 | Involving: waiter-1, cleaner-1 | Synthetic evaluation shift.",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "985d5db1-5832-468f-8cff-01b7cdaa622f",
+            "text": "Diners at table T2 experienced repeated interruptions during delivery rushes. | When: 2026-11-06 | Where: Restaurant | Involving: diners at T2 | delivery rushes",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "eac7b81c-d472-40f6-900c-69b39937012a",
+            "text": "During delivery rushes, diners at table T2 experienced repeated interruptions. | When: 2026-11-06 | Where: T2",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          }
+        ],
+        "without_memory": {
+          "summary": "Seat the waiting party at table T2, which is the baseline seating option and meets the fairness policy.",
+          "proposals": [
+            {
+              "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T2",
+              "type": "seat_party",
+              "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+              "table_id": "T2",
+              "baseline": true,
+              "unused_seats": 0,
+              "other_parties_seatable_now": 0,
+              "policy_departure": false,
+              "reason": "Baseline candidate matches party size and table capacity; no evidence suggests a different action.",
+              "memory_ids": [],
+              "status": "proposed"
+            }
+          ],
+          "evidence": []
+        },
+        "model": "openai/gpt-oss-120b",
+        "restaurant_id": "evaluation-af4308ec0f"
+      }
+    },
+    {
+      "pair": 2,
+      "memory_effect": true,
+      "result": {
+        "id": "b06353f9-8609-4a8f-afff-953c80c4ec45",
+        "created_at": "2026-11-06T20:32:19.338307+00:00",
+        "token": [
+          "6adcf27c-e2b5-498f-8ba6-2c59d8e38454",
+          6,
+          5,
+          "a114ca85fc4bea8a0f6285b7"
+        ],
+        "question": "What should we do next?",
+        "summary": "Seat the waiting party of 4 at table T3. Manager corrections and staff reports during the current delivery\u2011rush context explicitly prefer T3 over the baseline T2 to avoid interruptions.",
+        "proposals": [
+          {
+            "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T3",
+            "type": "seat_party",
+            "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+            "table_id": "T3",
+            "baseline": false,
+            "unused_seats": 0,
+            "other_parties_seatable_now": 0,
+            "policy_departure": true,
+            "reason": "Manager explicitly corrected the seating to T3 during a delivery rush and staff reports confirm fewer interruptions at T3; these align with the current rush context, overriding the baseline T2.",
+            "memory_ids": [
+              "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+              "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+              "02892eb7-b402-4246-903a-a68ce72ff747",
+              "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+              "aa6c5308-212a-4602-8f11-f329296d4856"
+            ],
+            "status": "proposed"
+          }
+        ],
+        "evidence": [
+          {
+            "id": "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+            "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational preference during delivery rush.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+            "text": "The manager decided to use table T3 instead of T2 to avoid interruptions. | When: 2026-11-06 | Where: T3 | Involving: manager | To mitigate interruptions for diners during delivery rushes.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+            "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational correction during delivery rush.",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "2537693e-edea-4b12-b176-ab96c2d90ba6",
+            "text": "The restaurant is operating under a synthetic evaluation shift with one cleaner available. | When: 2026-11-06 | Involving: cleaner-1 | Operational context for the shift.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "02892eb7-b402-4246-903a-a68ce72ff747",
+            "text": "The manager reassigned diners from table T2 to table T3 to avoid delivery rush interruptions. | When: 2026-11-06 | Where: Restaurant | Involving: manager | avoid interruptions at T2",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "aa6c5308-212a-4602-8f11-f329296d4856",
+            "text": "Staff reported fewer interruptions after using table T3. | When: 2026-11-06 | Where: T3 | Involving: staff",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "519ac905-ab3a-4556-a2d1-e72c36442d0d",
+            "text": "If table T3 requires cleaning, staff must prioritize its existing cleaning task and confirm cleanliness before seating. | Where: Restaurant | Involving: staff | operational procedure",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "3a2648d2-1ad6-404b-b1c1-fd56de0684f9",
+            "text": "The restaurant is operating under a delivery rush with only one cleaner available. | When: 2026-11-06 | Involving: waiter-1, cleaner-1 | Synthetic evaluation shift.",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "985d5db1-5832-468f-8cff-01b7cdaa622f",
+            "text": "Diners at table T2 experienced repeated interruptions during delivery rushes. | When: 2026-11-06 | Where: Restaurant | Involving: diners at T2 | delivery rushes",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "eac7b81c-d472-40f6-900c-69b39937012a",
+            "text": "During delivery rushes, diners at table T2 experienced repeated interruptions. | When: 2026-11-06 | Where: T2",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          }
+        ],
+        "without_memory": {
+          "summary": "Seat the waiting party of 4 at table T2, which matches capacity and is ready.",
+          "proposals": [
+            {
+              "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T2",
+              "type": "seat_party",
+              "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+              "table_id": "T2",
+              "baseline": true,
+              "unused_seats": 0,
+              "other_parties_seatable_now": 0,
+              "policy_departure": false,
+              "reason": "Baseline seating candidate fits party size and table capacity; no evidence suggests a different action.",
+              "memory_ids": [],
+              "status": "proposed"
+            }
+          ],
+          "evidence": []
+        },
+        "model": "openai/gpt-oss-120b",
+        "restaurant_id": "evaluation-af4308ec0f"
+      }
+    },
+    {
+      "pair": 3,
+      "memory_effect": true,
+      "result": {
+        "id": "b401b507-698b-4bff-8fb5-4937380b7116",
+        "created_at": "2026-11-06T20:32:47.342743+00:00",
+        "token": [
+          "6adcf27c-e2b5-498f-8ba6-2c59d8e38454",
+          6,
+          5,
+          "a114ca85fc4bea8a0f6285b7"
+        ],
+        "question": "What should we do next?",
+        "summary": "Seat the waiting party of 4 at table T3. Manager correction and staff reports during the current delivery rush indicate T3 is preferred to avoid interruptions, and the table is ready.",
+        "proposals": [
+          {
+            "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T3",
+            "type": "seat_party",
+            "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+            "table_id": "T3",
+            "baseline": false,
+            "unused_seats": 0,
+            "other_parties_seatable_now": 0,
+            "policy_departure": true,
+            "reason": "Manager explicitly corrected seating to T3 during delivery rush to avoid interruptions; staff reports also support using T3 under rush conditions.",
+            "memory_ids": [
+              "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+              "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+              "02892eb7-b402-4246-903a-a68ce72ff747",
+              "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+              "aa6c5308-212a-4602-8f11-f329296d4856"
+            ],
+            "status": "proposed"
+          }
+        ],
+        "evidence": [
+          {
+            "id": "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+            "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational preference during delivery rush.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+            "text": "The manager decided to use table T3 instead of T2 to avoid interruptions. | When: 2026-11-06 | Where: T3 | Involving: manager | To mitigate interruptions for diners during delivery rushes.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+            "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational correction during delivery rush.",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "2537693e-edea-4b12-b176-ab96c2d90ba6",
+            "text": "The restaurant is operating under a synthetic evaluation shift with one cleaner available. | When: 2026-11-06 | Involving: cleaner-1 | Operational context for the shift.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "02892eb7-b402-4246-903a-a68ce72ff747",
+            "text": "The manager reassigned diners from table T2 to table T3 to avoid delivery rush interruptions. | When: 2026-11-06 | Where: Restaurant | Involving: manager | avoid interruptions at T2",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "aa6c5308-212a-4602-8f11-f329296d4856",
+            "text": "Staff reported fewer interruptions after using table T3. | When: 2026-11-06 | Where: T3 | Involving: staff",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "519ac905-ab3a-4556-a2d1-e72c36442d0d",
+            "text": "If table T3 requires cleaning, staff must prioritize its existing cleaning task and confirm cleanliness before seating. | Where: Restaurant | Involving: staff | operational procedure",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "3a2648d2-1ad6-404b-b1c1-fd56de0684f9",
+            "text": "The restaurant is operating under a delivery rush with only one cleaner available. | When: 2026-11-06 | Involving: waiter-1, cleaner-1 | Synthetic evaluation shift.",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "985d5db1-5832-468f-8cff-01b7cdaa622f",
+            "text": "Diners at table T2 experienced repeated interruptions during delivery rushes. | When: 2026-11-06 | Where: Restaurant | Involving: diners at T2 | delivery rushes",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "eac7b81c-d472-40f6-900c-69b39937012a",
+            "text": "During delivery rushes, diners at table T2 experienced repeated interruptions. | When: 2026-11-06 | Where: T2",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          }
+        ],
+        "without_memory": {
+          "summary": "Seat the waiting party of 4 at table T2, which matches the party size and is a baseline seating option under the fairness policy.",
+          "proposals": [
+            {
+              "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T2",
+              "type": "seat_party",
+              "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+              "table_id": "T2",
+              "baseline": true,
+              "unused_seats": 0,
+              "other_parties_seatable_now": 0,
+              "policy_departure": false,
+              "reason": "Baseline seating candidate fits party size and table capacity; no evidence suggests a different action.",
+              "memory_ids": [],
+              "status": "proposed"
+            }
+          ],
+          "evidence": []
+        },
+        "model": "openai/gpt-oss-120b",
+        "restaurant_id": "evaluation-af4308ec0f"
+      }
+    },
+    {
+      "pair": 4,
+      "memory_effect": true,
+      "result": {
+        "id": "327ff47b-06d0-40b1-ba1a-1b4f709584f9",
+        "created_at": "2026-11-06T20:33:16.252335+00:00",
+        "token": [
+          "6adcf27c-e2b5-498f-8ba6-2c59d8e38454",
+          6,
+          5,
+          "a114ca85fc4bea8a0f6285b7"
+        ],
+        "question": "What should we do next?",
+        "summary": "Seat the waiting party at table T3. Manager corrections explicitly direct use of T3 during delivery\u2011rush conditions, and the current context matches those conditions. Tables are ready, so the preferred alternative is applicable.",
+        "proposals": [
+          {
+            "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T3",
+            "type": "seat_party",
+            "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+            "table_id": "T3",
+            "baseline": false,
+            "unused_seats": 0,
+            "other_parties_seatable_now": 0,
+            "policy_departure": true,
+            "reason": "Manager correction to use T3 to avoid delivery\u2011rush interruptions matches the current delivery rush context; no conflicting evidence and table is ready.",
+            "memory_ids": [
+              "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+              "02892eb7-b402-4246-903a-a68ce72ff747"
+            ],
+            "status": "proposed"
+          }
+        ],
+        "evidence": [
+          {
+            "id": "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+            "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational preference during delivery rush.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+            "text": "The manager decided to use table T3 instead of T2 to avoid interruptions. | When: 2026-11-06 | Where: T3 | Involving: manager | To mitigate interruptions for diners during delivery rushes.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+            "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational correction during delivery rush.",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "2537693e-edea-4b12-b176-ab96c2d90ba6",
+            "text": "The restaurant is operating under a synthetic evaluation shift with one cleaner available. | When: 2026-11-06 | Involving: cleaner-1 | Operational context for the shift.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "02892eb7-b402-4246-903a-a68ce72ff747",
+            "text": "The manager reassigned diners from table T2 to table T3 to avoid delivery rush interruptions. | When: 2026-11-06 | Where: Restaurant | Involving: manager | avoid interruptions at T2",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "aa6c5308-212a-4602-8f11-f329296d4856",
+            "text": "Staff reported fewer interruptions after using table T3. | When: 2026-11-06 | Where: T3 | Involving: staff",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "519ac905-ab3a-4556-a2d1-e72c36442d0d",
+            "text": "If table T3 requires cleaning, staff must prioritize its existing cleaning task and confirm cleanliness before seating. | Where: Restaurant | Involving: staff | operational procedure",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "3a2648d2-1ad6-404b-b1c1-fd56de0684f9",
+            "text": "The restaurant is operating under a delivery rush with only one cleaner available. | When: 2026-11-06 | Involving: waiter-1, cleaner-1 | Synthetic evaluation shift.",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "985d5db1-5832-468f-8cff-01b7cdaa622f",
+            "text": "Diners at table T2 experienced repeated interruptions during delivery rushes. | When: 2026-11-06 | Where: Restaurant | Involving: diners at T2 | delivery rushes",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "eac7b81c-d472-40f6-900c-69b39937012a",
+            "text": "During delivery rushes, diners at table T2 experienced repeated interruptions. | When: 2026-11-06 | Where: T2",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          }
+        ],
+        "without_memory": {
+          "summary": "Seat the waiting party of 4 at table T2, which is ready and matches the baseline seating recommendation.",
+          "proposals": [
+            {
+              "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T2",
+              "type": "seat_party",
+              "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+              "table_id": "T2",
+              "baseline": true,
+              "unused_seats": 0,
+              "other_parties_seatable_now": 0,
+              "policy_departure": false,
+              "reason": "Table T2 has capacity 4, is ready, and the party size is 4. No memories or policy departures indicate a restriction, so the baseline seating candidate is appropriate.",
+              "memory_ids": [],
+              "status": "proposed"
+            }
+          ],
+          "evidence": []
+        },
+        "model": "openai/gpt-oss-120b",
+        "restaurant_id": "evaluation-af4308ec0f"
+      }
+    },
+    {
+      "pair": 5,
+      "memory_effect": true,
+      "result": {
+        "id": "e5506234-39f5-4332-9bce-e4f27bee2cb5",
+        "created_at": "2026-11-06T20:33:48.732635+00:00",
+        "token": [
+          "6adcf27c-e2b5-498f-8ba6-2c59d8e38454",
+          6,
+          5,
+          "a114ca85fc4bea8a0f6285b7"
+        ],
+        "question": "What should we do next?",
+        "summary": "Seat the waiting party at table T3, following manager correction and staff\u2011reported preference to avoid delivery\u2011rush interruptions.",
+        "proposals": [
+          {
+            "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T3",
+            "type": "seat_party",
+            "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+            "table_id": "T3",
+            "baseline": false,
+            "unused_seats": 0,
+            "other_parties_seatable_now": 0,
+            "policy_departure": true,
+            "reason": "Manager and staff reports during a delivery rush explicitly prefer T3 to reduce interruptions; conditions match current context.",
+            "memory_ids": [
+              "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+              "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+              "02892eb7-b402-4246-903a-a68ce72ff747",
+              "aa6c5308-212a-4602-8f11-f329296d4856",
+              "eb14a9af-c68b-4b01-96e8-a4574fa03f8f"
+            ],
+            "status": "proposed"
+          }
+        ],
+        "evidence": [
+          {
+            "id": "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+            "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational preference during delivery rush.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+            "text": "The manager decided to use table T3 instead of T2 to avoid interruptions. | When: 2026-11-06 | Where: T3 | Involving: manager | To mitigate interruptions for diners during delivery rushes.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+            "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational correction during delivery rush.",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "2537693e-edea-4b12-b176-ab96c2d90ba6",
+            "text": "The restaurant is operating under a synthetic evaluation shift with one cleaner available. | When: 2026-11-06 | Involving: cleaner-1 | Operational context for the shift.",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "02892eb7-b402-4246-903a-a68ce72ff747",
+            "text": "The manager reassigned diners from table T2 to table T3 to avoid delivery rush interruptions. | When: 2026-11-06 | Where: Restaurant | Involving: manager | avoid interruptions at T2",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "aa6c5308-212a-4602-8f11-f329296d4856",
+            "text": "Staff reported fewer interruptions after using table T3. | When: 2026-11-06 | Where: T3 | Involving: staff",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          },
+          {
+            "id": "519ac905-ab3a-4556-a2d1-e72c36442d0d",
+            "text": "If table T3 requires cleaning, staff must prioritize its existing cleaning task and confirm cleanliness before seating. | Where: Restaurant | Involving: staff | operational procedure",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "3a2648d2-1ad6-404b-b1c1-fd56de0684f9",
+            "text": "The restaurant is operating under a delivery rush with only one cleaner available. | When: 2026-11-06 | Involving: waiter-1, cleaner-1 | Synthetic evaluation shift.",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "985d5db1-5832-468f-8cff-01b7cdaa622f",
+            "text": "Diners at table T2 experienced repeated interruptions during delivery rushes. | When: 2026-11-06 | Where: Restaurant | Involving: diners at T2 | delivery rushes",
+            "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+            "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+            "kind": "correction",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Manager report; chosen alternative is not proof of success."
+          },
+          {
+            "id": "eac7b81c-d472-40f6-900c-69b39937012a",
+            "text": "During delivery rushes, diners at table T2 experienced repeated interruptions. | When: 2026-11-06 | Where: T2",
+            "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+            "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+            "kind": "outcome",
+            "source": "staff_report",
+            "supports_preference": true,
+            "qualification": "Staff-reported outcome, not a measured causal improvement."
+          }
+        ],
+        "without_memory": {
+          "summary": "Seat the waiting party of 4 at table T2, the baseline seating option that fits the party size and respects the fairness policy. No evidence suggests a deviation.",
+          "proposals": [
+            {
+              "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T2",
+              "type": "seat_party",
+              "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+              "table_id": "T2",
+              "baseline": true,
+              "unused_seats": 0,
+              "other_parties_seatable_now": 0,
+              "policy_departure": false,
+              "reason": "Baseline candidate matches table capacity, status is ready, and policy permits seating; no memories indicate a restriction.",
+              "memory_ids": [],
+              "status": "proposed"
+            }
+          ],
+          "evidence": []
+        },
+        "model": "openai/gpt-oss-120b",
+        "restaurant_id": "evaluation-af4308ec0f"
+      }
+    }
+  ],
+  "checks": {
+    "five_pairs": true,
+    "shift_resets_temporary_context": true,
+    "quiet_does_not_apply_rush_lesson": true,
+    "restart_does_not_restore_visual_freshness": true,
+    "persistence": true,
+    "recovery_priority": true,
+    "recovery_assignment": true,
+    "no_automatic_cleanliness": true,
+    "handover_evidence": true,
+    "superseded_source_excluded": true,
+    "superseded_guidance_revised": true
+  },
+  "disclosure": "Actual Hindsight and actual hosted LLM with synthetic structured floor inputs. No video inference in this evaluation. Staff outcome reports are seeded scenario data, not measured restaurant results.",
+  "restaurant_id": "evaluation-af4308ec0f",
+  "bank_id": "floor-copilot-evaluation-af4308ec0f",
+  "model": "openai/gpt-oss-120b",
+  "versions": {
+    "hindsight-client": "1.2.0",
+    "groq": "1.7.0"
+  },
+  "hindsight_server": {
+    "api_version": "1.1.0",
+    "features": {
+      "observations": true,
+      "mcp": true,
+      "worker": false,
+      "bank_config_api": true,
+      "bank_llm_health": false,
+      "file_upload_api": true,
+      "document_export_api": true,
+      "document_import_api": true,
+      "audit_log": false,
+      "llm_trace": false,
+      "store_document_text": true
+    }
+  },
+  "initial_recall": [
+    {
+      "id": "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+      "text": "The manager decided to use table T3 instead of T2 to avoid interruptions. | When: 2026-11-06 | Where: T3 | Involving: manager | To mitigate interruptions for diners during delivery rushes.",
+      "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+      "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    },
+    {
+      "id": "02892eb7-b402-4246-903a-a68ce72ff747",
+      "text": "The manager reassigned diners from table T2 to table T3 to avoid delivery rush interruptions. | When: 2026-11-06 | Where: Restaurant | Involving: manager | avoid interruptions at T2",
+      "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+      "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "eac7b81c-d472-40f6-900c-69b39937012a",
+      "text": "During delivery rushes, diners at table T2 experienced repeated interruptions. | When: 2026-11-06 | Where: T2",
+      "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+      "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    },
+    {
+      "id": "aa6c5308-212a-4602-8f11-f329296d4856",
+      "text": "Staff reported fewer interruptions after using table T3. | When: 2026-11-06 | Where: T3 | Involving: staff",
+      "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+      "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    },
+    {
+      "id": "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+      "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational correction during delivery rush.",
+      "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+      "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+      "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational preference during delivery rush.",
+      "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+      "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    },
+    {
+      "id": "985d5db1-5832-468f-8cff-01b7cdaa622f",
+      "text": "Diners at table T2 experienced repeated interruptions during delivery rushes. | When: 2026-11-06 | Where: Restaurant | Involving: diners at T2 | delivery rushes",
+      "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+      "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "3a2648d2-1ad6-404b-b1c1-fd56de0684f9",
+      "text": "The restaurant is operating under a delivery rush with only one cleaner available. | When: 2026-11-06 | Involving: waiter-1, cleaner-1 | Synthetic evaluation shift.",
+      "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+      "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "519ac905-ab3a-4556-a2d1-e72c36442d0d",
+      "text": "If table T3 requires cleaning, staff must prioritize its existing cleaning task and confirm cleanliness before seating. | Where: Restaurant | Involving: staff | operational procedure",
+      "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+      "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "2537693e-edea-4b12-b176-ab96c2d90ba6",
+      "text": "The restaurant is operating under a synthetic evaluation shift with one cleaner available. | When: 2026-11-06 | Involving: cleaner-1 | Operational context for the shift.",
+      "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+      "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    }
+  ],
+  "retain_receipts": [
+    {
+      "success": true,
+      "bank_id": "floor-copilot-evaluation-af4308ec0f",
+      "items_count": 1,
+      "var_async": false,
+      "operation_id": null,
+      "operation_ids": null,
+      "usage": {
+        "input_tokens": 5032,
+        "output_tokens": 892,
+        "total_tokens": 5924,
+        "cached_tokens": 3864,
+        "thoughts_tokens": 0
+      }
+    },
+    {
+      "success": true,
+      "bank_id": "floor-copilot-evaluation-af4308ec0f",
+      "items_count": 1,
+      "var_async": false,
+      "operation_id": null,
+      "operation_ids": null,
+      "usage": {
+        "input_tokens": 5156,
+        "output_tokens": 954,
+        "total_tokens": 6110,
+        "cached_tokens": 3864,
+        "thoughts_tokens": 0
+      }
+    }
+  ],
+  "immutable_inputs": {
+    "question": "What should we do next?",
+    "current": {
+      "session_id": "6adcf27c-e2b5-498f-8ba6-2c59d8e38454",
+      "version": 6,
+      "tables": [
+        {
+          "id": "T1",
+          "capacity": 2,
+          "status": "ready",
+          "observed": "absent",
+          "manual_hold": false
+        },
+        {
+          "id": "T2",
+          "capacity": 4,
+          "status": "ready",
+          "observed": "absent",
+          "manual_hold": false
+        },
+        {
+          "id": "T3",
+          "capacity": 4,
+          "status": "ready",
+          "observed": "absent",
+          "manual_hold": false
+        }
+      ],
+      "waiting": [
+        {
+          "id": "93956b36-d405-46f7-9e7a-685a658c7440",
+          "size": 4,
+          "wait_seconds": 0
+        }
+      ],
+      "tasks": [],
+      "staff": [
+        {
+          "id": "waiter-1",
+          "role": "waiter"
+        },
+        {
+          "id": "cleaner-1",
+          "role": "cleaner"
+        }
+      ],
+      "policy": {
+        "strategy": "fairness",
+        "max_wait_minutes": 15,
+        "check_in_minutes": 10
+      },
+      "context": {
+        "delivery_activity": "rush",
+        "staffing": "One cleaner available",
+        "note": "Synthetic evaluation shift"
+      },
+      "context_confirmed_at": "2026-11-06T20:31:55.275115+00:00",
+      "observations_fresh": true,
+      "source_status": "LIVE"
+    },
+    "candidates": [
+      {
+        "id": "none",
+        "type": "no_action",
+        "baseline": true
+      },
+      {
+        "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T2",
+        "type": "seat_party",
+        "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+        "table_id": "T2",
+        "baseline": true,
+        "unused_seats": 0,
+        "other_parties_seatable_now": 0,
+        "policy_departure": false
+      },
+      {
+        "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T3",
+        "type": "seat_party",
+        "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+        "table_id": "T3",
+        "baseline": false,
+        "unused_seats": 0,
+        "other_parties_seatable_now": 0,
+        "policy_departure": true
+      }
+    ]
+  },
+  "quiet_control": {
+    "id": "dd533fbb-ddda-4acc-b7d3-38130785aa54",
+    "created_at": "2026-11-06T20:34:02.352354+00:00",
+    "token": [
+      "6adcf27c-e2b5-498f-8ba6-2c59d8e38454",
+      6,
+      7,
+      "a114ca85fc4bea8a0f6285b7"
+    ],
+    "question": "What should we do next?",
+    "summary": "Seat the waiting party at table T2 \u2013 the baseline choice is appropriate since the current context is normal (no delivery rush), and there is no relevant evidence to override the baseline policy.",
+    "proposals": [
+      {
+        "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T2",
+        "type": "seat_party",
+        "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+        "table_id": "T2",
+        "baseline": true,
+        "unused_seats": 0,
+        "other_parties_seatable_now": 0,
+        "policy_departure": false,
+        "reason": "Baseline seating is preferred; the rush\u2011specific preference for T3 does not apply in the current normal delivery activity.",
+        "memory_ids": [],
+        "status": "proposed"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+        "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational preference during delivery rush.",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+        "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational correction during delivery rush.",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "2537693e-edea-4b12-b176-ab96c2d90ba6",
+        "text": "The restaurant is operating under a synthetic evaluation shift with one cleaner available. | When: 2026-11-06 | Involving: cleaner-1 | Operational context for the shift.",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+        "text": "The manager decided to use table T3 instead of T2 to avoid interruptions. | When: 2026-11-06 | Where: T3 | Involving: manager | To mitigate interruptions for diners during delivery rushes.",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "aa6c5308-212a-4602-8f11-f329296d4856",
+        "text": "Staff reported fewer interruptions after using table T3. | When: 2026-11-06 | Where: T3 | Involving: staff",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "02892eb7-b402-4246-903a-a68ce72ff747",
+        "text": "The manager reassigned diners from table T2 to table T3 to avoid delivery rush interruptions. | When: 2026-11-06 | Where: Restaurant | Involving: manager | avoid interruptions at T2",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "519ac905-ab3a-4556-a2d1-e72c36442d0d",
+        "text": "If table T3 requires cleaning, staff must prioritize its existing cleaning task and confirm cleanliness before seating. | Where: Restaurant | Involving: staff | operational procedure",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "3a2648d2-1ad6-404b-b1c1-fd56de0684f9",
+        "text": "The restaurant is operating under a delivery rush with only one cleaner available. | When: 2026-11-06 | Involving: waiter-1, cleaner-1 | Synthetic evaluation shift.",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "985d5db1-5832-468f-8cff-01b7cdaa622f",
+        "text": "Diners at table T2 experienced repeated interruptions during delivery rushes. | When: 2026-11-06 | Where: Restaurant | Involving: diners at T2 | delivery rushes",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "eac7b81c-d472-40f6-900c-69b39937012a",
+        "text": "During delivery rushes, diners at table T2 experienced repeated interruptions. | When: 2026-11-06 | Where: T2",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      }
+    ],
+    "without_memory": null,
+    "model": "openai/gpt-oss-120b",
+    "restaurant_id": "evaluation-af4308ec0f"
+  },
+  "restart_recall": [
+    {
+      "id": "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+      "text": "The manager decided to use table T3 instead of T2 to avoid interruptions. | When: 2026-11-06 | Where: T3 | Involving: manager | To mitigate interruptions for diners during delivery rushes.",
+      "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+      "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    },
+    {
+      "id": "02892eb7-b402-4246-903a-a68ce72ff747",
+      "text": "The manager reassigned diners from table T2 to table T3 to avoid delivery rush interruptions. | When: 2026-11-06 | Where: Restaurant | Involving: manager | avoid interruptions at T2",
+      "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+      "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "eac7b81c-d472-40f6-900c-69b39937012a",
+      "text": "During delivery rushes, diners at table T2 experienced repeated interruptions. | When: 2026-11-06 | Where: T2",
+      "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+      "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    },
+    {
+      "id": "aa6c5308-212a-4602-8f11-f329296d4856",
+      "text": "Staff reported fewer interruptions after using table T3. | When: 2026-11-06 | Where: T3 | Involving: staff",
+      "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+      "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    },
+    {
+      "id": "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+      "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational correction during delivery rush.",
+      "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+      "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+      "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational preference during delivery rush.",
+      "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+      "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    },
+    {
+      "id": "985d5db1-5832-468f-8cff-01b7cdaa622f",
+      "text": "Diners at table T2 experienced repeated interruptions during delivery rushes. | When: 2026-11-06 | Where: Restaurant | Involving: diners at T2 | delivery rushes",
+      "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+      "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "3a2648d2-1ad6-404b-b1c1-fd56de0684f9",
+      "text": "The restaurant is operating under a delivery rush with only one cleaner available. | When: 2026-11-06 | Involving: waiter-1, cleaner-1 | Synthetic evaluation shift.",
+      "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+      "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "519ac905-ab3a-4556-a2d1-e72c36442d0d",
+      "text": "If table T3 requires cleaning, staff must prioritize its existing cleaning task and confirm cleanliness before seating. | Where: Restaurant | Involving: staff | operational procedure",
+      "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+      "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+      "kind": "correction",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Manager report; chosen alternative is not proof of success."
+    },
+    {
+      "id": "2537693e-edea-4b12-b176-ab96c2d90ba6",
+      "text": "The restaurant is operating under a synthetic evaluation shift with one cleaner available. | When: 2026-11-06 | Involving: cleaner-1 | Operational context for the shift.",
+      "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+      "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+      "kind": "outcome",
+      "source": "staff_report",
+      "supports_preference": true,
+      "qualification": "Staff-reported outcome, not a measured causal improvement."
+    }
+  ],
+  "recovery": {
+    "id": "f487c4c3-9b5f-4156-b7d6-140ea18e4624",
+    "created_at": "2026-11-06T20:34:22.916238+00:00",
+    "token": [
+      "6adcf27c-e2b5-498f-8ba6-2c59d8e38454",
+      7,
+      8,
+      "a114ca85fc4bea8a0f6285b7"
+    ],
+    "question": "Which existing task should we prioritize to prepare the remembered seating alternative?",
+    "summary": "Prioritize the cleaning task for table T3 so it can be ready for seating the waiting party during the delivery\u2011rush context.",
+    "proposals": [
+      {
+        "id": "priority:9b0148b0-9da3-4c0a-bc3e-024c60490ad8",
+        "type": "prioritize_task",
+        "task_id": "9b0148b0-9da3-4c0a-bc3e-024c60490ad8",
+        "priority": "high",
+        "reason": "Memory indicates that if T3 needs cleaning, staff must prioritize that cleaning before any seating; doing so prepares the alternative T3 seating option.",
+        "memory_ids": [
+          "519ac905-ab3a-4556-a2d1-e72c36442d0d"
+        ],
+        "status": "proposed"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "519ac905-ab3a-4556-a2d1-e72c36442d0d",
+        "text": "If table T3 requires cleaning, staff must prioritize its existing cleaning task and confirm cleanliness before seating. | Where: Restaurant | Involving: staff | operational procedure",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+        "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational correction during delivery rush.",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+        "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational preference during delivery rush.",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+        "text": "The manager decided to use table T3 instead of T2 to avoid interruptions. | When: 2026-11-06 | Where: T3 | Involving: manager | To mitigate interruptions for diners during delivery rushes.",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "aa6c5308-212a-4602-8f11-f329296d4856",
+        "text": "Staff reported fewer interruptions after using table T3. | When: 2026-11-06 | Where: T3 | Involving: staff",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "02892eb7-b402-4246-903a-a68ce72ff747",
+        "text": "The manager reassigned diners from table T2 to table T3 to avoid delivery rush interruptions. | When: 2026-11-06 | Where: Restaurant | Involving: manager | avoid interruptions at T2",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "2537693e-edea-4b12-b176-ab96c2d90ba6",
+        "text": "The restaurant is operating under a synthetic evaluation shift with one cleaner available. | When: 2026-11-06 | Involving: cleaner-1 | Operational context for the shift.",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "3a2648d2-1ad6-404b-b1c1-fd56de0684f9",
+        "text": "The restaurant is operating under a delivery rush with only one cleaner available. | When: 2026-11-06 | Involving: waiter-1, cleaner-1 | Synthetic evaluation shift.",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "985d5db1-5832-468f-8cff-01b7cdaa622f",
+        "text": "Diners at table T2 experienced repeated interruptions during delivery rushes. | When: 2026-11-06 | Where: Restaurant | Involving: diners at T2 | delivery rushes",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "eac7b81c-d472-40f6-900c-69b39937012a",
+        "text": "During delivery rushes, diners at table T2 experienced repeated interruptions. | When: 2026-11-06 | Where: T2",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      }
+    ],
+    "without_memory": null,
+    "model": "openai/gpt-oss-120b",
+    "restaurant_id": "evaluation-af4308ec0f"
+  },
+  "assignment": {
+    "id": "603f76d0-0bb7-435b-87f2-ca5775e35cc1",
+    "created_at": "2026-11-06T20:34:46.284705+00:00",
+    "token": [
+      "6adcf27c-e2b5-498f-8ba6-2c59d8e38454",
+      8,
+      9,
+      "a114ca85fc4bea8a0f6285b7"
+    ],
+    "question": "Assign the prioritized cleaning task to an available role-matching staff member.",
+    "summary": "Assign the open high\u2011priority cleaning task for table T3 to cleaner\u20111 to satisfy the cleaning\u2011first policy.",
+    "proposals": [
+      {
+        "id": "assign:9b0148b0-9da3-4c0a-bc3e-024c60490ad8:cleaner-1",
+        "type": "assign_task",
+        "task_id": "9b0148b0-9da3-4c0a-bc3e-024c60490ad8",
+        "staff_id": "cleaner-1",
+        "reason": "Policy states cleaning must be prioritized before seating; the high\u2011priority task for T3 should be given to the available cleaner\u20111. This is backed by the correction requiring cleaning priority (ID 519ac905\u2026) and the confirmed context that only one cleaner is on shift (ID 2537693e\u2026).",
+        "memory_ids": [
+          "519ac905-ab3a-4556-a2d1-e72c36442d0d",
+          "2537693e-edea-4b12-b176-ab96c2d90ba6"
+        ],
+        "status": "proposed"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "519ac905-ab3a-4556-a2d1-e72c36442d0d",
+        "text": "If table T3 requires cleaning, staff must prioritize its existing cleaning task and confirm cleanliness before seating. | Where: Restaurant | Involving: staff | operational procedure",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "2537693e-edea-4b12-b176-ab96c2d90ba6",
+        "text": "The restaurant is operating under a synthetic evaluation shift with one cleaner available. | When: 2026-11-06 | Involving: cleaner-1 | Operational context for the shift.",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+        "text": "The manager decided to use table T3 instead of T2 to avoid interruptions. | When: 2026-11-06 | Where: T3 | Involving: manager | To mitigate interruptions for diners during delivery rushes.",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "3a2648d2-1ad6-404b-b1c1-fd56de0684f9",
+        "text": "The restaurant is operating under a delivery rush with only one cleaner available. | When: 2026-11-06 | Involving: waiter-1, cleaner-1 | Synthetic evaluation shift.",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+        "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational correction during delivery rush.",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "aa6c5308-212a-4602-8f11-f329296d4856",
+        "text": "Staff reported fewer interruptions after using table T3. | When: 2026-11-06 | Where: T3 | Involving: staff",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+        "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational preference during delivery rush.",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "02892eb7-b402-4246-903a-a68ce72ff747",
+        "text": "The manager reassigned diners from table T2 to table T3 to avoid delivery rush interruptions. | When: 2026-11-06 | Where: Restaurant | Involving: manager | avoid interruptions at T2",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "985d5db1-5832-468f-8cff-01b7cdaa622f",
+        "text": "Diners at table T2 experienced repeated interruptions during delivery rushes. | When: 2026-11-06 | Where: Restaurant | Involving: diners at T2 | delivery rushes",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "eac7b81c-d472-40f6-900c-69b39937012a",
+        "text": "During delivery rushes, diners at table T2 experienced repeated interruptions. | When: 2026-11-06 | Where: T2",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      }
+    ],
+    "without_memory": null,
+    "model": "openai/gpt-oss-120b",
+    "restaurant_id": "evaluation-af4308ec0f"
+  },
+  "handover": {
+    "text": "### Shift Operational Briefing\n\n**Current Operational Status**\nAs of 2026-11-06 20:34 UTC, the restaurant is in a **delivery rush** with only one cleaner available. Table T3 is currently marked as `cleaning_required` with an open, high-priority cleaning task assigned to `cleaner-1`. Tables T1 and T2 are currently `ready`.\n\n**Operational Lessons & Guidelines**\nOperational feedback indicates that during delivery rushes, table T2 is susceptible to repeated interruptions due to its proximity to the pickup area. To mitigate this, previous shifts adopted the following practice:\n*   **Table Preference:** Use table T3 instead of T2 for diners during delivery rushes to minimize interruptions.\n*   **Operational Correction:** If table T3 requires cleaning, staff must prioritize its existing cleaning task and verify its readiness before seating guests there, rather than bypassing the cleaning requirement.\n\n**Outcome Interpretations & Uncertainties**\n*   **Staff Reports:** Staff have reported that seating guests at T3 resulted in fewer interruptions compared to T2. \n*   **Evidence Limitation:** While staff reported a positive experience with this transition, there is no measured business data confirming a direct improvement in efficiency or service metrics.\n*   **Unresolved Questions:** The sustainability of this preference relies on the availability of staff to maintain table T3. Because this is a high-demand scenario with limited cleaning resources, the manager must monitor whether T3's cleaning requirements cause a bottleneck that offsets the benefits of avoiding T2's location-based interruptions.",
+    "evidence": [
+      {
+        "id": "3a2648d2-1ad6-404b-b1c1-fd56de0684f9",
+        "text": "The restaurant is operating under a delivery rush with only one cleaner available. | When: 2026-11-06 | Involving: waiter-1, cleaner-1 | Synthetic evaluation shift.",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "c1bb6880-f782-49e6-80bc-a4fc3d153636",
+        "text": "The manager decided to use table T3 instead of T2 to avoid interruptions. | When: 2026-11-06 | Where: T3 | Involving: manager | To mitigate interruptions for diners during delivery rushes.",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "e4e6a8c5-6ba6-4810-a8e8-91bead35f718",
+        "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational correction during delivery rush.",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "eb14a9af-c68b-4b01-96e8-a4574fa03f8f",
+        "text": "During delivery rushes, the restaurant preference is to use table T3 instead of the baseline table T2. | When: 2026-11-06 | Operational preference during delivery rush.",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "aa6c5308-212a-4602-8f11-f329296d4856",
+        "text": "Staff reported fewer interruptions after using table T3. | When: 2026-11-06 | Where: T3 | Involving: staff",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "eac7b81c-d472-40f6-900c-69b39937012a",
+        "text": "During delivery rushes, diners at table T2 experienced repeated interruptions. | When: 2026-11-06 | Where: T2",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "2537693e-edea-4b12-b176-ab96c2d90ba6",
+        "text": "The restaurant is operating under a synthetic evaluation shift with one cleaner available. | When: 2026-11-06 | Involving: cleaner-1 | Operational context for the shift.",
+        "source_id": "ad18ae14-1e53-4dd0-92a7-d728b582edf2",
+        "recorded_at": "2026-11-06T20:32:01.419578+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "02892eb7-b402-4246-903a-a68ce72ff747",
+        "text": "The manager reassigned diners from table T2 to table T3 to avoid delivery rush interruptions. | When: 2026-11-06 | Where: Restaurant | Involving: manager | avoid interruptions at T2",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "985d5db1-5832-468f-8cff-01b7cdaa622f",
+        "text": "Diners at table T2 experienced repeated interruptions during delivery rushes. | When: 2026-11-06 | Where: Restaurant | Involving: diners at T2 | delivery rushes",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "519ac905-ab3a-4556-a2d1-e72c36442d0d",
+        "text": "If table T3 requires cleaning, staff must prioritize its existing cleaning task and confirm cleanliness before seating. | Where: Restaurant | Involving: staff | operational procedure",
+        "source_id": "4ce75776-da67-422a-92d6-4582459d79e1",
+        "recorded_at": "2026-11-06T20:31:55.276602+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      }
+    ],
+    "current_tasks": [
+      {
+        "id": "9b0148b0-9da3-4c0a-bc3e-024c60490ad8",
+        "table_id": "T3",
+        "kind": "cleaning",
+        "status": "open",
+        "role": "cleaner",
+        "priority": "high",
+        "assigned_to": "cleaner-1"
+      }
+    ],
+    "created_at": "2026-11-06T20:34:52.426453+00:00",
+    "token": [
+      "6adcf27c-e2b5-498f-8ba6-2c59d8e38454",
+      9,
+      10,
+      "a114ca85fc4bea8a0f6285b7"
+    ]
+  },
+  "supersession": {
+    "id": "f3fe70cc-2263-48d0-a8b0-9ca1e152bc49",
+    "created_at": "2026-11-06T20:35:11.164713+00:00",
+    "token": [
+      "6adcf27c-e2b5-498f-8ba6-2c59d8e38454",
+      10,
+      16,
+      "a114ca85fc4bea8a0f6285b7"
+    ],
+    "question": "What should we do next?",
+    "summary": "Seat the waiting party at table T2, which is the baseline seating option. The recent environment update only retires the old preference for using T3 during rush hours and does not provide a new directive for T2, so we revert to the baseline policy.",
+    "proposals": [
+      {
+        "id": "seat:93956b36-d405-46f7-9e7a-685a658c7440:T2",
+        "type": "seat_party",
+        "party_id": "93956b36-d405-46f7-9e7a-685a658c7440",
+        "table_id": "T2",
+        "baseline": true,
+        "unused_seats": 0,
+        "other_parties_seatable_now": 0,
+        "policy_departure": false,
+        "reason": "Baseline seating candidate; no active correction or evidence against using T2, and the update only nullifies the T3 preference.",
+        "memory_ids": [
+          "814200c4-628f-4a88-8ed8-0023aad3ca98",
+          "729098de-8c08-4b71-8413-d695fa6eb082"
+        ],
+        "status": "proposed"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "814200c4-628f-4a88-8ed8-0023aad3ca98",
+        "text": "Pickup location moved away from table T2, and the previous preference for using table T3 during rush hours is now obsolete. | When: 2026-11-06 | Where: Restaurant | Staff reported changed operational conditions.",
+        "source_id": "ae3193ae-c923-4d62-8e16-67bdc0ac4f8b",
+        "recorded_at": "2026-11-06T20:34:52.426575+00:00",
+        "kind": "environment_update",
+        "source": "staff_report",
+        "supports_preference": false,
+        "qualification": "Staff reports changed conditions; review old guidance."
+      },
+      {
+        "id": "729098de-8c08-4b71-8413-d695fa6eb082",
+        "text": "The current allocation policy is the standard for operations unless new evidence warrants a change, superseding guidance from 4ce75776-da67-422a-92d6-4582459d79e1. | When: 2026-11-06 | Where: Restaurant",
+        "source_id": "ae3193ae-c923-4d62-8e16-67bdc0ac4f8b",
+        "recorded_at": "2026-11-06T20:34:52.426575+00:00",
+        "kind": "environment_update",
+        "source": "staff_report",
+        "supports_preference": false,
+        "qualification": "Staff reports changed conditions; review old guidance."
+      }
+    ],
+    "without_memory": null,
+    "model": "openai/gpt-oss-120b",
+    "restaurant_id": "evaluation-af4308ec0f"
+  },
+  "finished_at": "2026-11-06T20:35:11.166696+00:00"
+}
