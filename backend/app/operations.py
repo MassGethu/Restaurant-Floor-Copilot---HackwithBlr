@@ -577,65 +577,28 @@ class Operations(ServiceMixin):
             self.save()
 
     def estimates(self):
-        assumptions = self.state["assumptions"]
-        now = self.state["now"]
-        # Two deterministic schedules; each table can be allocated only once at a time.
-        schedules = []
-        for bound in ("min", "max"):
-            slots = []
-            for table in self.state["tables"]:
-                release = None
-                if table["status"] == "ready" and (
-                    table["observed"] == "absent" or table["manual_hold"]
-                ):
-                    release = 0
-                elif table["status"] == "cleaning_required":
-                    release = assumptions[f"cleaning_{bound}"] * 60
-                elif table["status"] == "occupied" and table["duration_known"]:
-                    elapsed = now - table["occupied_since"]
-                    if elapsed < assumptions["dining_max"] * 60:
-                        release = (
-                            max(0, assumptions[f"dining_{bound}"] * 60 - elapsed)
-                            + assumptions[f"cleaning_{bound}"] * 60
-                        )
-                if release is not None:
-                    slots.append(
-                        dict(capacity=table["capacity"], at=release, id=table["id"])
-                    )
-            schedule = {}
-            for party in (p for p in self.state["parties"] if p["status"] == "waiting"):
-                options = sorted(
-                    (
-                        s
-                        for s in slots
-                        if s["capacity"] >= party["size"]
-                        and not (
-                            s["at"] == 0
-                            and [party["id"], s["id"]] in self.state.get("declined", [])
-                        )
-                    ),
-                    key=lambda s: (s["at"], s["capacity"], s["id"]),
-                )
-                if options:
-                    slot = options[0]
-                    schedule[party["id"]] = math.ceil(slot["at"] / 60)
-                    slot["at"] += (
-                        assumptions[f"dining_{bound}"]
-                        + assumptions[f"cleaning_{bound}"]
-                    ) * 60
-            schedules.append(schedule)
+        from app.simulation import simulate
+
+        schedules = simulate(self.state, horizon_minutes=240)["baseline"]
+        by_bound = {
+            bound: {
+                party["party_id"]: party["wait_minutes"] for party in value["seated"]
+            }
+            for bound, value in schedules.items()
+        }
         estimates = {}
         for party in (p for p in self.state["parties"] if p["status"] == "waiting"):
-            short, long = (schedule.get(party["id"]) for schedule in schedules)
-            # Assignment can change between scenarios, so longer dining does not
-            # necessarily increase every individual party's wait. Show the envelope
-            # of the two schedules, not incorrectly labeled ordered bounds.
+            short = by_bound["min"].get(party["id"])
+            long = by_bound["max"].get(party["id"])
             values = [value for value in (short, long) if value is not None]
             estimates[party["id"]] = dict(
-                min_minutes=min(values) if len(values) == 2 else None,
-                max_minutes=max(values) if len(values) == 2 else None,
-                scenario_minutes=dict(short_durations=short, long_durations=long),
-                note="Range spans two duration scenarios with queue allocation and parallel cleaning. Allocations can differ; this is not a guaranteed bound. Unknown or overdue sessions are excluded.",
+                min_minutes=math.ceil(min(values)) if len(values) == 2 else None,
+                max_minutes=math.ceil(max(values)) if len(values) == 2 else None,
+                scenario_minutes=dict(
+                    short_durations=math.ceil(short) if short is not None else None,
+                    long_durations=math.ceil(long) if long is not None else None,
+                ),
+                note="Range spans two duration scenarios under the current allocation policy, a 240-minute horizon and parallel cleaning. Allocations can differ; this is not a guaranteed bound. Unknown/overdue tables and parties beyond the horizon require staff estimates.",
             )
         return estimates
 

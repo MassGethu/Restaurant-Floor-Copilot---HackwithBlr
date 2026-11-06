@@ -130,10 +130,13 @@ def simulate(
             excluded_tables=excluded,
         )
 
+    baseline = {b: schedule(b, False) for b in ("min", "max")}
     return dict(
         horizon_minutes=horizon_minutes,
-        baseline={b: schedule(b, False) for b in ("min", "max")},
-        proposed={b: schedule(b, True) for b in ("min", "max")},
+        baseline=baseline,
+        proposed={b: schedule(b, True) for b in ("min", "max")}
+        if party is not None
+        else copy.deepcopy(baseline),
         assumptions=state["assumptions"],
         note="Deterministic scenarios, not guaranteed forecasts. Known queue only; parallel cleaning and configured dining ranges assumed. Unknown/overdue tables excluded. A delayed choice reserves that table until its chosen party is seated.",
     )

@@ -69,3 +69,15 @@ def test_matching_does_not_assign_one_table_twice():
         )
         assert len({t["id"] for _, t in result}) == len(result)
         assert all(p["size"] <= t["capacity"] for p, t in result)
+
+
+def test_dynamic_waits_use_the_same_throughput_policy_as_recommendations(floor):
+    floor.action("T3", "clean")
+    pair = floor.add_party("Pair", 2)
+    six = floor.add_party("Six", 6)
+    floor.state["policy"]["strategy"] = "throughput"
+    assert floor.recommendations()[0]["party_id"] == six["id"]
+    estimates = floor.estimates()
+    assert estimates[six["id"]]["min_minutes"] == 0
+    assert estimates[pair["id"]]["min_minutes"] == 32
+    assert estimates[pair["id"]]["max_minutes"] == 65

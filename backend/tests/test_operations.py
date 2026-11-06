@@ -236,7 +236,7 @@ def test_wait_range_spans_different_assignments_without_inversion(floor):
         manual_hold=False, duration_known=True, occupied_since=started) for i, (capacity,status,started) in enumerate([
             (4,'cleaning_required',3526), (6,'cleaning_required',3002),
             (2,'occupied',516), (4,'occupied',1831)])]
-    floor.state['parties'] = [dict(id=str(i),size=size,status='waiting') for i,size in enumerate([2,2,6,4,4,2])]
+    floor.state['parties'] = [dict(id=str(i),name=f'Party {i}',size=size,status='waiting') for i,size in enumerate([2,2,6,4,4,2])]
     estimate = floor.estimates()['5']
     assert estimate['scenario_minutes'] == dict(short_durations=17, long_durations=14)
     assert (estimate['min_minutes'], estimate['max_minutes']) == (14, 17)
