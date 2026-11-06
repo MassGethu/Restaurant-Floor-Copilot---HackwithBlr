@@ -1,3 +1,17 @@
+# Current expansion status — 6 November 2026
+
+The earlier local acceptance below covered a smaller prototype. The user subsequently requested broader implementation and a clean local Git history. This expansion supersedes the earlier deferrals.
+
+Implemented: staff task lifecycle and roster; manual service requests and timed check-ins; host-reviewed entrance crossings; fairness/balanced/throughput policies; future known-queue what-if scheduling; policy-consistent wait ranges; availability workspace; sampled operational analytics and session archives; CSV export; portable fixture configs. Full mapping and limits: docs/FEATURE_MATRIX.md.
+
+Validation: backend regression, frontend build/helper tests, interactive browser workflows, actual YOLO live workflow and separate entrance calibration. Current evidence is in docs/verification/acceptance-summary.json. Git history begins with the attributed reference import and reviewable implementation layers; see docs/HISTORY.md. No push/publication performed.
+
+Remaining limits: visual customer intent, natural arrival/group accuracy, learned departures and real multi-table CCTV validation. No real restaurant footage was available.
+
+---
+
+# Earlier prototype plan and historical acceptance
+
 # AI Restaurant Floor Copilot — execution plan
 
 Authorized 2026-11-05: reuse the reference application in this workspace and implement autonomously.

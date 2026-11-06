@@ -1,3 +1,7 @@
+# Expanded-scope audit notice
+
+The current 35-feature implementation and qualifications are mapped in [FEATURE_MATRIX.md](FEATURE_MATRIX.md). The following audit documents the earlier foundation; its future-simulation deferral was superseded by the 6 November expansion. Current policies and analytics are documented in README.md.
+
 # Requirements and evidence audit
 
 Scope: the approved two-day local prototype, built on the attributed reference. A controlled, explicitly synthetic visual scenario is allowed by the brief. This audit does not substitute stock/montage results for measured real CCTV accuracy.

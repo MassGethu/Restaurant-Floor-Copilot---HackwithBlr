@@ -32,3 +32,14 @@ Choose `restaurant-stock.mp4` to inspect genuine detection on an unmodified stoc
 - `scripts/smoke_live.py`: reproducible workflow test, approximately 75 seconds, leaves playback paused.
 - Seating logic is deterministic; departure estimates are heuristics. Neither is a trained prediction model.
 - Actual restaurant CCTV/staged fixed-camera validation remains future work.
+
+
+## Expanded operations tour
+
+1. In Policies choose fairness for the default demo; choose a one-minute check-in only when demonstrating the short scenario. Realistic defaults can be restored to ten minutes afterward.
+2. Open Staff desk after departure: assign the cleaning task to Cleaner 1, acknowledge/start, then confirm completion. A waiter request can be entered manually and assigned to Waiter 1; completing it records a visit. Timed check-ins are service suggestions, not detected customer intent.
+3. Pause a fresh scenario and prepare clean tables. Add a pair and six-person party. In What-if lab choose pair → T4 and Compare scenarios. Inspect guest waiting minutes and per-party ranges; confirm the live queue was not modified.
+4. Show Availability and Analytics; archived scenarios remain separate from the current timeline. Export CSV if useful. Trends are recorded scenario samples.
+5. For optional entrance demonstration run scripts/verify_arrivals.py first, then select entrance-calibration.mp4 on Floor. After about four seconds inspect Arrivals. Confirm the true party size manually or dismiss. This is translated stock calibration, not natural customer detection validation. Switching/restarting archives the previous scenario.
+
+The expanded actual-model acceptance script is scripts/smoke_expanded.py. It uses explicit synthetic staff inputs, requires the local API, runs about 75 seconds and leaves playback paused.

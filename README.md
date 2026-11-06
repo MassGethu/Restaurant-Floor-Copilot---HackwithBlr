@@ -14,7 +14,7 @@ Open http://127.0.0.1:5173/floor. The API listens on http://127.0.0.1:8000; inte
 
 Select `controlled-floor-demo.mp4`, click **Start**, and pause during its initial vacant interval. Confirm each table clean. Add a party and approve the explained recommendation. Resume to observe sustained presence, a temporary absence, and a departure. Confirm cleaning to enable seating from the queue again.
 
-**Restart clears the current scenario queue and staff actions.** Pause freezes footage time, occupancy timers, and queue waits. The demo does not loop automatically.
+**Restart starts a new scenario, archiving the previous queue and staff actions.** Roster, policies and duration assumptions persist. Pause freezes footage time, occupancy timers, and queue waits. The demo does not loop automatically.
 
 ## Reproduce setup
 
@@ -35,14 +35,14 @@ Model weights download automatically on first inference. Prepare them before an 
 .venv/bin/python scripts/prepare_demo.py
 ```
 
-This generates the controlled visual fixture and both table configurations for the current checkout path.
+This generates the controlled visual fixture and portable relative-path table configurations.
 
 ## What is AI and what is deterministic?
 
 - **Pretrained model inference:** Ultralytics YOLO + ByteTrack detects and tracks people.
 - **Temporal geometry rules:** reference points inside manually defined regions establish sustained visual presence/absence.
 - **Operational state:** staff-confirmed cleanliness, seating, corrections, and cleaning tasks are stored in SQLite.
-- **Seating policy:** oldest feasible waiting party, then smallest suitable ready table. Suggestions require staff approval and revalidation. Managers can choose another eligible table or decline a suggestion while keeping the party waiting. Comparisons show the effect on the current queue, using the same allocator.
+- **Seating policy:** configurable fairness (oldest feasible/best fit), balanced, or throughput allocation, with overdue-party protection and bounded matching. Suggestions require staff approval and revalidation. Managers can choose another eligible table or decline a suggestion while keeping the party waiting. Comparisons show the effect on the current queue, using the same allocator.
 - **Wait ranges:** deterministic schedules using stated 30–60 minute dining and 2–5 minute cleaning assumptions, including queue allocation. Displayed ranges span two duration scenarios, whose allocations can differ; they are not guaranteed bounds or learned departure predictions. Unknown or overdue sessions are excluded and may need staff estimates.
 - **Cleaning priority:** number of current waiting parties that fit, then time awaiting cleaning.
 
@@ -80,4 +80,19 @@ Run actual stock-frame inference with `scripts/verify_vision.py`. With the API r
 
 Built on Zihad’s MIT-licensed Restaurant Table Occupancy Detection, reference commit `51053aac5d4f6e4f5600205d0aadb177fb493826`. Upstream detection, editor, APIs, analytics, and dashboard foundation are pre-existing work. Ultralytics and model weights retain their separate licensing obligations; this project is not an assertion of MIT-only licensing for the combined application. Check the competition rules for disclosure of pre-existing work before submitting.
 
-The retained upstream analytics page uses monitoring-run records and has not been adapted into a media-time analytics product; it is excluded from the primary navigation and demo. The Floor Copilot is the authoritative operations interface.
+## Expanded operations workspace
+
+Open http://127.0.0.1:5173/operations for six linked workflows:
+
+- **Staff desk:** role-filtered cleaning/service tasks, staff roster, assignment, acknowledgement, progress, completion, new-task notices and optional sound.
+- **Arrivals:** review tracked entrance crossings, independently confirm party size, or dismiss. Configure one entrance region in the table editor.
+- **Availability:** table-by-table future ranges with their basis and uncertainty.
+- **What-if lab:** compare future known-queue schedules for another seating choice or delay without changing live state.
+- **Analytics:** actual scenario samples, waits, seated guests, completed table sessions, task metrics, archived scenarios and CSV export.
+- **Policies:** fairness, balanced or throughput presets, overdue protection and check-in interval.
+
+Waiter requests are manual; timed check-ins are heuristic suggestions with unknown customer intent. Entrance crossings do not distinguish customers from staff or reliably infer group size. The host confirms each arrival. Predictions use explicit duration assumptions and require real restaurant validation.
+
+See [the 35-feature matrix](docs/FEATURE_MATRIX.md), [Git history notes](docs/HISTORY.md) and [demo runbook](docs/DEMO.md). With the API running, `.venv/bin/python scripts/smoke_expanded.py` checks the expanded workflow using actual YOLO and declared synthetic staff inputs. It starts a new demo scenario and leaves playback paused. `.venv/bin/python scripts/verify_arrivals.py` generates and checks a synthetic entrance calibration clip from the permitted stock frame. Neither test measures real restaurant accuracy.
+
+The original upstream analytics component remains in source for provenance; `/analytics` now redirects to the operational analytics workspace.

@@ -35,3 +35,8 @@ Reference: `51053aac5d4f6e4f5600205d0aadb177fb493826`.
 - `frontend/src/pages/FloorPage.tsx`
 
 Additional changes include media-time configuration defaults, the local launch script, documentation and scripts listed in README.md. Original upstream README is preserved separately. Model weights and footage are excluded from Git.
+
+
+## Expanded operations additions — 6 November 2026
+
+New modules include backend/app/service.py, backend/app/simulation.py, backend/tests/test_service.py, backend/tests/test_simulation.py and frontend/src/pages/OperationsPage.tsx. Existing detector/pipeline/config/editor surfaces were extended for entrance regions. APIs, allocator, operational state, analytics navigation and floor links were expanded. New verification scripts cover arrival calibration and the full live staff workflow. The current feature mapping is docs/FEATURE_MATRIX.md; local Git records each reviewable layer.

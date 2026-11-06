@@ -27,3 +27,8 @@ Manual queue entries and staff actions are explicit. Synthetic capacities and di
 `scripts/verify_vision.py` runs real inference on original clip frames and stores annotated images plus `docs/verification/vision-report.json`. This has no ground-truth evaluation and establishes no accuracy percentage. Actual stock footage and controlled fixture results must be described separately.
 
 `verify_regions.py` additionally repeats the permitted crop across all four regions and checks independent occupancy/departure transitions using actual YOLO outputs. Results and annotated image are in docs/verification/four-region-report.json and four-region-inference.jpg. These are controlled geometry/isolation tests, not real-world accuracy evaluation.
+
+
+## Entrance calibration added 6 November
+
+scripts/verify_arrivals.py translates a frame of the same permitted stock clip across a configured entrance region and writes entrance-calibration.mp4 plus its portable config. This artificial motion checks actual YOLO/ByteTrack region-crossing plumbing. The generated input is synthetic and is not evidence of natural arrival, group-size, or customer-versus-staff accuracy. The host must independently confirm party size. Video remains excluded from Git; annotated evidence and the JSON report are in docs/verification.
