@@ -19,7 +19,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
-from app.memory_clients import plain
+from app.memory_clients import SYSTEM, plain
 from app.operations import Operations
 from app.schemas import TableDef
 from app.settings import get_settings
@@ -61,6 +61,8 @@ def main():
         "status": "running",
         "pairs": [],
         "checks": {},
+        "system_prompt": SYSTEM,
+        "reasoning_parameters": {"temperature": 0, "strict_structured_output": True},
         "disclosure": "Actual Hindsight and actual hosted LLM with synthetic structured floor inputs. No video inference in this evaluation. Staff outcome reports are seeded scenario data, not measured restaurant results.",
     }
     if not settings.hindsight_base_url or not settings.agent_api_key:
@@ -132,12 +134,23 @@ def main():
                 "note": "Synthetic evaluation shift",
             }
         )
+        # Past transient state deliberately differs from the current floor used in the pairs.
+        ops.action("T3", "hold_occupied")
         lesson = service.capture(
             "Synthetic operational episode: during delivery rushes diners at T2 beside pickup experienced repeated interruptions. "
             "The manager chose equally fitting T3 instead. If T3 needs cleaning, prioritize its existing cleaning task and assign an available cleaner; "
             "staff must still confirm cleanliness. This preference applies only during delivery rushes, not normal service.",
             table_id="T3",
             baseline_table_id="T2",
+        )
+        ops.action("T3", "depart")
+        ops.action("T3", "clean")
+        report["checks"]["historical_state_distractor"] = (
+            next(
+                t for t in lesson["content"]["situation"]["tables"] if t["id"] == "T3"
+            )["status"]
+            == "occupied"
+            and ops.table("T3")["status"] == "ready"
         )
         assert service.sync_once(), "Real retain failed; inspect delivery status"
         service.feedback(

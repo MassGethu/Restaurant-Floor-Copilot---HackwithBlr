@@ -204,6 +204,22 @@ def test_restart_preserves_memory_but_does_not_restore_freshness(supervisor):
         ops.close()
 
 
+def test_extraction_upgrade_requeues_same_sources_and_invalidates_old_advice(
+    supervisor,
+):
+    s = supervisor
+    item = retain_lesson(s)
+    s.advice()
+    s.record(item["id"])["retain_schema_version"] = 1
+    s.save()
+    upgraded = Supervisor(s.ops, s.settings, memory=s.memory, reasoner=s.reasoner)
+    assert upgraded.record(item["id"])["delivery"] == "pending"
+    assert upgraded.snapshot()["advice"]["stale"]
+    assert upgraded.sync_once()
+    assert len(s.memory.records) == 1
+    assert upgraded.record(item["id"])["retain_schema_version"] == 2
+
+
 def test_scope_isolation_for_restaurant_and_geometry(supervisor):
     s = supervisor
     retain_lesson(s)

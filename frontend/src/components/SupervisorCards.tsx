@@ -11,26 +11,38 @@ import {
 } from "../api/supervisor";
 
 export function EvidenceList({ items }: { items: Evidence[] }) {
+  const groups = new Map<string, Evidence[]>();
+  for (const item of items)
+    groups.set(item.source_id, [...(groups.get(item.source_id) ?? []), item]);
   return (
     <div className="memory-evidence">
       {items.length === 0 ? (
         <p>No relevant active memory was retrieved.</p>
       ) : (
-        items.map((item) => (
-          <details key={item.id}>
-            <summary>
-              {item.kind.replaceAll("_", " ")} ·{" "}
-              {new Date(item.recorded_at).toLocaleString()}
-            </summary>
-            <p>{item.text}</p>
-            <small>
-              {item.source.replaceAll("_", " ")} · {item.qualification}
-            </small>
-            <p className="memory-id">
-              Source {item.source_id} · Memory {item.id}
-            </p>
-          </details>
-        ))
+        [...groups.values()].map((facts) => {
+          const source = facts[0];
+          return (
+            <details key={source.source_id}>
+              <summary>
+                {source.kind.replaceAll("_", " ")} ·{" "}
+                {new Date(source.recorded_at).toLocaleString()} · {facts.length}{" "}
+                recalled facts
+              </summary>
+              {facts.map((fact) => (
+                <p key={fact.id}>{fact.text}</p>
+              ))}
+              <small>
+                {source.source.replaceAll("_", " ")} · {source.qualification}
+              </small>
+              <p className="memory-id">
+                One source experience: {source.source_id}
+              </p>
+              <p className="memory-id">
+                Memory IDs: {facts.map((fact) => fact.id).join(", ")}
+              </p>
+            </details>
+          );
+        })
       )}
     </div>
   );

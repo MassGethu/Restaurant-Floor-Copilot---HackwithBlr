@@ -18,6 +18,7 @@ from app.memory_clients import GroqReasoner, HindsightMemory, Selection
 from app.operations import OperationError
 
 ACTIVE = ("open", "acknowledged", "in_progress")
+RETAIN_SCHEMA_VERSION = 2
 
 
 class ServiceUnavailable(Exception):
@@ -63,9 +64,18 @@ class Supervisor:
             )
             if not self.state["shifts"]:
                 self.state["shifts"].append(self.new_shift("First shift"))
+            migrated = False
             for item in self.state["experiences"]:
+                if (
+                    item["delivery"] == "retained"
+                    and item.get("retain_schema_version") != RETAIN_SCHEMA_VERSION
+                ):
+                    item.update(delivery="pending", attempts=0, next_retry=0)
+                    migrated = True
                 if item["delivery"] == "sending":
                     item["delivery"] = "pending"
+            if migrated:
+                self.state["revision"] += 1
             self.save()
 
     @staticmethod
@@ -358,7 +368,12 @@ class Supervisor:
                     self.last_error = error
                     self.save()
                 else:
-                    item.update(delivery="retained", error=None, retain_receipt=receipt)
+                    item.update(
+                        delivery="retained",
+                        error=None,
+                        retain_receipt=receipt,
+                        retain_schema_version=RETAIN_SCHEMA_VERSION,
+                    )
                     self.last_error = None
                     self.change()
             return error is None

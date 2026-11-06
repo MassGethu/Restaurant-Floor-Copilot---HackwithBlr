@@ -158,6 +158,7 @@ export default function SupervisorPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [connectionError, setConnectionError] = useState("");
   const sequence = useRef(0);
   const contextRevision = useRef<string>("");
   const refresh = useCallback(async () => {
@@ -170,6 +171,7 @@ export default function SupervisorPage() {
       if (id !== sequence.current) return;
       setState(s);
       setFloor(f);
+      setConnectionError("");
       const revision = s.shift.id + s.shift.context_confirmed_at;
       if (revision !== contextRevision.current) {
         setContext(s.shift.context);
@@ -177,7 +179,9 @@ export default function SupervisorPage() {
       }
     } catch (e) {
       if (id === sequence.current)
-        setError(e instanceof Error ? e.message : "Cannot load supervisor.");
+        setConnectionError(
+          e instanceof Error ? e.message : "Cannot load supervisor.",
+        );
     }
   }, []);
   useEffect(() => {
@@ -262,9 +266,9 @@ export default function SupervisorPage() {
         </div>
         <Brain size={42} />
       </div>
-      {error && (
+      {(error || connectionError) && (
         <p role="alert" className="floor-stale">
-          {error}
+          {error || connectionError}
         </p>
       )}
       {notice && (
