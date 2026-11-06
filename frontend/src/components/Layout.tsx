@@ -1,5 +1,6 @@
 import {
   Bell,
+  Brain,
   LayoutGrid,
   MonitorPlay,
   PenLine,
@@ -10,6 +11,7 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 
 const LINKS = [
   { to: "/floor", label: "Floor Copilot", icon: LayoutGrid },
+  { to: "/supervisor", label: "Supervisor", icon: Brain },
   { to: "/operations", label: "Operations", icon: Bell },
   { to: "/videos", label: "Videos", icon: Video },
   { to: "/live", label: "Vision Monitor", icon: MonitorPlay },

@@ -1,0 +1,198 @@
+/* Shared experience workspace, matching the inherited floor palette. */
+.supervisor-page {
+  color: #243c36;
+}
+.supervisor-status {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  background: #e6eee8;
+  border: 1px solid #d0ded3;
+  border-radius: 14px;
+  margin-bottom: 20px;
+  font-size: 12px;
+}
+.supervisor-status b {
+  font-size: 16px;
+  margin-right: auto;
+}
+.supervisor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.supervisor-grid > div,
+.supervisor-grid > aside {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+}
+.supervisor-grid .floor-panel,
+.memory-panel {
+  padding: 22px;
+}
+.supervisor-grid h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.supervisor-grid h3,
+.memory-proposal h3 {
+  font-size: 14px;
+  font-weight: 650;
+  margin: 12px 0 6px;
+}
+.supervisor-grid p,
+.memory-panel p {
+  font-size: 13px;
+  line-height: 1.65;
+  margin: 8px 0 12px;
+}
+.supervisor-grid label {
+  display: block;
+  font-size: 12px;
+  font-weight: 550;
+  margin: 14px 0;
+}
+.supervisor-grid input:not([type="checkbox"]),
+.supervisor-grid textarea,
+.supervisor-grid select {
+  display: block;
+  width: 100%;
+  background: #fffef9;
+  border: 1px solid #ced9d2;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  margin-top: 7px;
+  color: #243c36;
+}
+.supervisor-grid textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+.supervisor-grid small,
+.memory-panel small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #667a70;
+  margin: 6px 0;
+}
+.supervisor-grid a,
+.memory-panel a {
+  color: #207b65;
+  font-weight: 600;
+}
+.memory-question-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.supervisor-grid .memory-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+}
+.memory-advice {
+  margin-top: 15px;
+}
+.memory-proposal {
+  border-top: 1px solid #dbe3dc;
+  padding: 8px 0 14px;
+}
+.memory-warning {
+  color: #925324 !important;
+  background: #fbf1de;
+  padding: 10px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  margin: 10px 0;
+}
+.memory-evidence details,
+.memory-comparison {
+  border-top: 1px solid #dbe3dc;
+  padding: 12px 0;
+  font-size: 12px;
+}
+.memory-evidence summary,
+.memory-comparison summary,
+.memory-setup summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #28765f;
+}
+.memory-id {
+  overflow-wrap: anywhere;
+  font-family: monospace;
+  font-size: 10px !important;
+  color: #75887b;
+}
+.experience-card {
+  border-top: 1px solid #dbe3dc;
+  padding: 20px 0;
+}
+.experience-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.experience-card header b {
+  text-transform: capitalize;
+  font-size: 14px;
+}
+.experience-card.historical {
+  opacity: 0.7;
+}
+.memory-status {
+  font-size: 10px;
+  padding: 4px 9px;
+  background: #e8ece5;
+  border-radius: 20px;
+}
+.memory-status.retained {
+  background: #dceee4;
+  color: #246f50;
+}
+.memory-status.failed {
+  background: #f8e2d9;
+  color: #934829;
+}
+.memory-setup {
+  padding: 16px 20px;
+  background: #fffaf0;
+  border: 1px solid #e8ddc6;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.memory-notice {
+  padding: 12px 18px;
+  background: #e1f0e5;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+.handover-text {
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 20px 0;
+}
+.memory-disclosure {
+  font-size: 11px !important;
+  color: #708075;
+}
+@media (max-width: 900px) {
+  .supervisor-grid {
+    grid-template-columns: 1fr;
+  }
+  .supervisor-status {
+    gap: 10px;
+  }
+}

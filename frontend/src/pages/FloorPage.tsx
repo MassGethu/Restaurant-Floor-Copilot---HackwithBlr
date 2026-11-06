@@ -21,6 +21,7 @@ import {
   Video,
   X,
 } from "lucide-react";
+import SupervisorCards from "../components/SupervisorCards";
 import { api, apiUrl } from "../api/client";
 import {
   floorRequest,
@@ -598,6 +599,7 @@ export default function FloorPage() {
         </div>
 
         <aside className="floor-right">
+          <SupervisorCards floor={state} />
           <section className="decision-panel">
             <div className="panel-title">
               <div>

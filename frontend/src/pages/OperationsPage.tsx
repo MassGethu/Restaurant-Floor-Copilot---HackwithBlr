@@ -179,7 +179,9 @@ export default function OperationsPage() {
         {error || "Connecting to the operations workspace…"}
       </div>
     );
-  const tasks = state.tasks ?? [];
+  const tasks = [...(state.tasks ?? [])].sort(
+    (a, b) => Number(b.priority === "high") - Number(a.priority === "high"),
+  );
   const arrivals = (state.arrivals ?? []).filter((a) => a.status === "pending");
   const waiting = state.parties.filter((p) => p.status === "waiting");
   const selectedParty = waiting.find((p) => p.id === simParty) ?? waiting[0];
@@ -307,7 +309,10 @@ export default function OperationsPage() {
                         {state.tables.find((t) => t.id === task.table_id)
                           ?.name ?? task.table_id}
                       </b>
-                      <span>{task.status.replace("_", " ")}</span>
+                      <span>
+                        {task.priority === "high" ? "HIGH PRIORITY · " : ""}
+                        {task.status.replace("_", " ")}
+                      </span>
                     </header>
                     <h3>
                       {task.kind.replace("_", " ")} <small>{task.source}</small>

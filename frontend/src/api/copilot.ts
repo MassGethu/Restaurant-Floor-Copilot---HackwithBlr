@@ -48,6 +48,7 @@ export type FloorState = {
   tasks: {
     id: string;
     table_id: string;
+    priority: "normal" | "high";
     kind: string;
     source: string;
     note: string;
