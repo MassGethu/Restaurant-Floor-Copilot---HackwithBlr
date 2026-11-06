@@ -47,9 +47,34 @@ def wait_recalled(s, source_id):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pairs", type=int, default=5, choices=range(1, 11))
+    parser.add_argument(
+        "--profile",
+        choices=("cloud", "local"),
+        help="Explicit memory target; never changes backend/.env",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="Separate evidence file; defaults to a profile-specific report",
+    )
+    parser.add_argument(
+        "--advice-interval",
+        type=float,
+        default=0,
+        help="Minimum seconds between advice requests, for hosted-model rate limits",
+    )
     args = parser.parse_args()
+    if args.advice_interval < 0:
+        parser.error("--advice-interval must be nonnegative")
     settings = get_settings()
-    report_path = ROOT / "docs/verification/hindsight-live-memory-report.json"
+    if args.profile:
+        settings = settings.model_copy(update={"hindsight_profile": args.profile})
+    report_path = args.output or ROOT / "docs/verification" / (
+        "hindsight-local-memory-report.json"
+        if settings.hindsight_profile == "local"
+        else "hindsight-live-memory-report.json"
+    )
+    report_path.parent.mkdir(parents=True, exist_ok=True)
     if report_path.exists():
         previous = json.loads(report_path.read_text())
         report_path.with_name(
@@ -61,11 +86,13 @@ def main():
         "status": "running",
         "pairs": [],
         "checks": {},
+        "memory_profile": settings.hindsight_profile,
         "system_prompt": SYSTEM,
         "reasoning_parameters": {"temperature": 0, "strict_structured_output": True},
+        "advice_interval_seconds": args.advice_interval,
         "disclosure": "Actual Hindsight and actual hosted LLM with synthetic structured floor inputs. No video inference in this evaluation. Staff outcome reports are seeded scenario data, not measured restaurant results.",
     }
-    if not settings.hindsight_base_url or not settings.agent_api_key:
+    if not settings.memory_base_url or not settings.agent_api_key:
         report.update(
             status="not_run_missing_credentials",
             required=[
@@ -84,6 +111,33 @@ def main():
     path = settings.data_dir / "memory-evaluations" / f"{run_id}.db"
     ops = Operations(path)
     service = None
+    last_advice = 0
+
+    def pace():
+        nonlocal last_advice
+        delay = args.advice_interval - (time.monotonic() - last_advice)
+        while delay > 0:
+            time.sleep(min(delay, 1))
+            delay = args.advice_interval - (time.monotonic() - last_advice)
+        last_advice = time.monotonic()
+
+    def advice(*args_, **kwargs):
+        pace()
+        return service.advice(*args_, **kwargs)
+
+    def deliver_pending():
+        deadline = time.monotonic() + 300
+        while any(x["delivery"] == "pending" for x in service.state["experiences"]):
+            service.sync_once()
+            assert not any(
+                x["delivery"] == "failed" for x in service.state["experiences"]
+            ), "Real retain exhausted bounded retries; inspect delivery status"
+            assert time.monotonic() < deadline, (
+                "Retain delivery exceeded evaluation window"
+            )
+            if any(x["delivery"] == "pending" for x in service.state["experiences"]):
+                time.sleep(1)
+
     try:
         ops.configure(
             "synthetic-memory-evaluation",
@@ -152,13 +206,13 @@ def main():
             == "occupied"
             and ops.table("T3")["status"] == "ready"
         )
-        assert service.sync_once(), "Real retain failed; inspect delivery status"
+        deliver_pending()
         service.feedback(
             lesson["id"],
             "helped",
             "Synthetic staff outcome report: staff reported fewer interruptions after using T3. No measured business improvement is claimed.",
         )
-        assert service.sync_once()
+        deliver_pending()
         report["initial_recall"] = wait_recalled(service, lesson["id"])
         report["retain_receipts"] = [
             x.get("retain_receipt") for x in service.state["experiences"]
@@ -166,7 +220,7 @@ def main():
         payload, _ = service.prepare("What should we do next?")
         report["immutable_inputs"] = payload
         for i in range(args.pairs):
-            result = service.advice(compare=True)
+            result = advice(compare=True)
             actual = [
                 p.get("table_id")
                 for p in result["proposals"]
@@ -200,7 +254,7 @@ def main():
                 "note": "Synthetic normal service",
             }
         )
-        quiet = service.advice()
+        quiet = advice()
         report["quiet_control"] = quiet
         report["checks"]["quiet_does_not_apply_rush_lesson"] = [
             p.get("table_id") for p in quiet["proposals"] if p["type"] == "seat_party"
@@ -235,7 +289,7 @@ def main():
         )
         ops.table("T3").update(status="cleaning_required", dirty_since=0)
         ops.save()
-        recovery = service.advice(
+        recovery = advice(
             "Which existing task should we prioritize to prepare the remembered seating alternative?"
         )
         report["recovery"] = recovery
@@ -245,7 +299,7 @@ def main():
         report["checks"]["recovery_priority"] = priority is not None
         if priority:
             service.approve(recovery["id"], priority["id"], True)
-            assignment = service.advice(
+            assignment = advice(
                 "Assign the prioritized cleaning task to an available role-matching staff member."
             )
             report["assignment"] = assignment
@@ -258,14 +312,14 @@ def main():
         report["checks"]["no_automatic_cleanliness"] = (
             ops.table("T3")["status"] == "cleaning_required"
         )
+        pace()
         report["handover"] = service.handover()
         report["checks"]["handover_evidence"] = bool(report["handover"]["evidence"])
         update = service.supersede(
             lesson["id"],
             "Synthetic environment update: pickup moved away from T2; the old rush-specific preference for T3 is obsolete. Use the current allocation policy unless new evidence warrants otherwise.",
         )
-        while any(x["delivery"] == "pending" for x in service.state["experiences"]):
-            assert service.sync_once(), "Failed to retain updated experience"
+        deliver_pending()
         wait_recalled(service, update["id"])
         ops.action(
             "T3", "clean"
@@ -277,7 +331,7 @@ def main():
                 "note": "Pickup location has changed; staff-confirmed environment update is recorded.",
             }
         )
-        revised = service.advice()
+        revised = advice()
         report["supersession"] = revised
         report["checks"]["superseded_source_excluded"] = not any(
             f["source_id"] == lesson["id"] for f in revised["evidence"]

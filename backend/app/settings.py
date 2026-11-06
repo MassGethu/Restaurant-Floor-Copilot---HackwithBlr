@@ -40,10 +40,42 @@ class Settings(BaseSettings):
     restaurant_id: str = Field(default="demo-restaurant", pattern=r"^[a-z0-9-]{1,60}$")
     hindsight_base_url: str = ""
     hindsight_api_key: str = ""
+    hindsight_profile: Literal["cloud", "local"] = "cloud"
+    hindsight_local_base_url: str = "http://127.0.0.1:8888"
+    hindsight_local_api_key: str = ""
+    hindsight_local_timeout_seconds: float = Field(default=180, ge=1, le=600)
+    hindsight_local_llm_model: str = "openai/gpt-oss-20b"
+    hindsight_local_reflect_llm_model: str = "openai/gpt-oss-120b"
+    hindsight_local_retain_interval_seconds: float = Field(default=30, ge=0, le=300)
     agent_api_key: str = ""
     agent_base_url: str = "https://api.groq.com"
     agent_model: str = "openai/gpt-oss-120b"
     memory_timeout_seconds: float = Field(default=30, ge=1, le=120)
+
+    @property
+    def memory_base_url(self) -> str:
+        return (
+            self.hindsight_local_base_url
+            if self.hindsight_profile == "local"
+            else self.hindsight_base_url
+        )
+
+    @property
+    def memory_api_key(self) -> str:
+        # Never forward the Cloud bearer token to the local server.
+        return (
+            self.hindsight_local_api_key
+            if self.hindsight_profile == "local"
+            else self.hindsight_api_key
+        )
+
+    @property
+    def memory_request_timeout(self) -> float:
+        return (
+            self.hindsight_local_timeout_seconds
+            if self.hindsight_profile == "local"
+            else self.memory_timeout_seconds
+        )
 
     # External tools
     ffmpeg_path: str
@@ -85,7 +117,14 @@ class Settings(BaseSettings):
     loop_video_files: bool
     source_outage_seconds: float = Field(gt=0)
 
-    @field_validator("log_dir", "mediamtx_config", "videos_dir", "configs_dir", "data_dir", "models_dir")
+    @field_validator(
+        "log_dir",
+        "mediamtx_config",
+        "videos_dir",
+        "configs_dir",
+        "data_dir",
+        "models_dir",
+    )
     @classmethod
     def _resolve_from_backend_dir(cls, value: Path) -> Path:
         return (BACKEND_DIR / value).resolve()
@@ -101,7 +140,9 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         """CORS_ORIGINS split into a list."""
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        return [
+            origin.strip() for origin in self.cors_origins.split(",") if origin.strip()
+        ]
 
 
 @lru_cache

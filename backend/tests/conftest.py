@@ -133,6 +133,8 @@ def make_settings(tmp_path: Path, **overrides: Any) -> Settings:
         "videos_dir": tmp_path / "videos",
         "default_video_id": "",
         "hindsight_base_url": "",
+        "hindsight_profile": "cloud",
+        "hindsight_local_retain_interval_seconds": 0,
         "hindsight_api_key": "",
         "agent_api_key": "",
         "fake_camera_rtsp_url": "rtsp://127.0.0.1:9/cam1",  # nothing listens on port 9

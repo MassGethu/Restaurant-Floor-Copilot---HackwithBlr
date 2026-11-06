@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import socket
 import sys
 from types import FrameType
 
@@ -18,11 +19,23 @@ from loguru import logger
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(prog="python -m app", description="Run the table occupancy backend.")
-    parser.add_argument("--video", help="video ID / table config to watch at startup (overrides DEFAULT_VIDEO_ID)")
+    parser = argparse.ArgumentParser(
+        prog="python -m app", description="Run the table occupancy backend."
+    )
+    parser.add_argument(
+        "--video",
+        help="video ID / table config to watch at startup (overrides DEFAULT_VIDEO_ID)",
+    )
+    parser.add_argument(
+        "--memory",
+        choices=("cloud", "local"),
+        help="Select memory explicitly; leaves backend/.env unchanged",
+    )
     args = parser.parse_args()
     if args.video:
         os.environ["DEFAULT_VIDEO_ID"] = args.video  # read by the settings below
+    if args.memory:
+        os.environ["HINDSIGHT_PROFILE"] = args.memory
 
     from app.logging_setup import setup_logging
     from app.settings import get_settings
@@ -30,6 +43,22 @@ def main() -> int:
     settings = get_settings()
     log_file = setup_logging(settings)
     logger.info("Logging to {}", log_file)
+
+    # Do not migrate a shared ledger into another profile before discovering
+    # that the current edition's backend is still running on the same port.
+    try:
+        connection = socket.create_connection(
+            (settings.api_host, settings.api_port), timeout=0.2
+        )
+    except OSError:
+        pass
+    else:
+        connection.close()
+        logger.error(
+            "Port {} is already in use. Stop this edition's backend before switching profiles.",
+            settings.api_port,
+        )
+        return 1
 
     from app.main import app, shutdown_requested
 

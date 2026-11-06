@@ -19,6 +19,28 @@ from app.operations import OperationError
 
 ACTIVE = ("open", "acknowledged", "in_progress")
 RETAIN_SCHEMA_VERSION = 2
+DELIVERY_FIELDS = (
+    "delivery",
+    "attempts",
+    "next_retry",
+    "error",
+    "retain_receipt",
+    "retain_schema_version",
+)
+
+
+def destination(settings, profile=None):
+    profile = profile or settings.hindsight_profile
+    url = (
+        settings.hindsight_local_base_url
+        if profile == "local"
+        else settings.hindsight_base_url
+    )
+    return digest([profile, url.rstrip("/"), settings.restaurant_id])
+
+
+def pending_delivery():
+    return {"delivery": "pending", "attempts": 0, "next_retry": 0, "error": None}
 
 
 class ServiceUnavailable(Exception):
@@ -39,10 +61,12 @@ class Supervisor:
         self.lock = operations.lock
         self.memory = memory or HindsightMemory(settings)
         self.reasoner = reasoner or GroqReasoner(settings)
-        self.memory_configured = memory is not None or bool(settings.hindsight_base_url)
+        self.memory_configured = memory is not None or bool(settings.memory_base_url)
+        self.destination = destination(settings)
         self.reasoner_configured = reasoner is not None or bool(settings.agent_api_key)
         self.generating = threading.Lock()
         self.delivering = threading.Lock()
+        self.next_delivery_at = 0.0
         self.stopping = threading.Event()
         self.worker = None
         self.last_error = None
@@ -64,8 +88,25 @@ class Supervisor:
             )
             if not self.state["shifts"]:
                 self.state["shifts"].append(self.new_shift("First shift"))
-            migrated = False
+            # Flat fields remain the UI projection of the selected destination.
+            # Legacy receipts came from Cloud; preserve them before the first local replay.
+            previous_destination = self.state.get(
+                "memory_destination", destination(settings, "cloud")
+            )
+            for advice in self.state["advice"]:
+                advice.setdefault("memory_destination", previous_destination)
+            migrated = previous_destination != self.destination
             for item in self.state["experiences"]:
+                deliveries = item.setdefault("deliveries", {})
+                deliveries[previous_destination] = {
+                    k: copy.deepcopy(item[k]) for k in DELIVERY_FIELDS if k in item
+                }
+                selected = copy.deepcopy(
+                    deliveries.get(self.destination, pending_delivery())
+                )
+                for key in DELIVERY_FIELDS:
+                    item.pop(key, None)
+                item.update(selected)
                 if (
                     item["delivery"] == "retained"
                     and item.get("retain_schema_version") != RETAIN_SCHEMA_VERSION
@@ -76,6 +117,7 @@ class Supervisor:
                     item["delivery"] = "pending"
             if migrated:
                 self.state["revision"] += 1
+            self.state["memory_destination"] = self.destination
             self.save()
 
     @staticmethod
@@ -91,6 +133,10 @@ class Supervisor:
         }
 
     def save(self):
+        for item in self.state["experiences"]:
+            item.setdefault("deliveries", {})[self.destination] = {
+                k: copy.deepcopy(item[k]) for k in DELIVERY_FIELDS if k in item
+            }
         with self.ops.db:
             self.ops.db.execute(
                 "INSERT OR REPLACE INTO supervisor_state VALUES (?,?)",
@@ -337,6 +383,8 @@ class Supervisor:
         if not self.memory_configured or not self.delivering.acquire(blocking=False):
             return False
         try:
+            if time.monotonic() < self.next_delivery_at:
+                return False
             with self.lock:
                 item = next(
                     (
@@ -349,6 +397,11 @@ class Supervisor:
                 if item is None:
                     return False
                 item.update(delivery="sending", attempts=item["attempts"] + 1)
+                if self.settings.hindsight_profile == "local":
+                    self.next_delivery_at = (
+                        time.monotonic()
+                        + self.settings.hindsight_local_retain_interval_seconds
+                    )
                 outgoing = copy.deepcopy(item)
                 self.save()
             try:
@@ -363,7 +416,11 @@ class Supervisor:
                     item.update(
                         delivery="failed" if item["attempts"] >= 3 else "pending",
                         error=error,
-                        next_retry=time.time() + 2 ** item["attempts"] * 2,
+                        next_retry=time.time()
+                        + max(
+                            2 ** item["attempts"] * 2,
+                            60 if self.settings.hindsight_profile == "local" else 0,
+                        ),
                     )
                     self.last_error = error
                     self.save()
@@ -572,6 +629,8 @@ class Supervisor:
                     **answer,
                     without_memory=baseline,
                     model=self.settings.agent_model,
+                    memory_profile=self.settings.hindsight_profile,
+                    memory_destination=self.destination,
                     restaurant_id=self.settings.restaurant_id,
                 )
                 self.state["advice"] = (self.state["advice"] + [item])[-100:]
@@ -702,10 +761,13 @@ class Supervisor:
 
     def snapshot(self):
         with self.lock:
-            latest = (
-                copy.deepcopy(self.state["advice"][-1])
-                if self.state["advice"]
-                else None
+            latest = next(
+                (
+                    copy.deepcopy(item)
+                    for item in reversed(self.state["advice"])
+                    if item.get("memory_destination") == self.destination
+                ),
+                None,
             )
             if latest:
                 latest["stale"] = latest["token"] != self.token() or not (
@@ -724,6 +786,7 @@ class Supervisor:
                 "experiences": experiences,
                 "advice": latest,
                 "integration": {
+                    "memory_profile": self.settings.hindsight_profile,
                     "memory_configured": self.memory_configured,
                     "reasoner_configured": self.reasoner_configured,
                     "generating": self.generating.locked(),

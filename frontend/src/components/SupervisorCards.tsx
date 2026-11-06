@@ -219,6 +219,11 @@ export default function SupervisorCards({
         <div>
           <Brain size={18} />
           <h2>Shift memory</h2>
+          <small>
+            {state?.integration.memory_profile === "local"
+              ? "Local Docker"
+              : "Cloud"}
+          </small>
         </div>
         <Link to="/supervisor">
           <ArrowRight size={16} />

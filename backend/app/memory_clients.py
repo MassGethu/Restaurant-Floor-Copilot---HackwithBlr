@@ -104,9 +104,9 @@ class HindsightMemory:
         from hindsight_client import Hindsight
 
         return Hindsight(
-            base_url=self.settings.hindsight_base_url,
-            api_key=self.settings.hindsight_api_key or None,
-            timeout=self.settings.memory_timeout_seconds,
+            base_url=self.settings.memory_base_url,
+            api_key=self.settings.memory_api_key or None,
+            timeout=self.settings.memory_request_timeout,
             max_attempts=1,
         )
 

@@ -19,7 +19,7 @@ fi
 
 # OpenCV prints only fatal FFmpeg messages; the backend logs connection problems itself.
 export OPENCV_FFMPEG_LOGLEVEL=8
-(cd backend && exec "../$PYTHON" -m app) &
+(cd backend && exec "../$PYTHON" -m app "$@") &
 BACKEND_PID=$!
 trap 'kill "$BACKEND_PID" 2>/dev/null || true; wait "$BACKEND_PID" 2>/dev/null || true' EXIT
 

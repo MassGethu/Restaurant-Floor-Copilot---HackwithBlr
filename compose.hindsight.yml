@@ -1,0 +1,60 @@
+name: cv-ai-hindsight
+
+x-hindsight-image: &hindsight-image ghcr.io/vectorize-io/hindsight@sha256:19d0c08f3df79acac29384826419a1ca158129e81ec527cdcbd8c97ff4ef76da
+
+services:
+  init-data:
+    image: *hindsight-image
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["chown 1000:1000 /data /cache && chmod 700 /data /cache"]
+    volumes:
+      - ./backend/data/hindsight-local/pg0:/data
+      - ./backend/data/hindsight-local/cache:/cache
+    network_mode: none
+    restart: "no"
+
+  hindsight:
+    image: *hindsight-image
+    depends_on:
+      init-data:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8888:8888"
+      - "127.0.0.1:9999:9999"
+    environment:
+      HINDSIGHT_API_LLM_PROVIDER: groq
+      HINDSIGHT_API_LLM_API_KEY: ${HINDSIGHT_DOCKER_LLM_API_KEY:?Run scripts/local_hindsight.py up}
+      HINDSIGHT_API_LLM_MODEL: ${HINDSIGHT_DOCKER_LLM_MODEL:-openai/gpt-oss-20b}
+      HINDSIGHT_API_REFLECT_LLM_MODEL: ${HINDSIGHT_DOCKER_REFLECT_MODEL:-openai/gpt-oss-120b}
+      HINDSIGHT_API_REFLECT_LLM_REASONING_EFFORT: low
+      HINDSIGHT_API_LLM_REASONING_EFFORT: low
+      HINDSIGHT_API_LLM_GROQ_SERVICE_TIER: on_demand
+      HINDSIGHT_API_LLM_MAX_CONCURRENT: "1"
+      HINDSIGHT_API_LLM_MAX_RETRIES: "2"
+      HINDSIGHT_API_LLM_STRICT_SCHEMA: "true"
+      HINDSIGHT_API_ENABLE_OBSERVATIONS: "false"
+      HINDSIGHT_API_ENABLE_AUTO_CONSOLIDATION: "false"
+      HINDSIGHT_API_WORKER_ENABLED: "false"
+      HINDSIGHT_API_RECALL_INCLUDE_CHUNKS: "false"
+      HINDSIGHT_API_RECALL_MAX_TOKENS: "1024"
+      HINDSIGHT_API_REFLECT_MAX_ITERATIONS: "4"
+      HINDSIGHT_API_REFLECT_MAX_COMPLETION_TOKENS: "2048"
+      HINDSIGHT_API_RETAIN_MAX_COMPLETION_TOKENS: "4096"
+      HINDSIGHT_API_WORKER_ID: cv-ai-hindsight-local-worker
+      HINDSIGHT_API_LOG_LEVEL: warning
+      HINDSIGHT_API_MODEL_INIT_TIMEOUT: "600"
+      HINDSIGHT_API_STARTUP_WAIT_SECONDS: "630"
+    volumes:
+      - ./backend/data/hindsight-local/pg0:/home/hindsight/.pg0
+      - ./backend/data/hindsight-local/cache:/home/hindsight/.cache
+    shm_size: 1gb
+    mem_limit: 4g
+    stop_grace_period: 75s
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8888/health', timeout=5)"]
+      interval: 15s
+      timeout: 8s
+      start_period: 120s
+      retries: 5

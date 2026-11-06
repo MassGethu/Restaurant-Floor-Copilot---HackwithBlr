@@ -277,6 +277,12 @@ export default function SupervisorPage() {
         </p>
       )}
       <div className="supervisor-status">
+        <span>
+          Memory:{" "}
+          {state?.integration.memory_profile === "local"
+            ? "Local Docker"
+            : "Cloud"}
+        </span>
         <b>{state?.shift.label ?? "Loading shift…"}</b>
         <span>
           {state?.integration.memory_configured

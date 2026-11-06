@@ -76,6 +76,7 @@ export type SupervisorState = {
   experiences: Experience[];
   advice: AdviceResult | null;
   integration: {
+    memory_profile: "cloud" | "local";
     memory_configured: boolean;
     reasoner_configured: boolean;
     generating: boolean;
