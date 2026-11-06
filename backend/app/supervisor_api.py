@@ -1,4 +1,5 @@
 """Validated supervisor HTTP boundary. Never accepts arbitrary model tool arguments."""
+
 from typing import Literal
 
 from fastapi import APIRouter, Request
@@ -39,7 +40,9 @@ class NoteInput(Input):
 
 
 class AdviceInput(Input):
-    question: str = Field(default="What should we do next?", min_length=1, max_length=500)
+    question: str = Field(
+        default="What should we do next?", min_length=1, max_length=500
+    )
     compare: bool = False
 
 

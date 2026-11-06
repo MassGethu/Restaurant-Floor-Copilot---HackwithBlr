@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     hindsight_base_url: str = ""
     hindsight_api_key: str = ""
     agent_api_key: str = ""
-    agent_base_url: str = "https://api.groq.com/openai/v1"
+    agent_base_url: str = "https://api.groq.com"
     agent_model: str = "openai/gpt-oss-120b"
     memory_timeout_seconds: float = Field(default=30, ge=1, le=120)
 

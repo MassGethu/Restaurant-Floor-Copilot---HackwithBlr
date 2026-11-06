@@ -13,6 +13,7 @@ export type Evidence = {
   kind: string;
   source: string;
   qualification: string;
+  supports_preference: boolean;
 };
 export type Proposal = {
   id: string;

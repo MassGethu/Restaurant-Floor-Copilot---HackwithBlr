@@ -1,0 +1,298 @@
+"""Real Hindsight + real hosted model evaluation; NO fake-service fallback.
+
+Creates an isolated synthetic operational fixture and edition-owned memory bank.
+This evaluates memory behavior, not computer vision or restaurant business impact.
+Run from the repo root: .venv/bin/python scripts/evaluate_memory.py
+"""
+
+from __future__ import annotations
+
+import argparse
+import importlib.metadata
+import json
+import sys
+import time
+import uuid
+from pathlib import Path
+from types import SimpleNamespace
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "backend"))
+
+from app.memory_clients import plain
+from app.operations import Operations
+from app.schemas import TableDef
+from app.settings import get_settings
+from app.supervisor import ServiceUnavailable, Supervisor, digest, utcnow
+
+
+def wait_recalled(s, source_id):
+    deadline = time.monotonic() + 60
+    while True:
+        evidence = s.evidence(
+            s.memory.recall(
+                "Pickup rush interruptions at T2 and the T3 alternative", s.layout()
+            ),
+            s.layout(),
+        )
+        if any(x["source_id"] == source_id for x in evidence):
+            return evidence
+        if time.monotonic() >= deadline:
+            raise AssertionError(
+                "Retained source did not become recallable within the evaluation window"
+            )
+        time.sleep(2)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--pairs", type=int, default=5, choices=range(1, 11))
+    args = parser.parse_args()
+    settings = get_settings()
+    report_path = ROOT / "docs/verification/hindsight-live-memory-report.json"
+    if report_path.exists():
+        previous = json.loads(report_path.read_text())
+        report_path.with_name(
+            f"hindsight-memory-attempt-{digest(previous)}.json"
+        ).write_text(json.dumps(previous, indent=2))
+    report = {
+        "started_at": utcnow(),
+        "passed": False,
+        "status": "running",
+        "pairs": [],
+        "checks": {},
+        "disclosure": "Actual Hindsight and actual hosted LLM with synthetic structured floor inputs. No video inference in this evaluation. Staff outcome reports are seeded scenario data, not measured restaurant results.",
+    }
+    if not settings.hindsight_base_url or not settings.agent_api_key:
+        report.update(
+            status="not_run_missing_credentials",
+            required=[
+                "HINDSIGHT_BASE_URL",
+                "HINDSIGHT_API_KEY for Cloud",
+                "AGENT_API_KEY",
+            ],
+        )
+        report_path.write_text(json.dumps(report, indent=2))
+        print(
+            "Live evaluation not run: configure backend/.env. No fake fallback was used."
+        )
+        return 2
+    run_id = uuid.uuid4().hex[:10]
+    settings = settings.model_copy(update={"restaurant_id": "evaluation-" + run_id})
+    path = settings.data_dir / "memory-evaluations" / f"{run_id}.db"
+    ops = Operations(path)
+    service = None
+    try:
+        ops.configure(
+            "synthetic-memory-evaluation",
+            [
+                TableDef(
+                    id=f"T{i}",
+                    name=f"Synthetic table {i}",
+                    capacity=cap,
+                    polygon=[(i * 20, 0), (i * 20 + 10, 0), (i * 20 + 10, 10)],
+                )
+                for i, cap in enumerate([2, 4, 4], 1)
+            ],
+        )
+        ops.observe(
+            ops.state["video_id"],
+            [
+                SimpleNamespace(
+                    table_id=f"T{i}",
+                    status=SimpleNamespace(value="AVAILABLE"),
+                    people_count=0,
+                )
+                for i in range(1, 4)
+            ],
+            0,
+        )
+        ops.snapshot(
+            "LIVE", "ready"
+        )  # Explicit synthetic observation fixture, not a detector result.
+        for table in ops.state["tables"]:
+            ops.action(table["id"], "clean")
+        ops.add_party("Synthetic party", 4)
+        service = Supervisor(ops, settings)
+        report.update(
+            restaurant_id=settings.restaurant_id,
+            bank_id=service.memory.bank_id,
+            model=settings.agent_model,
+            versions={
+                name: importlib.metadata.version(name)
+                for name in ("hindsight-client", "groq")
+            },
+        )
+        with service.memory.client() as client:
+            report["hindsight_server"] = plain(client.get_version())
+        service.set_context(
+            {
+                "delivery_activity": "rush",
+                "staffing": "One cleaner available",
+                "note": "Synthetic evaluation shift",
+            }
+        )
+        lesson = service.capture(
+            "Synthetic operational episode: during delivery rushes diners at T2 beside pickup experienced repeated interruptions. "
+            "The manager chose equally fitting T3 instead. If T3 needs cleaning, prioritize its existing cleaning task and assign an available cleaner; "
+            "staff must still confirm cleanliness. This preference applies only during delivery rushes, not normal service.",
+            table_id="T3",
+            baseline_table_id="T2",
+        )
+        assert service.sync_once(), "Real retain failed; inspect delivery status"
+        service.feedback(
+            lesson["id"],
+            "helped",
+            "Synthetic staff outcome report: staff reported fewer interruptions after using T3. No measured business improvement is claimed.",
+        )
+        assert service.sync_once()
+        report["initial_recall"] = wait_recalled(service, lesson["id"])
+        report["retain_receipts"] = [
+            x.get("retain_receipt") for x in service.state["experiences"]
+        ]
+        payload, _ = service.prepare("What should we do next?")
+        report["immutable_inputs"] = payload
+        for i in range(args.pairs):
+            result = service.advice(compare=True)
+            actual = [
+                p.get("table_id")
+                for p in result["proposals"]
+                if p["type"] == "seat_party"
+            ]
+            baseline = [
+                p.get("table_id")
+                for p in result["without_memory"]["proposals"]
+                if p["type"] == "seat_party"
+            ]
+            report["pairs"].append(
+                {
+                    "pair": i + 1,
+                    "memory_effect": actual == ["T3"] and baseline == ["T2"],
+                    "result": result,
+                }
+            )
+            print(f"Pair {i + 1}: with memory={actual}, without={baseline}", flush=True)
+            report_path.write_text(json.dumps(report, indent=2))
+        report["checks"]["five_pairs"] = len(report["pairs"]) == 5 and all(
+            p["memory_effect"] for p in report["pairs"]
+        )
+        service.start_shift("Later synthetic shift")
+        report["checks"]["shift_resets_temporary_context"] = (
+            service.current_shift()["context"]["delivery_activity"] == "unknown"
+        )
+        service.set_context(
+            {
+                "delivery_activity": "normal",
+                "staffing": "One cleaner",
+                "note": "Synthetic normal service",
+            }
+        )
+        quiet = service.advice()
+        report["quiet_control"] = quiet
+        report["checks"]["quiet_does_not_apply_rush_lesson"] = [
+            p.get("table_id") for p in quiet["proposals"] if p["type"] == "seat_party"
+        ] == ["T2"]
+        service.close()
+        ops.close()
+        ops = Operations(path)
+        service = Supervisor(ops, settings)
+        report["checks"]["restart_does_not_restore_visual_freshness"] = not ops.fresh
+        report["restart_recall"] = wait_recalled(service, lesson["id"])
+        report["checks"]["persistence"] = bool(report["restart_recall"])
+        # Explicitly re-establish the same synthetic floor fixture after restart.
+        ops.observe(
+            ops.state["video_id"],
+            [
+                SimpleNamespace(
+                    table_id=f"T{i}",
+                    status=SimpleNamespace(value="AVAILABLE"),
+                    people_count=0,
+                )
+                for i in range(1, 4)
+            ],
+            0,
+        )
+        ops.snapshot("LIVE", "ready")
+        service.set_context(
+            {
+                "delivery_activity": "rush",
+                "staffing": "One cleaner available",
+                "note": "Synthetic recovery scenario",
+            }
+        )
+        ops.table("T3").update(status="cleaning_required", dirty_since=0)
+        ops.save()
+        recovery = service.advice(
+            "Which existing task should we prioritize to prepare the remembered seating alternative?"
+        )
+        report["recovery"] = recovery
+        priority = next(
+            (p for p in recovery["proposals"] if p["type"] == "prioritize_task"), None
+        )
+        report["checks"]["recovery_priority"] = priority is not None
+        if priority:
+            service.approve(recovery["id"], priority["id"], True)
+            assignment = service.advice(
+                "Assign the prioritized cleaning task to an available role-matching staff member."
+            )
+            report["assignment"] = assignment
+            assign = next(
+                (p for p in assignment["proposals"] if p["type"] == "assign_task"), None
+            )
+            report["checks"]["recovery_assignment"] = assign is not None
+            if assign:
+                service.approve(assignment["id"], assign["id"], True)
+        report["checks"]["no_automatic_cleanliness"] = (
+            ops.table("T3")["status"] == "cleaning_required"
+        )
+        report["handover"] = service.handover()
+        report["checks"]["handover_evidence"] = bool(report["handover"]["evidence"])
+        update = service.supersede(
+            lesson["id"],
+            "Synthetic environment update: pickup moved away from T2; the old rush-specific preference for T3 is obsolete. Use the current allocation policy unless new evidence warrants otherwise.",
+        )
+        while any(x["delivery"] == "pending" for x in service.state["experiences"]):
+            assert service.sync_once(), "Failed to retain updated experience"
+        wait_recalled(service, update["id"])
+        ops.action(
+            "T3", "clean"
+        )  # Explicit staff cleanliness confirmation in the synthetic fixture.
+        service.set_context(
+            {
+                "delivery_activity": "rush",
+                "staffing": "One cleaner",
+                "note": "Pickup location has changed; staff-confirmed environment update is recorded.",
+            }
+        )
+        revised = service.advice()
+        report["supersession"] = revised
+        report["checks"]["superseded_source_excluded"] = not any(
+            f["source_id"] == lesson["id"] for f in revised["evidence"]
+        )
+        report["checks"]["superseded_guidance_revised"] = [
+            p.get("table_id") for p in revised["proposals"] if p["type"] == "seat_party"
+        ] == ["T2"]
+        report.update(passed=all(report["checks"].values()), status="completed")
+    except Exception as exc:  # noqa: BLE001 - classify service failures without exposing provider payloads
+        # Do not serialize exception messages: providers may include request data.
+        report.update(status="failed", error_type=type(exc).__name__)
+        if isinstance(exc, ServiceUnavailable):
+            report["error_detail"] = str(exc)
+        if service:
+            report["last_reasoning"] = service.last_reasoning
+        print(
+            f"Live evaluation failed ({type(exc).__name__}); partial evidence saved.",
+            flush=True,
+        )
+    finally:
+        if service:
+            service.close()
+        ops.close()
+        report["finished_at"] = utcnow()
+        report_path.write_text(json.dumps(report, indent=2))
+    print(f"Report: {report_path}. Passed: {report['passed']}")
+    return 0 if report["passed"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

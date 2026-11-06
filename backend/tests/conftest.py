@@ -132,6 +132,9 @@ def make_settings(tmp_path: Path, **overrides: Any) -> Settings:
         "data_dir": tmp_path / "data",
         "videos_dir": tmp_path / "videos",
         "default_video_id": "",
+        "hindsight_base_url": "",
+        "hindsight_api_key": "",
+        "agent_api_key": "",
         "fake_camera_rtsp_url": "rtsp://127.0.0.1:9/cam1",  # nothing listens on port 9
         "manage_mediamtx": False,
         # Any existing executable: FakePopen never runs it.
