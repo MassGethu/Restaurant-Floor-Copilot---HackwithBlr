@@ -24,6 +24,8 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.copilot_api import router as copilot_router
 from app.operations import Operations, OperationError
+from app.supervisor import Supervisor, ServiceUnavailable
+from app.supervisor_api import router as supervisor_router
 from app.analytics import compute_analytics
 from app.broadcaster import Broadcaster
 from app.config_store import ConfigError, ConfigStore, build_table_config
@@ -113,6 +115,16 @@ def create_app(
                             **({"detector_factory": detector_factory} if detector_factory else {}))
         app.state.store, app.state.db, app.state.library = store, db, library
         app.state.streams, app.state.broadcaster, app.state.pipeline = streams, broadcaster, pipeline
+        def refresh_supervisor_floor():
+            playback = pipeline.playback()
+            with operations.lock:
+                operations.fresh = playback["inference_fresh"]
+                operations.source = playback["source_status"]
+                operations.model = playback["model_state"]
+
+        supervisor = Supervisor(operations, settings, refresh=refresh_supervisor_floor)
+        app.state.supervisor = supervisor
+        supervisor.start()
         app.state.hints = None  # loaded when the table editor first asks for it
         shutdown_requested.clear()
 
@@ -127,6 +139,7 @@ def create_app(
         finally:
             logger.info("Shutting down")
             shutdown_requested.set()
+            supervisor.close()
             pipeline.stop()
             streams.shutdown()
             operations.close()
@@ -141,6 +154,11 @@ def create_app(
         lifespan=lifespan,
     )
     app.include_router(copilot_router)
+    app.include_router(supervisor_router)
+
+    @app.exception_handler(ServiceUnavailable)
+    async def supervisor_unavailable(request: Request, error: ServiceUnavailable):
+        return JSONResponse(status_code=503, content={"detail": str(error)})
 
     @app.exception_handler(OperationError)
     async def operation_error(request: Request, error: OperationError):

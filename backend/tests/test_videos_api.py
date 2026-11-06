@@ -58,8 +58,8 @@ def test_upload_reads_metadata_and_makes_a_thumbnail(app: App) -> None:
 
 
 def test_dashboard_origin_is_allowed_by_cors(app: App) -> None:
-    allowed = app.client.get("/api/videos", headers={"Origin": "http://localhost:5173"})
-    assert allowed.headers.get("access-control-allow-origin") == "http://localhost:5173"
+    allowed = app.client.get("/api/videos", headers={"Origin": "http://localhost:5174"})
+    assert allowed.headers.get("access-control-allow-origin") == "http://localhost:5174"
     other = app.client.get("/api/videos", headers={"Origin": "http://evil.example"})
     assert "access-control-allow-origin" not in other.headers
 

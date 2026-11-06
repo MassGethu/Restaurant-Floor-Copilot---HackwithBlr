@@ -15,7 +15,7 @@ checks = []
 def api(path="", body=None):
     with urlopen(
         Request(
-            "http://127.0.0.1:8000/api/copilot" + path,
+            "http://127.0.0.1:8001/api/copilot" + path,
             data=json.dumps(body).encode() if body is not None else None,
             headers={"Content-Type": "application/json"},
         ),
@@ -131,6 +131,6 @@ except Exception as error:
     result = dict(passed=False, checks=checks, error=repr(error))
     raise
 finally:
-    (ROOT / "docs/verification/expanded-live-report.json").write_text(
+    (ROOT / "docs/verification/hindsight-expanded-live-report.json").write_text(
         json.dumps(result, indent=2)
     )

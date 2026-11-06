@@ -36,6 +36,15 @@ class Settings(BaseSettings):
     log_rotation_mb: int = Field(gt=0)
     log_retention_files: int = Field(ge=1)
 
+    # Hindsight edition: secrets never leave the backend.
+    restaurant_id: str = Field(default="demo-restaurant", pattern=r"^[a-z0-9-]{1,60}$")
+    hindsight_base_url: str = ""
+    hindsight_api_key: str = ""
+    agent_api_key: str = ""
+    agent_base_url: str = "https://api.groq.com/openai/v1"
+    agent_model: str = "openai/gpt-oss-120b"
+    memory_timeout_seconds: float = Field(default=30, ge=1, le=120)
+
     # External tools
     ffmpeg_path: str
     ffprobe_path: str

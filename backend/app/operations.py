@@ -37,6 +37,8 @@ class Operations(ServiceMixin):
             "CREATE TABLE IF NOT EXISTS floor_sessions (id TEXT PRIMARY KEY, payload TEXT NOT NULL)"
         )
         self.state = json.loads(row[0]) if row else self.empty()
+        for task in self.state.get("tasks", []):
+            task.setdefault("priority", "normal")
         defaults = self.empty()
         for key in (
             "tasks",

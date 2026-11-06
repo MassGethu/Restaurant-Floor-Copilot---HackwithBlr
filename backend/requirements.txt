@@ -30,3 +30,7 @@ loguru==0.7.3
 # --- Tests ---
 pytest==9.1.1
 httpx2==2.13.1              # HTTP client used by FastAPI's TestClient
+
+# --- Persistent shift memory and hosted reasoning ---
+hindsight-client==1.2.0
+groq==1.7.0

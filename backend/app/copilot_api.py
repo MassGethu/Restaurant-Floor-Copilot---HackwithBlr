@@ -49,7 +49,7 @@ class ServiceInput(BaseModel):
 
 
 class TaskInput(BaseModel):
-    action: Literal["assign", "acknowledge", "start", "complete", "cancel"]
+    action: Literal["assign", "acknowledge", "start", "complete", "cancel", "priority_high", "priority_normal"]
     staff_id: str | None = None
 
 

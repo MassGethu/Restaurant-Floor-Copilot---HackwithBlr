@@ -1,6 +1,6 @@
 """Exercise the actual running YOLO application on the controlled input clip.
 
-Requires backend on localhost:8000. Resets only this prototype's demo session.
+Requires backend on localhost:8001. Resets only this prototype's demo session.
 The report distinguishes staff actions from vision-triggered transitions.
 """
 import json
@@ -13,7 +13,7 @@ report = []
 
 
 def api(path='', body=None):
-    request = Request('http://127.0.0.1:8000/api/copilot' + path,
+    request = Request('http://127.0.0.1:8001/api/copilot' + path,
         data=json.dumps(body).encode() if body is not None else None,
         headers={'Content-Type': 'application/json'})
     with urlopen(request, timeout=15) as response:
@@ -89,4 +89,4 @@ except Exception as error:
     result = dict(passed=False, checks=report, error=repr(error))
     raise
 finally:
-    (ROOT/'docs/verification/live-smoke-report.json').write_text(json.dumps(result, indent=2))
+    (ROOT/'docs/verification/hindsight-live-smoke-report.json').write_text(json.dumps(result, indent=2))

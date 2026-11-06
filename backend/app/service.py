@@ -23,6 +23,7 @@ class ServiceMixin:
             role="cleaner" if kind == "cleaning" else "waiter",
             status="open",
             assigned_to=None,
+            priority="normal",
             created_at=self.state["now"],
             acknowledged_at=None,
             completed_at=None,
@@ -145,6 +146,8 @@ class ServiceMixin:
                 if person is None or person["role"] != task["role"]:
                     self.fail("Choose a staff member with the matching role.")
                 task["assigned_to"] = person["id"]
+            elif action in ("priority_high", "priority_normal"):
+                task["priority"] = action.removeprefix("priority_")
             elif action == "acknowledge":
                 task.update(status="acknowledged", acknowledged_at=self.state["now"])
             elif action == "start":
