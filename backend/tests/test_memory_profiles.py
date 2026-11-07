@@ -210,3 +210,33 @@ def test_local_replay_is_paced_without_holding_operations(supervisor, monkeypatc
     clock[0] += 30
     assert local.sync_once()
     assert set(local.memory.records) == {first["id"], second["id"]}
+
+
+def test_local_handover_reads_verified_sources_without_synthesis(
+    supervisor, monkeypatch
+):
+    memory = FakeMemory()
+
+    def unexpected_reflect(*args):
+        pytest.fail("A Local source brief must not call Reflect")
+
+    monkeypatch.setattr(memory, "reflect", unexpected_reflect)
+    local = Supervisor(
+        supervisor.ops,
+        supervisor.settings.model_copy(update={"hindsight_profile": "local"}),
+        memory=memory,
+        reasoner=FakeReasoner(),
+    )
+    lesson = retain_lesson(local)
+    local.feedback(lesson["id"], "unknown", "No confirmed improvement")
+    assert local.sync_once()
+    brief = local.handover()
+    assert brief["mode"] == "sources"
+    assert "Staff outcome report: unknown." in brief["text"]
+    assert brief["current_tasks"] == local.public_floor()["tasks"]
+    changed = local.supersede(lesson["id"], "Pickup moved; retire the old preference.")
+    assert local.sync_once()
+    brief = local.handover()
+    assert "Pickup moved" in brief["text"]
+    assert {x["source_id"] for x in brief["evidence"]} == {changed["id"]}
+    assert "No confirmed improvement" not in brief["text"]

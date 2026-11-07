@@ -46,10 +46,12 @@ class Settings(BaseSettings):
     hindsight_local_timeout_seconds: float = Field(default=180, ge=1, le=600)
     hindsight_local_llm_model: str = "openai/gpt-oss-20b"
     hindsight_local_reflect_llm_model: str = "openai/gpt-oss-120b"
+    hindsight_local_handover_mode: Literal["sources", "reflect"] = "sources"
     hindsight_local_retain_interval_seconds: float = Field(default=30, ge=0, le=300)
     agent_api_key: str = ""
     agent_base_url: str = "https://api.groq.com"
     agent_model: str = "openai/gpt-oss-120b"
+    supervisor_proactive: bool = True
     memory_timeout_seconds: float = Field(default=30, ge=1, le=120)
 
     @property
@@ -75,6 +77,14 @@ class Settings(BaseSettings):
             self.hindsight_local_timeout_seconds
             if self.hindsight_profile == "local"
             else self.memory_timeout_seconds
+        )
+
+    @property
+    def memory_handover_mode(self) -> Literal["sources", "reflect"]:
+        return (
+            self.hindsight_local_handover_mode
+            if self.hindsight_profile == "local"
+            else "reflect"
         )
 
     # External tools

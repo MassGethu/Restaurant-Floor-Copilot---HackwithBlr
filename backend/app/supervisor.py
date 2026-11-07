@@ -726,17 +726,31 @@ class Supervisor:
                 "Current context is authoritative. Do not treat old task status as current. Cite source experiences. "
                 f"Do not use retired experience IDs: {json.dumps(retired)}"
             )
-            raw = self.memory.reflect(query, token[3], context)
-            memories = (raw.get("based_on") or {}).get("memories") or []
-            evidence = self.evidence({"results": memories}, token[3])
+            mode = self.settings.memory_handover_mode
+            if mode == "sources":
+                raw = self.memory.recall(
+                    "Shift handover: relevant operating corrections, outcomes, "
+                    "changed conditions and unresolved work. Current staff context: "
+                    + json.dumps(context["context"]),
+                    token[3],
+                )
+                evidence = self.evidence(raw, token[3])
+                with self.lock:
+                    text, evidence = self.source_brief(context, evidence)
+            else:
+                raw = self.memory.reflect(query, token[3], context)
+                memories = (raw.get("based_on") or {}).get("memories") or []
+                evidence = self.evidence({"results": memories}, token[3])
+                text = raw.get("text", "")
+                # The model may have interpreted any returned source. Reject the whole
+                # synthesis when even one of those sources cannot be used currently.
+                if len(evidence) != len(memories):
+                    raise ServiceUnavailable(
+                        "Handover included historical or unverifiable evidence. Refresh after memory updates."
+                    )
             if not evidence:
                 raise ServiceUnavailable(
                     "Handover has no verifiable active source evidence yet. Retain and recall an experience first."
-                )
-            # Reject the whole synthesis if any used memory cannot be verified as active.
-            if len(evidence) != len(memories):
-                raise ServiceUnavailable(
-                    "Handover included historical or unverifiable evidence. Refresh after memory updates."
                 )
             if self.stopping.is_set():
                 raise ServiceUnavailable("Supervisor is stopping.")
@@ -744,7 +758,8 @@ class Supervisor:
                 if token != self.token():
                     raise OperationError("State changed during handover. Refresh.")
             return {
-                "text": raw.get("text", ""),
+                "text": text,
+                "mode": mode,
                 "evidence": evidence,
                 "current_tasks": context["tasks"],
                 "created_at": utcnow(),
@@ -758,6 +773,45 @@ class Supervisor:
             ) from exc
         finally:
             self.generating.release()
+
+    def source_brief(self, context, evidence):
+        """Summarize only verified recalled sources, without asking a model."""
+        kinds = {
+            "environment_update": "Changed conditions reported by staff",
+            "correction": "Manager correction",
+            "outcome": "Staff outcome report",
+            "task_outcome": "Recorded task event",
+            "action": "Historical proposal decision",
+        }
+        activity = context["context"]["delivery_activity"]
+        lines = [
+            f"Current delivery activity: {activity} (staff context).",
+            "Carry-over sources to review for this shift:",
+        ]
+        selected = []
+        seen = set()
+        order = list(kinds)
+        for fact in sorted(
+            evidence,
+            key=lambda item: (
+                order.index(item["kind"]) if item["kind"] in order else len(order)
+            ),
+        ):
+            if fact["source_id"] in seen:
+                continue
+            seen.add(fact["source_id"])
+            item = self.record(fact["source_id"])
+            content = item["content"]
+            note = " ".join((content.get("note") or fact["text"]).split())
+            if item["kind"] == "outcome":
+                note = f"{content['outcome'].replace('_', ' ')}. {note}"
+            if len(note) > 400:
+                note = note[:397] + "…"
+            lines.append(f"• {kinds.get(item['kind'], 'Historical record')}: {note}")
+            selected.append(fact)
+            if len(selected) == 4:
+                break
+        return "\n".join(lines), selected
 
     def snapshot(self):
         with self.lock:
@@ -833,7 +887,8 @@ class Supervisor:
                         for x in self.state["experiences"]
                     )
                 if (
-                    self.memory_configured
+                    self.settings.supervisor_proactive
+                    and self.memory_configured
                     and self.reasoner_configured
                     and has_memory
                     and len(payload["candidates"]) > 1

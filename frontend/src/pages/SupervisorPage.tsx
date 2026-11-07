@@ -428,6 +428,11 @@ export default function SupervisorPage() {
                     advice.
                   </p>
                 )}
+                <h3>
+                  {handover.mode === "sources"
+                    ? "Source brief · Hindsight recall"
+                    : "Synthesis · Hindsight Reflect"}
+                </h3>
                 <div className="handover-text">{handover.text}</div>
                 <EvidenceList items={handover.evidence} />
               </>
