@@ -1,0 +1,20 @@
+# Local service verification — observed limits
+
+These are actual service failures, separate from fake-client tests. No failed run is counted as full local acceptance. The earlier Cloud evidence is retained unchanged.
+
+- The first local evaluator ran all five pairs successfully, plus quiet-period, logical-shift, application-restart, task-priority/assignment and cleanliness controls. Native handover failed. Evidence: `hindsight-memory-attempt-30f0b461ea09bec86869d037.json`.
+- Groq rejected its automatic service-tier selection for this account. The Docker stack now explicitly selects `on_demand`.
+- Default large completion budgets and background consolidation consumed free-tier allowance. Local retain now caps completions at 4,096 tokens; consolidation/observations and their worker are disabled. The app uses synchronous retain and original source facts, so these background operations are unnecessary for its retrieval contract.
+- Native reflection with `gpt-oss-20b` produced Groq HTTP 400 `tool_use_failed` errors while Hindsight was requesting schema-shaped tool selections. Forcing strict schemas alone did not resolve it. The final configuration uses the stronger `gpt-oss-120b` specifically for reflection. A 1,024-token cap then exposed an output-length failure; the final cap is 2,048 with explicit low reasoning effort. Those were initial deployment settings; later experiments and the verified source-brief path are below.
+- An experimental global reflect iteration cap of two was insufficient because Hindsight halves it for the app's low budget. The app rejected an answer without verifiable evidence. The final cap is four globally, permitting the low-budget retrieval turn and closing synthesis.
+- A later evaluator was invoked during container recreation and failed with `ServerDisconnectedError` before any trials. It is preserved as a failed startup-order check, not as evidence of data loss. Wait for `local_hindsight.py check` before evaluating.
+- Back-to-back retain calls exposed HTTP 429 at the account's 8,000-token/minute limit. Local source replay is now paced at 30 seconds with at least 60 seconds before retry, retaining the three-attempt bound and visible errors. The evaluator respects the outbox rather than treating a deferred call as a completed delivery.
+- Further paired reruns were blocked by the shared hosted action model's daily token allowance. A direct diagnostic returned `tokens per day (TPD): Limit 200000, Used 198279, Requested 1938`. This is separate from Docker persistence or Cloud/Local receipt isolation. The final partial report explicitly says failed; it is not a five-pair pass.
+
+No new key, account upgrade, purchase or alternate action model was used to bypass quotas. Cloud configuration and its existing successful evaluation remain available. Both profiles share the configured hosted action key, so local memory storage does not remove hosted reasoning quotas. The full evaluator remains available when needed, but it was not repeated for the budgeted demo.
+
+## Follow-up on a limited token budget
+
+A single proactive recommendation on the actual running app succeeded (T2 baseline, T3 with memory, and priority/assignment for an existing cleaning task). Native Reflect then hit an 8,838-token request against the account’s 8,000-token/minute limit. An overly tight context cap split synthesis into multiple calls and still hit quota; a larger cap did not establish a passing native run. The optional local Reflect mode is therefore not required for the demo.
+
+Local now defaults to an explicit source brief: actual Hindsight recall, verified source selection, deterministic formatting, and live operational tasks. The follow-up [single demo report](hindsight-local-single-demo.json) preserves the native failures and the final successful source brief. It used no Hindsight Cloud requests or new retain calls. The same real T3 advice was reused after restart, with automatic refresh disabled for this running demo. Cloud native Reflect had already been verified after the profile round trip.

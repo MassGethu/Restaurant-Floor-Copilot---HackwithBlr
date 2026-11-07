@@ -1,0 +1,426 @@
+{
+  "disclosure": "Actual running FastAPI, YOLO, local Hindsight Docker and Groq; labeled controlled stock-footage montage and synthetic staff context. This is a working prototype demo, not a live restaurant outcome study.",
+  "started_at": "2026-11-07T03:46:18.185553+00:00",
+  "memory_profile": "local",
+  "sources_reused": 6,
+  "pending_retain": 0,
+  "floor": {
+    "playback": {
+      "video_id": "controlled-floor-demo",
+      "position_seconds": 0.4,
+      "paused": true,
+      "ended": false,
+      "source_status": "LIVE",
+      "model_state": "ready",
+      "inference_fresh": true,
+      "processing_fps": 0.0,
+      "session_id": 1
+    },
+    "observations_fresh": true,
+    "tables": [
+      {
+        "id": "T1",
+        "observed": "absent",
+        "status": "cleaning_required",
+        "manual_hold": false
+      },
+      {
+        "id": "T2",
+        "observed": "absent",
+        "status": "ready",
+        "manual_hold": true
+      },
+      {
+        "id": "T3",
+        "observed": "absent",
+        "status": "ready",
+        "manual_hold": false
+      },
+      {
+        "id": "T4",
+        "observed": "absent",
+        "status": "ready",
+        "manual_hold": false
+      }
+    ]
+  },
+  "deterministic_baseline": {
+    "party_id": "81fdb652-fbd9-488a-a7f1-5992e4cad4ee",
+    "party_name": "Synthetic recovery review",
+    "table_id": "T2",
+    "table_name": "Table 2",
+    "unused_seats": 0,
+    "explanation": "Table 2 is staff-confirmed ready and its 4 seats fit 4 guests. Smallest suitable table; oldest feasible party first.",
+    "version": 19,
+    "alternatives": [
+      {
+        "table_id": "T2",
+        "table_name": "Table 2",
+        "capacity": 4,
+        "unused_seats": 0,
+        "other_parties_seatable_now": 0,
+        "other_guests_seatable_now": 0,
+        "displaced_party_names": []
+      },
+      {
+        "table_id": "T3",
+        "table_name": "Table 3",
+        "capacity": 4,
+        "unused_seats": 0,
+        "other_parties_seatable_now": 0,
+        "other_guests_seatable_now": 0,
+        "displaced_party_names": []
+      },
+      {
+        "table_id": "T4",
+        "table_name": "Table 4",
+        "capacity": 6,
+        "unused_seats": 2,
+        "other_parties_seatable_now": 0,
+        "other_guests_seatable_now": 0,
+        "displaced_party_names": []
+      }
+    ]
+  },
+  "shift": {
+    "id": "09fa0511-0079-47c8-9e16-ca1bd6819349",
+    "label": "Next demo shift",
+    "started_at": "2026-11-06T20:09:31.491112+00:00",
+    "ended_at": null,
+    "context": {
+      "delivery_activity": "rush",
+      "staffing": "One cleaner available \u00b7 synthetic connected browser check",
+      "note": "Synthetic connected browser check. Delivery pickup rush in progress."
+    },
+    "context_confirmed_at": "2026-11-06T20:40:19.564947+00:00",
+    "source": "staff_report"
+  },
+  "proactive_advice": {
+    "id": "6a028bd9-6542-4bf8-bf97-4781f90d9e71",
+    "created_at": "2026-11-07T03:46:26.841752+00:00",
+    "token": [
+      "3c547189-cf3f-4146-a7f1-d30e48dcca5f",
+      19,
+      27,
+      "7a8d51d8759bd72918731eb1"
+    ],
+    "question": "What should we do next?",
+    "summary": "Seat the waiting party at T3 per manager guidance during the delivery rush, and prioritize then assign the cleaning task for T1 to the sole available cleaner.",
+    "proposals": [
+      {
+        "id": "seat:81fdb652-fbd9-488a-a7f1-5992e4cad4ee:T3",
+        "type": "seat_party",
+        "party_id": "81fdb652-fbd9-488a-a7f1-5992e4cad4ee",
+        "table_id": "T3",
+        "baseline": false,
+        "unused_seats": 0,
+        "other_parties_seatable_now": 0,
+        "policy_departure": true,
+        "reason": "Manager correction prefers T3 during delivery rush; T2 has interruptions and manual hold. Seating at T3 aligns with manager guidance and current rush context.",
+        "memory_ids": [
+          "8e3ad048-c4eb-4f4a-8ed2-c2755beb8395",
+          "34976aff-a9c4-4893-be91-127b76d2e997",
+          "95b7eff2-0613-489f-be03-59421e33e07c"
+        ],
+        "status": "proposed"
+      },
+      {
+        "id": "priority:bb24fe35-7ce7-4814-8d1d-22b6956a0e95",
+        "type": "prioritize_task",
+        "task_id": "bb24fe35-7ce7-4814-8d1d-22b6956a0e95",
+        "priority": "high",
+        "reason": "Only one cleaner available during delivery rush; prioritize cleaning of T1 to free the table.",
+        "memory_ids": [
+          "5eb47ef3-f084-46c0-95d2-75c71a183627"
+        ],
+        "status": "proposed"
+      },
+      {
+        "id": "assign:bb24fe35-7ce7-4814-8d1d-22b6956a0e95:cleaner-1",
+        "type": "assign_task",
+        "task_id": "bb24fe35-7ce7-4814-8d1d-22b6956a0e95",
+        "staff_id": "cleaner-1",
+        "reason": "Assign the high\u2011priority cleaning task to the available cleaner\u20111.",
+        "memory_ids": [
+          "b4bfd625-885d-4bde-b111-7ecedd219da6"
+        ],
+        "status": "proposed"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "5eb47ef3-f084-46c0-95d2-75c71a183627",
+        "text": "The context confirmed that a delivery pickup rush was in progress and only one cleaner was available | When: 2026-11-06",
+        "source_id": "9c40bd4c-dfde-4ac6-a73c-d8466368c6fb",
+        "recorded_at": "2026-11-06T20:51:00.697358+00:00",
+        "kind": "action",
+        "source": "staff_action",
+        "supports_preference": true,
+        "qualification": "Staff approval/rejection, not an outcome."
+      },
+      {
+        "id": "8e3ad048-c4eb-4f4a-8ed2-c2755beb8395",
+        "text": "Manager chose table T3 because table T2 beside pickup had interruptions during a delivery rush, as reported in a staff correction | When: 2026-11-06 | Where: Restaurant shift | Involving: Manager | T2 was unsuitable due to delivery rush interruptions; T3 offered a quieter alternative",
+        "source_id": "1d04e6f1-558f-4ffc-a85c-37cbf983516b",
+        "recorded_at": "2026-11-06T20:09:18.121699+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "34976aff-a9c4-4893-be91-127b76d2e997",
+        "text": "Manager reports and corrections indicate that table T3 is the quieter alternative and should be used instead of table T2 during delivery rushes | When: 2026-11-06 | Where: Restaurant layout 7a8d51d8759bd72918731eb1 | Involving: Manager (source staff_action) | To optimize seating during delivery rush",
+        "source_id": "5859b97d-cfc5-4ff0-852f-6080a5d81fa5",
+        "recorded_at": "2026-11-06T20:48:35.880660+00:00",
+        "kind": "action",
+        "source": "staff_action",
+        "supports_preference": true,
+        "qualification": "Staff approval/rejection, not an outcome."
+      },
+      {
+        "id": "95b7eff2-0613-489f-be03-59421e33e07c",
+        "text": "Manager chose table T3 instead of T2 during a delivery rush because T2 beside pickup had interruptions | When: 2026-11-06 | Where: Restaurant layout 7a8d51d8759bd72918731eb1 | Involving: Manager (staff report) | T2 had interruptions; T3 is quieter alternative during rush",
+        "source_id": "af0cd4e7-2b03-419c-979b-9661894b0ff5",
+        "recorded_at": "2026-11-06T20:09:23.972219+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "0b4f5eba-3a71-46ba-8075-e4652cc17243",
+        "text": "Staff action prioritized the open cleaning task for table T3 to prepare a quieter alternative during the delivery rush | When: 2026-11-06 | Involving: staff_action | Prioritize cleaning to accommodate delivery rush",
+        "source_id": "9c40bd4c-dfde-4ac6-a73c-d8466368c6fb",
+        "recorded_at": "2026-11-06T20:51:00.697358+00:00",
+        "kind": "action",
+        "source": "staff_action",
+        "supports_preference": true,
+        "qualification": "Staff approval/rejection, not an outcome."
+      },
+      {
+        "id": "da3b422d-069a-41d5-92f0-0151efe2a3a7",
+        "text": "Table T3 is occupied while tables T1, T2, and T4 are ready during the delivery rush | When: 2026-11-06 | Where: Restaurant layout 7a8d51d8759bd72918731eb1 | Current table status snapshot",
+        "source_id": "5859b97d-cfc5-4ff0-852f-6080a5d81fa5",
+        "recorded_at": "2026-11-06T20:48:35.880660+00:00",
+        "kind": "action",
+        "source": "staff_action",
+        "supports_preference": true,
+        "qualification": "Staff approval/rejection, not an outcome."
+      },
+      {
+        "id": "4799ea27-37cf-4465-9fc4-70f6d2a71bcd",
+        "text": "A waiting party of size 4 (id 81fdb652-fbd9-488a-a7f1-5992e4cad4ee) is waiting with zero wait time | When: 2026-11-06 | Where: Restaurant shift 09fa0511-0079-47c8-9e16-ca1bd6819349",
+        "source_id": "592c07e8-797d-4a0b-8f1d-9593d60d3ec3",
+        "recorded_at": "2026-11-06T20:52:45.344928+00:00",
+        "kind": "action",
+        "source": "staff_action",
+        "supports_preference": true,
+        "qualification": "Staff approval/rejection, not an outcome."
+      },
+      {
+        "id": "6b177105-c4eb-48b6-9330-af5245bcc856",
+        "text": "Table T3 is marked as cleaning_required and is currently unoccupied | When: 2026-11-06 | Where: Restaurant layout 7a8d51d8759bd72918731eb1",
+        "source_id": "592c07e8-797d-4a0b-8f1d-9593d60d3ec3",
+        "recorded_at": "2026-11-06T20:52:45.344928+00:00",
+        "kind": "action",
+        "source": "staff_action",
+        "supports_preference": true,
+        "qualification": "Staff approval/rejection, not an outcome."
+      },
+      {
+        "id": "42619167-581d-4db2-8370-da0bb87d7bfb",
+        "text": "Table T3 had status cleaning_required and was not occupied at the time of the action | When: 2026-11-06",
+        "source_id": "9c40bd4c-dfde-4ac6-a73c-d8466368c6fb",
+        "recorded_at": "2026-11-06T20:51:00.697358+00:00",
+        "kind": "action",
+        "source": "staff_action",
+        "supports_preference": true,
+        "qualification": "Staff approval/rejection, not an outcome."
+      },
+      {
+        "id": "a04b51ce-0e33-4602-97c4-699e5f0722fe",
+        "text": "The restaurant policy strategy was fairness with a maximum wait of 15 minutes and check-in every 10 minutes | When: 2026-11-06",
+        "source_id": "9c40bd4c-dfde-4ac6-a73c-d8466368c6fb",
+        "recorded_at": "2026-11-06T20:51:00.697358+00:00",
+        "kind": "action",
+        "source": "staff_action",
+        "supports_preference": true,
+        "qualification": "Staff approval/rejection, not an outcome."
+      },
+      {
+        "id": "319a9180-bb3a-4853-b805-07a9c483b2cb",
+        "text": "Outcome of choosing T3 is unknown; no measured improvement reported | When: 2026-11-06 | Where: Restaurant layout 7a8d51d8759bd72918731eb1 | Involving: Staff report | Outcome not yet observed",
+        "source_id": "af0cd4e7-2b03-419c-979b-9661894b0ff5",
+        "recorded_at": "2026-11-06T20:09:23.972219+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": true,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "e1cf0ae1-85b1-4103-bb17-f8c322f0607e",
+        "text": "Cleaning task with ID 6c7c244e-deb9-4793-9fb8-7e0bde144ecf was completed at table T3 | When: 2026-11-06",
+        "source_id": "task-event-6b922e596751b021e7c682cc",
+        "recorded_at": "2026-11-06T20:53:37.021094+00:00",
+        "kind": "task_outcome",
+        "source": "operational_event",
+        "supports_preference": true,
+        "qualification": "Recorded lifecycle event in scenario time; does not establish causal improvement."
+      },
+      {
+        "id": "802e25fb-af04-40d0-88a2-ca0be4f8c055",
+        "text": "A waiting party of size 4 was present with wait time 0 seconds | When: 2026-11-06",
+        "source_id": "9c40bd4c-dfde-4ac6-a73c-d8466368c6fb",
+        "recorded_at": "2026-11-06T20:51:00.697358+00:00",
+        "kind": "action",
+        "source": "staff_action",
+        "supports_preference": true,
+        "qualification": "Staff approval/rejection, not an outcome."
+      },
+      {
+        "id": "126e1bbe-054d-4c4b-9d8d-1f26f0b157c9",
+        "text": "Staff action approved seating of party dbef5e84-fa8c-49cd-8778-720c80ac163a at table T3 | When: 2026-11-06 | Where: Restaurant layout 7a8d51d8759bd72918731eb1 | Involving: Staff (waiter-1) | Following manager's recommendation during delivery rush",
+        "source_id": "5859b97d-cfc5-4ff0-852f-6080a5d81fa5",
+        "recorded_at": "2026-11-06T20:48:35.880660+00:00",
+        "kind": "action",
+        "source": "staff_action",
+        "supports_preference": true,
+        "qualification": "Staff approval/rejection, not an outcome."
+      },
+      {
+        "id": "b4bfd625-885d-4bde-b111-7ecedd219da6",
+        "text": "Task 6c7c244e-deb9-4793-9fb8-7e0bde144ecf assigned to cleaner-1 to clean table T3 because the task is high priority and only one cleaner is available | When: 2026-11-06 | Where: Restaurant shift 09fa0511-0079-47c8-9e16-ca1bd6819349 | Involving: cleaner-1 (staff), task 6c7c244e-deb9-4793-9fb8-7e0bde144ecf | High priority cleaning required; staff reports confirm only one cleaner available",
+        "source_id": "592c07e8-797d-4a0b-8f1d-9593d60d3ec3",
+        "recorded_at": "2026-11-06T20:52:45.344928+00:00",
+        "kind": "action",
+        "source": "staff_action",
+        "supports_preference": true,
+        "qualification": "Staff approval/rejection, not an outcome."
+      }
+    ],
+    "without_memory": null,
+    "model": "openai/gpt-oss-120b",
+    "memory_profile": "local",
+    "memory_destination": "0d1af7af94f8e462a4846278",
+    "restaurant_id": "demo-restaurant",
+    "stale": false
+  },
+  "integration": {
+    "memory_profile": "local",
+    "memory_configured": true,
+    "reasoner_configured": true,
+    "generating": false,
+    "last_error": null,
+    "pending": 0,
+    "failed": 0,
+    "retained": 6
+  },
+  "contextual_seating_passed": true,
+  "comparison_note": "Deterministic allocator baseline compared with a single real memory-backed model recommendation. No repeated paired model test.",
+  "handover_passed": true,
+  "passed": true,
+  "hindsight_cloud_calls_for_demo": 0,
+  "new_retain_calls_for_demo": 0,
+  "compose_sha256": "cbf456afa3cf474d7a21d9fccc3561b6cf9487a09e9d6a159b1a62ccc495033a",
+  "native_reflect_attempts": [
+    {
+      "http_status": 503,
+      "result": {
+        "detail": "Handover unavailable (ServiceException)."
+      },
+      "provider_diagnostic": "Groq HTTP 413 closing schema: requested 8838 tokens against 8000 TPM; subsequent standalone synthesis hit HTTP 429."
+    },
+    {
+      "http_status": 503,
+      "result": {
+        "detail": "Handover unavailable (ServiceException)."
+      },
+      "provider_diagnostic": "A 1200-token context budget forced multiple synthesis chunks, which hit Groq HTTP 429. Final config uses 4500 to fit one evidence block."
+    },
+    {
+      "http_status": 503,
+      "result": {
+        "detail": "Handover unavailable (ServiceException)."
+      }
+    }
+  ],
+  "handover": {
+    "http_status": 200,
+    "result": {
+      "text": "Current delivery activity: rush (staff context).\nCarry-over sources to review for this shift:\n\u2022 Manager correction: Synthetic browser walkthrough: during delivery rushes, T2 beside pickup has interruptions. The manager reports choosing T3. Outcome has not yet been observed.\n\u2022 Staff outcome report: unknown. Synthetic feedback: outcome unknown; this walkthrough does not establish real restaurant improvement.\n\u2022 Recorded task event: Recorded cleaning task completed at T3.\n\u2022 Historical proposal decision: The context confirmed that a delivery pickup rush was in progress and only one cleaner was available | When: 2026-11-06",
+      "mode": "sources",
+      "evidence": [
+        {
+          "id": "8e3ad048-c4eb-4f4a-8ed2-c2755beb8395",
+          "text": "Manager chose table T3 because table T2 beside pickup had interruptions during a delivery rush, as reported in a staff correction | When: 2026-11-06 | Where: Restaurant shift | Involving: Manager | T2 was unsuitable due to delivery rush interruptions; T3 offered a quieter alternative",
+          "source_id": "1d04e6f1-558f-4ffc-a85c-37cbf983516b",
+          "recorded_at": "2026-11-06T20:09:18.121699+00:00",
+          "kind": "correction",
+          "source": "staff_report",
+          "supports_preference": true,
+          "qualification": "Manager report; chosen alternative is not proof of success."
+        },
+        {
+          "id": "95b7eff2-0613-489f-be03-59421e33e07c",
+          "text": "Manager chose table T3 instead of T2 during a delivery rush because T2 beside pickup had interruptions | When: 2026-11-06 | Where: Restaurant layout 7a8d51d8759bd72918731eb1 | Involving: Manager (staff report) | T2 had interruptions; T3 is quieter alternative during rush",
+          "source_id": "af0cd4e7-2b03-419c-979b-9661894b0ff5",
+          "recorded_at": "2026-11-06T20:09:23.972219+00:00",
+          "kind": "outcome",
+          "source": "staff_report",
+          "supports_preference": true,
+          "qualification": "Staff-reported outcome, not a measured causal improvement."
+        },
+        {
+          "id": "e1cf0ae1-85b1-4103-bb17-f8c322f0607e",
+          "text": "Cleaning task with ID 6c7c244e-deb9-4793-9fb8-7e0bde144ecf was completed at table T3 | When: 2026-11-06",
+          "source_id": "task-event-6b922e596751b021e7c682cc",
+          "recorded_at": "2026-11-06T20:53:37.021094+00:00",
+          "kind": "task_outcome",
+          "source": "operational_event",
+          "supports_preference": true,
+          "qualification": "Recorded lifecycle event in scenario time; does not establish causal improvement."
+        },
+        {
+          "id": "5eb47ef3-f084-46c0-95d2-75c71a183627",
+          "text": "The context confirmed that a delivery pickup rush was in progress and only one cleaner was available | When: 2026-11-06",
+          "source_id": "9c40bd4c-dfde-4ac6-a73c-d8466368c6fb",
+          "recorded_at": "2026-11-06T20:51:00.697358+00:00",
+          "kind": "action",
+          "source": "staff_action",
+          "supports_preference": true,
+          "qualification": "Staff approval/rejection, not an outcome."
+        }
+      ],
+      "current_tasks": [
+        {
+          "id": "bb24fe35-7ce7-4814-8d1d-22b6956a0e95",
+          "table_id": "T1",
+          "kind": "cleaning",
+          "status": "open",
+          "role": "cleaner",
+          "priority": "normal",
+          "assigned_to": null
+        }
+      ],
+      "created_at": "2026-11-07T04:08:21.363860+00:00",
+      "token": [
+        "3c547189-cf3f-4146-a7f1-d30e48dcca5f",
+        19,
+        27,
+        "7a8d51d8759bd72918731eb1"
+      ]
+    }
+  },
+  "final_demo_advice_reused": true,
+  "handover_generation_calls": 0,
+  "source_brief_current_tasks_match_sqlite": true,
+  "cloud_env_unchanged": true,
+  "source_commit": "a45b9e0687beb0c3d104a954bff48af05cc32e6f",
+  "regression": {
+    "backend_passed": 198,
+    "frontend_helpers_passed": 17,
+    "production_build": "passed"
+  },
+  "hindsight_api_version": "1.2.0"
+}

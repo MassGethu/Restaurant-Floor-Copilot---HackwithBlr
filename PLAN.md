@@ -4,6 +4,8 @@ The current implementation follows the accepted learning-across-shifts plan. See
 
 Implemented locally: isolated ports, source ledger/outbox, real service adapters, contextual advice, checked approvals, task priority/assignment, logical shifts, feedback, source/dependent supersession, handover, Supervisor workspace and demonstration/evaluation tooling. Actual Hindsight/LLM evaluation passed all defined checks using configured services and synthetic operational inputs; Band AI usage and external submission remain human steps.
 
+Additional authorized scope: local Hindsight Docker deployment alongside Cloud. Implemented pinned image, loopback ports, persisted PostgreSQL/model cache, explicit backend profile selection and destination-specific delivery receipts. Setup and current verification: `docs/LOCAL_HINDSIGHT.md` and `docs/verification/hindsight-docker-verification.json`. The original folder remains outside this work.
+
 ---
 
 # Current expansion status — 6 November 2026

@@ -33,7 +33,7 @@ Participants must independently install and use Band AI according to the competi
 5. Ask for advice with **Compare identical inputs with memory removed** selected. Inspect actual recalled evidence and the baseline versus memory-backed alternatives. Alternate seating is explicitly a manager policy choice.
 6. Approve the proposed action. Every approval checks the original operational/context/memory revisions and current eligibility again. A changed state requires refreshed advice.
 7. For recovery, create a dirty-table situation using ordinary staff/vision workflows. Ask which existing task prepares the remembered alternative. Approve priority and assignment separately, refreshing after each action. Staff must still complete cleaning.
-8. Prepare a handover. Its historical synthesis uses Hindsight reflect; its current task list comes directly from SQLite.
+8. Prepare a handover. Cloud uses Hindsight Reflect; Local defaults to a source brief built from Hindsight recall without a generation call. Both take current tasks directly from SQLite.
 9. Replace the lesson with a report that pickup moved. The old source, its outcomes, and advice-derived action evidence become historical. Ask again and inspect the changed evidence.
 
 Restarting playback retains its inherited archive/reset behavior; it is distinct from starting a logical shift. Restarting the application preserves memory/source records but never restores visual freshness without observations.
@@ -49,7 +49,7 @@ flowchart LR
   OPS -->|current state and eligible candidates| AGENT
   AGENT --> CARDS[Advice and evidence cards]
   CARDS -->|staff approval and backend revalidation| OPS
-  HS -->|reflect with cited source evidence| BRIEF[Shift handover]
+  HS -->|reflect or source-verified recall| BRIEF[Shift handover]
   OPS -->|current tasks| BRIEF
 ```
 
@@ -90,14 +90,14 @@ After configuring credentials, run from the root:
 .venv/bin/python scripts/evaluate_memory.py
 ```
 
-This uses a distinct evaluation restaurant/bank and scratch database under this edition's data directory. It runs five same-input pairs, a quiet-period control, a later logical shift, restart recall, recovery priority/assignment, read-only reflect, and supersession. It writes service versions, retain receipts, actual retrieved facts, exact structured inputs, model responses and pass/fail checks. Its inputs are synthetic operational fixtures; it does not claim video inference or real business impact. There is no fake fallback. A missing-key report is explicitly not a passing live result.
+This uses a distinct evaluation restaurant/bank and scratch database under this edition's data directory. It runs five same-input pairs, a quiet-period control, a later logical shift, restart recall, recovery priority/assignment, handover and supersession. It writes service versions, retain receipts, actual retrieved facts, exact structured inputs, model responses and pass/fail checks. Its inputs are synthetic operational fixtures; it does not claim video inference or real business impact. There is no fake fallback. A missing-key report is explicitly not a passing live result.
 
 The evaluator creates remote test memories in its named evaluation bank. It does not delete them automatically; preserve them as evidence or review deletion separately. No real customer data belongs in evaluation records.
 
 ## Limits and roadmap
 
-The real-service evaluator passed five paired comparisons and all its control checks. Connected-service browser verification is recorded separately in the verification summary. The app has no real restaurant CCTV benchmark, trained departure predictor, visual intent detector, POS feed, staff authentication, external push notifications, or measured revenue/wait improvement. Memory adaptation changes supplied context; it does not train model weights.
+The Cloud real-service evaluator passed five paired comparisons and all its control checks. Connected-service browser verification is recorded separately in the verification summary. The app has no real restaurant CCTV benchmark, trained departure predictor, visual intent detector, POS feed, staff authentication, external push notifications, or measured revenue/wait improvement. Memory adaptation changes supplied context; it does not train model weights.
 
-After core live acceptance, the first stretch item is local Hindsight with edition-specific persistent storage and the same hosted model. Cloud/local switching must be explicit; no silent fallback. Further work includes a reviewed restaurant playbook, recurring visual-ambiguity guidance, and duration calibration supported by representative observations. These are roadmap items, not implemented features.
+Local Hindsight is now implemented as a pinned Docker stack with edition-specific persistent storage, explicit Cloud/Local selection and separate destination receipts. See [local setup and verification](LOCAL_HINDSIGHT.md). Action reasoning still uses hosted Groq. The verified Local demo reuses stored sources and builds a handover without an additional generation call; neither profile silently falls back to the other. Further roadmap work includes a reviewed restaurant playbook, recurring visual-ambiguity guidance, and duration calibration supported by representative observations.
 
 Upstream attribution, footage provenance and separate Ultralytics/model obligations remain in the inherited documentation. Pre-existing-code eligibility requires organizer clarification. Submission drafts are local and unpublished.

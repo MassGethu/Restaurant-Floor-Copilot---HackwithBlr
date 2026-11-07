@@ -1,0 +1,194 @@
+{
+  "disclosure": "Actual local Docker/Hindsight and Cloud endpoints; synthetic existing restaurant sources. No real business impact or fully offline inference claim.",
+  "image": "ghcr.io/vectorize-io/hindsight@sha256:19d0c08f3df79acac29384826419a1ca158129e81ec527cdcbd8c97ff4ef76da",
+  "image_id": "sha256:19d0c08f3df79acac29384826419a1ca158129e81ec527cdcbd8c97ff4ef76da",
+  "docker_server_version": "29.8.2",
+  "hindsight_api_version": "1.2.0",
+  "port_bindings": {
+    "8888/tcp": [
+      {
+        "HostIp": "127.0.0.1",
+        "HostPort": "8888"
+      }
+    ],
+    "9999/tcp": [
+      {
+        "HostIp": "127.0.0.1",
+        "HostPort": "9999"
+      }
+    ]
+  },
+  "mounts": [
+    {
+      "source": "/Users/massgethu/CV_AI_Hindsight/backend/data/hindsight-local/cache",
+      "destination": "/home/hindsight/.cache",
+      "type": "bind"
+    },
+    {
+      "source": "/Users/massgethu/CV_AI_Hindsight/backend/data/hindsight-local/pg0",
+      "destination": "/home/hindsight/.pg0",
+      "type": "bind"
+    }
+  ],
+  "memory_limit_bytes": 4294967296,
+  "oom_killed": false,
+  "models": {
+    "retain": "openai/gpt-oss-20b",
+    "reflect": "openai/gpt-oss-120b",
+    "action": "openai/gpt-oss-120b"
+  },
+  "cloud_env_unchanged": true,
+  "regression": {
+    "backend_passed": 197,
+    "frontend_helpers_passed": 17,
+    "production_build": "passed"
+  },
+  "browser_verification": "Computer-use browser surface unavailable in this turn; API and build verification recorded separately.",
+  "checks": {
+    "local_profile_active": true,
+    "local_raw_recall": true,
+    "floor_table_statuses_preserved": true,
+    "queue_preserved": true,
+    "task_records_preserved": true,
+    "shift_preserved": true,
+    "local_outage_visible": true,
+    "local_outage_keeps_profile": true,
+    "local_outage_preserves_operations": true,
+    "container_was_recreated": true,
+    "recalled_facts_survived_recreation": true,
+    "final_local_handover_verified": false,
+    "cloud_restored": true,
+    "cloud_receipts_unchanged": true,
+    "local_receipts_preserved": true,
+    "all_original_sources_retained_locally": true,
+    "cloud_raw_recall_after_roundtrip": true,
+    "cloud_handover_available": true,
+    "container_healthy": true,
+    "control_plane_available": true,
+    "no_oom": true,
+    "credentials_absent_from_publishable_files": true
+  },
+  "local_recall_before_recreation": {
+    "bank_id": "floor-copilot-demo-restaurant",
+    "layout_id": "7a8d51d8759bd72918731eb1",
+    "fact_ids": [
+      "126e1bbe-054d-4c4b-9d8d-1f26f0b157c9",
+      "319a9180-bb3a-4853-b805-07a9c483b2cb",
+      "34976aff-a9c4-4893-be91-127b76d2e997",
+      "8e3ad048-c4eb-4f4a-8ed2-c2755beb8395",
+      "95b7eff2-0613-489f-be03-59421e33e07c",
+      "da3b422d-069a-41d5-92f0-0151efe2a3a7"
+    ]
+  },
+  "container_before_recreation": "3b281dec9c398edbf43958718af46a0d52cc0c55117c422fcb243d694bcc09b3",
+  "outage": {
+    "http_status": 503,
+    "response": {
+      "detail": "Advice unavailable (ClientConnectorError)."
+    },
+    "memory_profile": "local"
+  },
+  "container_after_recreation": "c41a178296f89c04522d863cca0d9701a3959bd3a9dfa7a65c72fc84a0ffa21e",
+  "local_recall_after_recreation": {
+    "fact_ids": [
+      "0b4f5eba-3a71-46ba-8075-e4652cc17243",
+      "126e1bbe-054d-4c4b-9d8d-1f26f0b157c9",
+      "319a9180-bb3a-4853-b805-07a9c483b2cb",
+      "34976aff-a9c4-4893-be91-127b76d2e997",
+      "42619167-581d-4db2-8370-da0bb87d7bfb",
+      "5eb47ef3-f084-46c0-95d2-75c71a183627",
+      "802e25fb-af04-40d0-88a2-ca0be4f8c055",
+      "8e3ad048-c4eb-4f4a-8ed2-c2755beb8395",
+      "95b7eff2-0613-489f-be03-59421e33e07c",
+      "a04b51ce-0e33-4602-97c4-699e5f0722fe",
+      "da3b422d-069a-41d5-92f0-0151efe2a3a7",
+      "e1cf0ae1-85b1-4103-bb17-f8c322f0607e"
+    ]
+  },
+  "final_local_handover": {
+    "http_status": 503,
+    "response": {
+      "detail": "Handover has no verifiable active source evidence yet. Retain and recall an experience first."
+    }
+  },
+  "cloud_after_roundtrip": {
+    "profile": "cloud",
+    "retained": 6,
+    "pending": 0,
+    "failed": 0,
+    "recalled_fact_ids": [
+      "0605760d-e571-4425-8bba-da95f148b187",
+      "179aa205-cc56-441c-b3bb-6f7b3a377bbc",
+      "1a5ca8ea-3051-4083-a65b-92400d0c78a2",
+      "24f0634f-229c-45a0-bfbe-15ce30c92a7a",
+      "2930a6ca-7992-4409-881c-486352e67709",
+      "3072f81f-ade5-487e-9315-f456c8fe1de7",
+      "3ce6c752-804e-4abb-957a-08b8a6458511",
+      "3e57fc3f-33f0-4c83-9c84-85cbdfb64a0f",
+      "444e7062-f261-456f-bac3-f6e0183a5c81",
+      "5bf1c53d-766f-4084-8a60-c8745caa9c5c",
+      "6553192c-ae58-4da5-be14-a3133bb7a70c",
+      "6f98f72e-cd17-4454-b19c-d31bcfceac10",
+      "758f03e8-d83e-4f69-b520-7dd6ee36ac68",
+      "784b07cb-aff4-46bd-8397-6a20f61ce3e5",
+      "7da7f675-9b62-4b0f-a2b1-9756060f1094",
+      "7e816daa-e6a6-4ce9-a77d-a311b666f92b",
+      "829272be-4f7e-432e-b46c-a3732b114598",
+      "94b18e0f-c9ea-455e-ba9c-ddaef4471252",
+      "9e280510-7a8d-4236-be9f-6335a94c9749",
+      "a44d4696-f16a-42d1-a737-e182e6a24651",
+      "a55fceeb-e32a-4ecb-af74-caec4be41811",
+      "abf24713-588e-4f3c-bfec-82878ad393b9",
+      "b3b618f4-8cdb-4341-9002-d0793b27c6bb",
+      "b5c3ca64-4773-42f7-a2cf-7bdbea3387df",
+      "f13a804f-2d23-40e5-baa5-2e076c18d9ad"
+    ],
+    "receipt_hash": "3c7fb53eaf04c9e378eea0b9d5771b251731a9bb13b97fda005ef4b6f221f3ad"
+  },
+  "local_delivered_source_count": 6,
+  "final_scene": {
+    "paused": true,
+    "tables": {
+      "T1": "occupied",
+      "T2": "occupied",
+      "T3": "ready",
+      "T4": "ready"
+    }
+  },
+  "cloud_handover_after_roundtrip": {
+    "http_status": 200,
+    "evidence_count": 18
+  },
+  "verified_at": "2026-11-06T22:00:15.234654+00:00",
+  "final_runtime": {
+    "app_memory_profile": "cloud",
+    "docker_state": "running",
+    "docker_health": "healthy",
+    "local_api": "http://127.0.0.1:8888",
+    "local_control_plane": "http://127.0.0.1:9999",
+    "app": "http://127.0.0.1:5174/supervisor"
+  },
+  "full_local_evaluation": "Not accepted: see partial reports and hindsight-local-failures.md. Shared Groq daily quota prevented complete final evaluation.",
+  "source_commit": "c08ef7f29536783ebb8389cfee9db0a73c32a986",
+  "source_hashes": {
+    "compose.hindsight.yml": "92cbcf9de7680be5ca20b9adfafdbb48f88c351caff94e626c00716f05d3ac21",
+    "scripts/local_hindsight.py": "a272a5fbe473e4d24f518674d2df635539d4ebecf90d77c590ff08979b65d7bb",
+    "scripts/evaluate_memory.py": "d7732a83fbc366ecaf8d2bc7b66fa0ee479b201094c049021a9868dcce496083",
+    "backend/app/settings.py": "655ae765d613e460a01100dc9df08a5a0542e64100c895814eb4896f13a20ab1",
+    "backend/app/memory_clients.py": "0462a43524f923a643fbb8173e4266d56ca64c744b4c03528b9a9faacbe35fe1",
+    "backend/app/supervisor.py": "26e21121a7c29410e5de0c8f53f0a7d2a32ef7f924a0374cdf70541db24e723d",
+    "backend/app/__main__.py": "b395b67fa15c19589ff1945aac8c81ac945988ce65ab9ee34d90663239bf7d4c",
+    "backend/tests/test_memory_profiles.py": "15174c9e7a216121d8ac942a15049688efeeb916836310d99131c09b5ddd025e"
+  },
+  "latest_budgeted_demo": {
+    "report": "hindsight-local-single-demo.json",
+    "app_memory_profile": "local",
+    "advice_stale": false,
+    "playback_paused": true,
+    "fresh_observations": true,
+    "automatic_advice": false,
+    "handover_mode": "sources",
+    "hindsight_cloud_calls": 0,
+    "new_retain_calls": 0
+  }
+}
