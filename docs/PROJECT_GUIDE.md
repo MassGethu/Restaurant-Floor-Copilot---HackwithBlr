@@ -10,7 +10,7 @@ From the project root, run:
 .venv/bin/python scripts/rehearse_busy_shift.py --manual
 ```
 
-This opens a fresh practice desk on a separate loopback port. The launcher prints its URL and a command to simulate a camera outage. It uses a temporary database and configuration, the staged demo clip, and real YOLO inference. Hindsight and Groq are disabled in this copy. Press Ctrl+C to close the practice servers and discard the scratch state. If the clip or dependencies are missing, follow [README setup](../README.md#reproduce-setup).
+This opens a fresh practice desk on a separate loopback port. The launcher prints its URL and a command to simulate a camera outage. It uses a temporary database and configuration, the staged demo clip, and real YOLO inference. Hindsight and Groq are disabled in this copy. Press Ctrl+C to close the practice servers and discard the scratch state. If the clip or dependencies are missing, follow [local setup guide](SETUP.md).
 
 1. On **Floor overview**, scroll to **Visual observation**. Select `controlled-floor-demo.mp4`, click **Start replay**, wait for the camera to be ready, and pause early in the vacant interval. Confirm Tables 1 and 2 empty and clean. Block Table 3 from walk-in seating and leave Table 4 unverified.
 2. In the **Waiting room**, add a party of two and accept its seating decision for Table 1. Add a party of four and seat it at Table 2. Add a second pair and a party of six; both should wait. Open **Staff tasks** and request a service visit for Table 2, such as a water refill. Return to the floor and resume the replay.
