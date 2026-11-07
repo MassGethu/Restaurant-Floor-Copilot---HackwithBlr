@@ -1,7 +1,7 @@
 """Event-driven what-if schedules on known parties and explicit assumptions."""
 
 import copy
-from app.decisions import allocate
+from app.decisions import allocate, ready_table
 
 
 def simulate(
@@ -21,8 +21,7 @@ def simulate(
         if (
             party is None
             or table is None
-            or table["status"] != "ready"
-            or not (table["observed"] == "absent" or table["manual_hold"])
+            or not ready_table(table)
             or table["capacity"] < party["size"]
         ):
             raise ValueError(
@@ -40,9 +39,10 @@ def simulate(
         for original in state["tables"]:
             slot = copy.deepcopy(original)
             available = None
-            if original["status"] == "ready" and (
-                original["observed"] == "absent" or original["manual_hold"]
-            ):
+            if original.get("blocked") or original.get("departure_review"):
+                excluded.append(original["id"])
+                continue
+            if ready_table(original):
                 available = 0
             elif original["status"] == "cleaning_required":
                 available = assumptions[f"cleaning_{bound}"]
@@ -83,7 +83,7 @@ def simulate(
             if clock > horizon_minutes:
                 break
             ready = [
-                dict(s, status="ready", observed="absent")
+                dict(s, status="ready", observed="absent", seating_eligible=True)
                 for s in slots
                 if s["available"] <= clock
             ]

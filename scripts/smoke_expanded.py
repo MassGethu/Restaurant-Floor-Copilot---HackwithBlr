@@ -102,7 +102,9 @@ try:
     record(
         "Timed staff suggestion, assignment, acknowledgement and recorded visit", state
     )
-    state = wait(lambda s: s["tables"][0]["status"] == "cleaning_required", 25)
+    state = wait(lambda s: s["tables"][0]["departure_review"], 25)
+    assert state["tables"][0]["status"] == "occupied" and state["tables"][0]["party_id"]
+    state = api("/tables/T1", {"action": "depart"})
     task = next(
         t
         for t in state["tasks"]

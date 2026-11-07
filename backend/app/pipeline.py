@@ -152,6 +152,9 @@ class Pipeline:
         self._detector: Detector | None = None
         self._last_detection_seq = -1
         self._last_detection_at = 0.0
+        self._identical_since = 0.0
+        self._frozen = False
+        self._frame_received = 0.0
         self._model_state = "loading"
         self._processing = RateMeter()
         self._streaming = RateMeter()
@@ -208,6 +211,8 @@ class Pipeline:
     def source_label(self) -> str:
         """LIVE, RECONNECTING or NO SOURCE."""
         with self._lock:
+            if self._frozen or self._outage:
+                return "RECONNECTING"
             return source_label(self._source.status if self._source else SourceStatus.STOPPED)
 
     @property
@@ -242,6 +247,13 @@ class Pipeline:
                 source_url=str((BACKEND_DIR / Path(source_url)).resolve())
 
         with self._lock:
+            if self.operations is not None and video_id:
+                if config:
+                    live = bool(source_url and ("://" in source_url or source_url.isdigit()))
+                    self.operations.configure(video_id, config.tables, reset=reset_operations, live=live)
+                else:
+                    with self.operations.lock:
+                        self.operations.validate_session_change(video_id, reset_operations)
             old_source = None
             if source_url is None:
                 old_source, self._source, self._frame = self._source, None, None
@@ -253,13 +265,13 @@ class Pipeline:
             self._scenario_time = 0.0
             self._last_detection_at = 0.0
             self._last_detection_seq = -1
+            self._identical_since = time.monotonic()
+            self._frozen = False
             self._clock_origin = time.time()
             self._observation_time = self._clock_origin
             self._source_epoch = 0
-            if self.operations is not None and video_id and config:
-                self.operations.configure(video_id, config.tables, reset=reset_operations)
             if self.operations is not None:
-                self.operations.fresh = False
+                self.operations.invalidate_camera()
             self._generation += 1
             self._results = Results()
             self._outage, self._last_frame_at = False, time.time()
@@ -274,6 +286,14 @@ class Pipeline:
             logger.info("Watching {} from {} ({})", video_id, redact(source_url), tables)
         self._publish_status(force=True)
 
+    def reconnect(self, floor_video_id: str | None) -> None:
+        with self._lock:
+            video_id = self._video_id or floor_video_id
+            if not video_id:
+                raise ValueError("Select and configure a source before reconnecting.")
+            source = self._source.source if self._source else None
+            self.activate(video_id, source_override=source)
+
     def playback(self) -> dict:
         with self._lock:
             source = self._source
@@ -281,8 +301,20 @@ class Pipeline:
                         paused=bool(source and getattr(source, 'paused', False)),
                         ended=bool(source and source.status is SourceStatus.ENDED),
                         source_status=self.source_label, model_state=self.model_state,
-                        inference_fresh=self._last_detection_at > 0 and (time.monotonic() - self._last_detection_at < 5 or bool(source and getattr(source, 'paused', False) and self._last_detection_seq == self._frame_seq)),
+                        inference_fresh=not self._outage and not self._frozen and self._last_detection_at > 0 and (time.monotonic() - self._last_detection_at < 5 or bool(source and getattr(source, 'paused', False) and self._last_detection_seq == self._frame_seq)),
+                        source_frozen=self._frozen,
+                        is_file=bool(source and getattr(source, 'is_file', False)),
                         processing_fps=self.processing_fps, session_id=self._generation)
+
+    def refresh_operations(self) -> dict:
+        # Keep the observation read ordered with source changes before approvals.
+        with self._lock:
+            playback = self.playback()
+            if self.operations is not None:
+                self.operations.update_camera(
+                    playback["source_status"], playback["model_state"], playback["inference_fresh"]
+                )
+            return playback
 
     def pause(self, paused: bool) -> None:
         with self._lock:
@@ -362,6 +394,8 @@ class Pipeline:
             if silent < self.settings.source_outage_seconds:
                 return
             self._outage = True
+            if self.operations is not None:
+                self.operations.invalidate_camera()
             run, self._run = self._run, None
             try:
                 self._db.end_run(run[0], self._last_frame_at)
@@ -374,6 +408,10 @@ class Pipeline:
         self._outage = False
         self._generation += 1  # the detection thread starts tracking from scratch
         self._results = Results()
+        self._last_detection_at = 0.0
+        self._last_detection_seq = -1
+        if self.operations is not None:
+            self.operations.invalidate_camera()
         self._sync_run(new_run=False, at=self._last_frame_at)  # from the frame that ended the outage
         logger.info("Frames are back: occupancy starts over")
 
@@ -416,6 +454,8 @@ class Pipeline:
         with self._lock:
             results, video_id, config, frame = self._results, self._video_id, self._config, self._frame
             source_status = self._source.status if self._source else SourceStatus.STOPPED
+            if self._frozen or self._outage:
+                source_status = SourceStatus.RECONNECTING
         now = self._observation_time if self._source and getattr(self._source, "is_file", False) else time.time()
         tables = [
             TableStatusOut(
@@ -471,22 +511,45 @@ class Pipeline:
                     with self._frame_ready:
                         if self._source is not source:  # the video changed while reading
                             continue
+                        is_file = getattr(source, 'is_file', False)
+                        recovering = self._outage or self._frozen
+                        if not is_file:
+                            same = not self._outage and self._frame is not None and np.array_equal(frame, self._frame)
+                            now_mono = time.monotonic()
+                            if not same:
+                                self._identical_since = now_mono
+                                self._frozen = False
+                            elif now_mono - self._identical_since >= min(5.0, self.settings.source_outage_seconds):
+                                if not self._frozen:
+                                    self._frozen = True
+                                    self._last_detection_at = 0.0
+                                    if self.operations is not None:
+                                        self.operations.invalidate_camera()
+                                    run, self._run = self._run, None
+                                    if run:
+                                        try:
+                                            self._db.end_run(run[0], time.time() - (now_mono - self._identical_since))
+                                        except Exception:
+                                            logger.exception("Could not record the frozen camera interval")
+                                    self._publish_status(force=True)
+                                continue
                         self._frame = frame
                         self._frame_seq += 1
+                        self._frame_received = time.monotonic()
                         self._last_frame_at = time.time()
-                        if getattr(source, 'is_file', False):
+                        if is_file:
                             if epoch != self._source_epoch:
                                 self._source_epoch = epoch
                                 self._generation += 1
                                 self._sync_run(new_run=True)
-                                if self.operations is not None and self._config:
+                                if self.operations is not None and self._config and self.operations.state["service_epoch"] is None:
                                     self.operations.configure(self._video_id, self._config.tables, reset=True)
                             self._scenario_time = packet_time
                             self._observation_time = self._clock_origin + packet_time
                         else:
                             self._observation_time = self._last_frame_at
                             self._scenario_time = self._last_frame_at - self._clock_origin
-                        if self._outage:
+                        if recovering:
                             self._resume_after_outage()
                         self._frame_ready.notify_all()
                     self._render(frame)
@@ -510,6 +573,8 @@ class Pipeline:
         with self._lock:
             results = self._results
             source_status = self._source.status if self._source else SourceStatus.STOPPED
+            if self._frozen or self._outage:
+                source_status = SourceStatus.RECONNECTING
         if frame is None:
             frame, results = np.zeros(PLACEHOLDER_SHAPE, np.uint8), Results()
         image = self._annotator.annotate(
@@ -564,6 +629,7 @@ class Pipeline:
                 frame, frame_time, config, video_id, current_generation = (
                     self._frame, self._observation_time, self._config, self._video_id, self._generation,
                 )
+                received = self._frame_received
             try:
                 if current_generation != generation:  # another video: start tracking from scratch
                     generation, tracker, tracker_config, tracker_size = current_generation, None, None, None
@@ -597,14 +663,16 @@ class Pipeline:
                     reference_point=config.occupancy.reference_point if config else self.settings.reference_point,
                 )
                 with self._lock:
-                    if self._generation != current_generation or self._config is not config:
+                    if self._generation != current_generation or self._config is not config or self._frozen or self._outage:
                         continue  # the video or regions changed during inference
                     self._results = results
                     self._last_detection_seq = seen_seq
-                    self._last_detection_at = time.monotonic()
+                    self._last_detection_at = received
                     if self.operations is not None:
-                        self.operations.observe(video_id, results.states, max(0.0, frame_time - self._clock_origin), observation_time=frame_time)
-                        self.operations.observe_entrance(detections,results.entrance,max(0.0,frame_time-self._clock_origin))
+                        paused_file = getattr(self._source, 'paused', False) and seen_seq == self._frame_seq
+                        if paused_file or time.monotonic() - received < 5:
+                            self.operations.observe(video_id, results.states, max(0.0, frame_time - self._clock_origin), observation_time=frame_time)
+                            self.operations.observe_entrance(detections,results.entrance,max(0.0,frame_time-self._clock_origin))
                 if events:
                     self._record_events(video_id, events, {table.id: table.name for table in results.tables})
                 self._publish_status(force=bool(events))

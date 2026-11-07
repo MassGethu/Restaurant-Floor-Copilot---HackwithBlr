@@ -2,12 +2,13 @@
 
 All transitions and seating checks run under one lock and SQLite transaction.
 The snapshot is small (one restaurant) and versioned to reject stale approvals.
-Scenario time comes from footage; wall time is retained only in audit events.
+Replay uses footage time. Live and staff-led service use a persisted wall-clock origin.
 """
 
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import math
 import sqlite3
@@ -22,6 +23,9 @@ from app.service import ServiceMixin
 
 class OperationError(ValueError):
     pass
+
+
+STAFF_CHECK_SECONDS = 60
 
 
 class Operations(ServiceMixin):
@@ -48,6 +52,8 @@ class Operations(ServiceMixin):
             "trend",
             "completed_sessions",
             "counters",
+            "staff_mode",
+            "service_epoch",
         ):
             self.state.setdefault(key, defaults[key])
         self._entrance_tracks = {}
@@ -73,6 +79,8 @@ class Operations(ServiceMixin):
             trend=[],
             completed_sessions=[],
             counters=dict(manager_overrides=0),
+            staff_mode=False,
+            service_epoch=None,
             staff=[
                 dict(id="waiter-1", name="Waiter 1", role="waiter"),
                 dict(id="cleaner-1", name="Cleaner 1", role="cleaner"),
@@ -89,6 +97,103 @@ class Operations(ServiceMixin):
 
     def close(self):
         self.db.close()
+
+    @property
+    def camera_ready(self):
+        return self.fresh and self.source == "LIVE" and self.model == "ready"
+
+    def advance_clock(self):
+        """Call under the floor lock before a request or observation uses service time."""
+        wall = time.time()
+        epoch = self.state["service_epoch"]
+        if epoch is not None:
+            self.state["now"] = max(self.state["now"], wall - epoch)
+        changed = False
+        for table in self.state["tables"]:
+            if table["manual_hold"] and (table.get("hold_until") or 0) <= wall:
+                table.update(manual_hold=False, hold_until=None)
+                if table["status"] == "ready":
+                    table.update(
+                        status="needs_verification",
+                        note="Staff readiness check expired.",
+                    )
+                changed = True
+        if changed:
+            self.save()
+
+    def set_staff_mode(self, enabled):
+        with self.lock:
+            self.advance_clock()
+            if enabled == self.state["staff_mode"]:
+                return
+            if not self.state["tables"]:
+                self.fail(
+                    "Configure the floor before starting staff-confirmed service."
+                )
+            if not enabled and not self.camera_ready:
+                self.fail(
+                    "Wait for fresh camera observations before leaving staff mode."
+                )
+            if enabled and self.state["service_epoch"] is None:
+                self.state["service_epoch"] = time.time() - self.state["now"]
+            self.state["staff_mode"] = enabled
+            for table in self.state["tables"]:
+                if table["manual_hold"] and table["status"] == "ready":
+                    table.update(
+                        manual_hold=False, hold_until=None, status="needs_verification"
+                    )
+            self.event(
+                "Staff-confirmed service started. Check each table in person before seating."
+                if enabled
+                else "Camera-assisted service resumed after staff review.",
+                "staff",
+            )
+            self.save()
+
+    def validate_session_change(self, video_id, reset):
+        if self.state["service_epoch"] is None:
+            return
+        if not reset and video_id == self.state["video_id"]:
+            return
+        if any(
+            p["status"] in ("waiting", "seated") for p in self.state["parties"]
+        ) or any(
+            t["status"] in ("open", "acknowledged", "in_progress")
+            for t in self.state["tasks"]
+        ):
+            self.fail(
+                "Finish or reconcile open service work before starting a new replay. Use Reconnect to keep this floor."
+            )
+
+    def invalidate_camera(self):
+        with self.lock:
+            self.fresh = False
+            self.source = "RECONNECTING"
+            self._entrance_tracks.clear()
+            if self.state["service_epoch"] is not None and not self.state["staff_mode"]:
+                ready = [t for t in self.state["tables"] if t["status"] == "ready"]
+                for table in ready:
+                    table.update(
+                        status="needs_verification",
+                        manual_hold=False,
+                        hold_until=None,
+                        note="Camera connection changed. Confirm readiness in person.",
+                    )
+                if ready:
+                    self.event(
+                        "Camera connection changed. Check the previously ready tables.",
+                        "system",
+                    )
+                    self.save()
+
+    def update_camera(self, source, model, fresh):
+        with self.lock:
+            if self.camera_ready and not (
+                source == "LIVE" and model == "ready" and fresh
+            ):
+                self.invalidate_camera()
+            self.source, self.model, self.fresh = source, model, fresh
+            self.advance_clock()
 
     def save(self):
         self.reconcile_tasks()
@@ -126,11 +231,13 @@ class Operations(ServiceMixin):
         )
         del self.state["events"][100:]
 
-    def configure(self, video_id, tables, reset=False):
+    def configure(self, video_id, tables, reset=False, *, live=False):
         tables = [
             table for table in tables if getattr(table, "kind", "table") == "table"
         ]
         with self.lock:
+            self.advance_clock()
+            self.validate_session_change(video_id, reset)
             if not reset and self.state["video_id"] == video_id:
                 self.validate_configuration(tables)
             if reset or self.state["video_id"] != video_id:
@@ -189,7 +296,10 @@ class Operations(ServiceMixin):
                     )
                 item.update(name=table.name, capacity=table.capacity, region=region)
                 configured.append(item)
-            if configured != self.state["tables"] or reset:
+            start_clock = live and self.state["service_epoch"] is None
+            if start_clock:
+                self.state["service_epoch"] = time.time() - self.state["now"]
+            if configured != self.state["tables"] or reset or start_clock:
                 self.state["tables"] = configured
                 self.save()
 
@@ -217,8 +327,11 @@ class Operations(ServiceMixin):
         with self.lock:
             if video_id != self.state["video_id"]:
                 return
+            self.advance_clock()
             self.fresh = fresh
-            self.state["now"] = max(self.state["now"], now)
+            if self.state["service_epoch"] is None:
+                self.state["now"] = max(self.state["now"], now)
+            now = self.state["now"]
             changed = False
             by_id = {s.table_id: s for s in states}
             for table in self.state["tables"]:
@@ -236,6 +349,20 @@ class Operations(ServiceMixin):
                 table["observed"] = observed
                 if previous != observed:
                     changed = True
+                if observed == "present":
+                    if table.get("departure_review") or table.get("review_dismissed"):
+                        table.update(departure_review=False, review_dismissed=False)
+                        changed = True
+                    if table["manual_hold"] and table["status"] == "ready":
+                        table.update(
+                            status="needs_verification",
+                            manual_hold=False,
+                            hold_until=None,
+                            note="Camera sees someone after the staff check. Verify the table again.",
+                        )
+                        changed = True
+                if self.state["staff_mode"] or table["status"] == "cleaning_required":
+                    continue
                 if table["manual_hold"] or table.get("verification_hold", False):
                     continue
                 if table.get("departure_hold", False):
@@ -274,17 +401,15 @@ class Operations(ServiceMixin):
                     and table["status"] == "occupied"
                     and now >= table["grace_until"]
                 ):
-                    if table["seen_present"]:
-                        self.depart(table, "vision")
-                    else:
+                    if not table.get("departure_review") and not table.get(
+                        "review_dismissed"
+                    ):
                         table.update(
-                            status="needs_verification",
-                            note="Seated party not observed after arrival grace period. Verify with staff.",
+                            departure_review=True,
+                            note="Camera reports vacancy. Check the table before confirming departure.",
                         )
-                        self.event(
-                            f"{table['name']}: seating needs verification.", "vision"
-                        )
-                    changed = True
+                        self.event(f"{table['name']}: check for departure.", "vision")
+                        changed = True
             if (
                 changed
                 or self.reconcile_tasks()
@@ -322,6 +447,8 @@ class Operations(ServiceMixin):
             occupied_since=None,
             duration_known=False,
             seen_present=False,
+            departure_review=False,
+            review_dismissed=False,
             note="Departure confirmed. Staff must confirm cleaning.",
         )
         self.event(f"{table['name']}: cleaning required.", origin)
@@ -335,8 +462,29 @@ class Operations(ServiceMixin):
             raise OperationError("Table not found.")
         return table
 
-    def add_party(self, name, size):
+    def add_party(self, name, size, *, request_id=None, session_id=None):
         with self.lock:
+            self.advance_clock()
+            if session_id is not None and session_id != self.state["session_id"]:
+                self.fail(
+                    "The floor session changed. Review the queue before submitting again."
+                )
+            name = name.strip()[:60]
+            if request_id:
+                previous = next(
+                    (
+                        p
+                        for p in self.state["parties"]
+                        if p.get("request_id") == request_id
+                    ),
+                    None,
+                )
+                if previous:
+                    if previous["request_name"] != name or previous["size"] != size:
+                        self.fail(
+                            "This queue request was already used for a different party."
+                        )
+                    return copy.deepcopy(previous)
             if not self.state["video_id"] or not self.state["tables"]:
                 raise OperationError(
                     "Start footage and configure tables before adding a party."
@@ -347,12 +495,14 @@ class Operations(ServiceMixin):
                 raise OperationError("Queue is full.")
             party = dict(
                 id=str(uuid.uuid4()),
-                name=name.strip()[:60] or f"Party {len(self.state['parties']) + 1}",
+                name=name or f"Party {len(self.state['parties']) + 1}",
                 size=size,
                 arrived_at=self.state["now"],
                 status="waiting",
                 table_id=None,
             )
+            if request_id:
+                party.update(request_id=request_id, request_name=name)
             self.state["parties"].append(party)
             self.event(f"{party['name']} joined the queue ({size} guests).", "staff")
             self.save()
@@ -385,29 +535,67 @@ class Operations(ServiceMixin):
             )
             self.save()
 
-    def action(self, table_id, action):
+    def table_key(self, table):
+        fields = (
+            "id",
+            "status",
+            "party_id",
+            "occupied_since",
+            "observed",
+            "hold_until",
+            "blocked",
+            "departure_review",
+            "capacity",
+            "region",
+        )
+        return hashlib.sha256(
+            json.dumps([self.state["session_id"], *[table.get(k) for k in fields]]).encode()
+        ).hexdigest()
+
+    def action(self, table_id, action, *, table_key=None):
         with self.lock:
+            self.advance_clock()
             table = self.table(table_id)
-            if action == "clean":
-                if table["status"] not in ("cleaning_required", "needs_verification"):
-                    raise OperationError(
-                        "Only a dirty or unverified table can be confirmed clean."
-                    )
-                if not self.fresh or table["observed"] != "absent":
-                    raise OperationError(
-                        "Fresh confirmed absence is required. Use a staff override if vision is incorrect."
-                    )
+            if table_key is not None and table_key != self.table_key(table):
+                self.fail(
+                    "This table changed. Review the current table before confirming."
+                )
+            staff_mode = self.state["staff_mode"]
+            if action in ("clean", "hold_ready"):
                 if table["party_id"]:
+                    self.fail("Resolve the seated party before confirming readiness.")
+                if table["status"] not in (
+                    "cleaning_required",
+                    "needs_verification",
+                    "ready",
+                ):
                     raise OperationError(
-                        "Resolve the seated party before confirming readiness."
+                        "Confirm departure before marking an occupied table ready."
                     )
+                if self.camera_ready and table["observed"] != "absent":
+                    self.fail(
+                        "Fresh confirmed absence is required. Camera activity conflicts with readiness."
+                    )
+                if not self.camera_ready and not staff_mode:
+                    self.fail(
+                        "Fresh camera observations are required. Start staff-confirmed mode to check in person."
+                    )
+                if table.get("blocked"):
+                    self.fail("Remove the table block before confirming readiness.")
+                temporary = staff_mode or action == "hold_ready"
                 table.update(
                     status="ready",
                     occupied_since=None,
                     dirty_since=None,
-                    manual_hold=False,
+                    manual_hold=temporary,
+                    hold_until=time.time() + STAFF_CHECK_SECONDS if temporary else None,
                     verification_hold=False,
-                    note="Clean and ready, confirmed by staff.",
+                    departure_hold=False,
+                    departure_review=False,
+                    review_dismissed=False,
+                    note="Staff confirmed empty and clean. Recheck after 60 seconds."
+                    if temporary
+                    else "Clean and ready, confirmed by staff.",
                 )
                 self.state["declined"] = [
                     pair
@@ -415,40 +603,53 @@ class Operations(ServiceMixin):
                     if pair[1] != table_id
                 ]
             elif action == "depart":
-                if table["status"] not in ("occupied", "needs_verification"):
+                if table["status"] != "occupied" and not table["party_id"]:
                     raise OperationError("This table has no occupied session to end.")
                 self.depart(table, "staff")
                 table["manual_hold"] = False
+                table["hold_until"] = None
                 table["verification_hold"] = False
                 table["departure_hold"] = table["observed"] != "absent"
+            elif action == "still_seated":
+                if not table.get("departure_review"):
+                    self.fail("There is no departure check to dismiss.")
+                table.update(
+                    departure_review=False,
+                    review_dismissed=True,
+                    note="Staff confirmed the party is still seated.",
+                )
             elif action == "hold_occupied":
                 table.update(
                     status="occupied",
                     manual_hold=True,
+                    hold_until=time.time() + STAFF_CHECK_SECONDS,
                     verification_hold=False,
                     departure_hold=False,
-                    occupied_since=self.state["now"],
-                    duration_known=False,
-                    note="Staff correction: occupied. Camera transitions held until released.",
+                    departure_review=False,
+                    occupied_since=table["occupied_since"]
+                    if table["occupied_since"] is not None
+                    else self.state["now"],
+                    note="Staff confirmed occupied. Recheck after 60 seconds.",
                 )
-            elif action == "hold_ready":
-                if table["party_id"]:
-                    raise OperationError(
-                        "Confirm departure before overriding readiness."
-                    )
+            elif action in ("block", "unblock"):
+                blocked = action == "block"
                 table.update(
-                    status="ready",
-                    manual_hold=True,
-                    verification_hold=False,
-                    departure_hold=False,
-                    occupied_since=None,
-                    dirty_since=None,
-                    note="Staff override: clean and ready. Camera transitions held until released.",
+                    blocked=blocked,
+                    manual_hold=False,
+                    hold_until=None,
+                    note="Staff blocked this table from walk-in seating."
+                    if blocked
+                    else "Table block removed. Confirm readiness before seating.",
                 )
+                if table["status"] == "ready":
+                    table["status"] = "needs_verification"
             elif action == "release":
+                if not table["manual_hold"]:
+                    self.fail("There is no active staff check to end.")
                 table.update(
                     manual_hold=False,
-                    status="needs_verification",
+                    hold_until=None,
+                    status="occupied" if table["party_id"] else "needs_verification",
                     note="Staff override released. Verify readiness or occupancy.",
                 )
             else:
@@ -456,21 +657,78 @@ class Operations(ServiceMixin):
             self.event(f"{table['name']}: {table['note']}", "staff")
             self.save()
 
+    def seating_eligible(self, table):
+        if table["status"] != "ready" or table.get("blocked") or table["party_id"]:
+            return False
+        if self.state["staff_mode"]:
+            return (
+                table["manual_hold"]
+                and (table.get("hold_until") or 0) > time.time()
+                and (not self.camera_ready or table["observed"] == "absent")
+            )
+        return self.camera_ready and table["observed"] == "absent"
+
+    def seating_key(self, allocations=None):
+        state = self.state
+        waiting = [
+            (
+                p["id"],
+                p["size"],
+                self.state["now"] - p["arrived_at"]
+                >= state["policy"]["max_wait_minutes"] * 60,
+            )
+            for p in state["parties"]
+            if p["status"] == "waiting"
+        ]
+        eligible = [
+            (t["id"], t["name"], t["capacity"], t.get("hold_until"))
+            for t in state["tables"]
+            if self.seating_eligible(t)
+        ]
+        if allocations is None:
+            allocations = allocate(
+                [p for p in state["parties"] if p["status"] == "waiting"],
+                [
+                    dict(t, seating_eligible=self.seating_eligible(t))
+                    for t in state["tables"]
+                ],
+                state["declined"],
+                state["policy"],
+                state["now"],
+            )
+        return hashlib.sha256(
+            json.dumps(
+                [
+                    state["session_id"],
+                    state["staff_mode"],
+                    waiting,
+                    eligible,
+                    state["declined"],
+                    state["policy"],
+                    [(p["id"], t["id"]) for p, t in allocations],
+                ],
+                sort_keys=True,
+            ).encode()
+        ).hexdigest()
+
     def recommendations(self):
-        if not self.fresh or self.source != "LIVE" or self.model != "ready":
+        if not self.camera_ready and not self.state["staff_mode"]:
             return []
         result = []
         waiting = [p for p in self.state["parties"] if p["status"] == "waiting"]
         declined = self.state.get("declined", [])
         policy = self.state["policy"]
+        tables = [
+            dict(t, seating_eligible=self.seating_eligible(t))
+            for t in self.state["tables"]
+        ]
         effective = (
             policy
-            if len([t for t in self.state["tables"] if t["status"] == "ready"]) <= 8
+            if sum(t["seating_eligible"] for t in tables) <= 8
             else {**policy, "strategy": "fairness"}
         )
-        allocation = allocate(
-            waiting, self.state["tables"], declined, effective, self.state["now"]
-        )
+        allocation = allocate(waiting, tables, declined, effective, self.state["now"])
+        key = self.seating_key(allocation)
         for party, table in allocation:
             index = waiting.index(party)
             skipped = [
@@ -494,10 +752,11 @@ class Operations(ServiceMixin):
                     unused_seats=table["capacity"] - party["size"],
                     explanation=reason,
                     version=self.state["version"],
+                    decision_key=key,
                     alternatives=compare_tables(
                         party,
                         waiting,
-                        self.state["tables"],
+                        tables,
                         declined,
                         allocation,
                         effective,
@@ -507,12 +766,20 @@ class Operations(ServiceMixin):
             )
         return result
 
-    def decline(self, party_id, table_id, version):
+    def check_seating_request(self, version, decision_key):
+        if decision_key is not None:
+            current = decision_key == self.seating_key()
+        else:
+            current = version == self.state["version"]
+        if not current:
+            self.fail(
+                "Seating choices changed. Review the updated options before confirming."
+            )
+
+    def decline(self, party_id, table_id, version, *, decision_key=None):
         with self.lock:
-            if version != self.state["version"]:
-                raise OperationError(
-                    "Restaurant state changed. Review the refreshed recommendation."
-                )
+            self.advance_clock()
+            self.check_seating_request(version, decision_key)
             if not any(
                 r["party_id"] == party_id and r["table_id"] == table_id
                 for r in self.recommendations()
@@ -526,12 +793,10 @@ class Operations(ServiceMixin):
             )
             self.save()
 
-    def seat(self, party_id, table_id, version, override=False):
+    def seat(self, party_id, table_id, version, override=False, *, decision_key=None):
         with self.lock:
-            if version != self.state["version"]:
-                raise OperationError(
-                    "Restaurant state changed. Review the refreshed recommendation."
-                )
+            self.advance_clock()
+            self.check_seating_request(version, decision_key)
             party = next(
                 (
                     p
@@ -542,23 +807,40 @@ class Operations(ServiceMixin):
             )
             table = self.table(table_id)
             eligible = (
-                self.fresh
-                and self.source == "LIVE"
-                and self.model == "ready"
-                and party is not None
-                and table["status"] == "ready"
-                and (table["observed"] == "absent" or table["manual_hold"])
+                party is not None
+                and self.seating_eligible(table)
                 and table["capacity"] >= party["size"]
             )
             if not eligible:
                 raise OperationError(
                     "The party or table is no longer eligible for seating."
                 )
-            if not override and not any(
-                r["party_id"] == party_id and r["table_id"] == table_id
-                for r in self.recommendations()
+            recs = self.recommendations()
+            recommendation = next((r for r in recs if r["party_id"] == party_id), None)
+            if not override and (
+                recommendation is None or recommendation["table_id"] != table_id
             ):
-                raise OperationError("This allocation is no longer eligible.")
+                self.fail("This allocation is no longer eligible.")
+            if override:
+                choice = next(
+                    (
+                        alt
+                        for alt in (recommendation or {}).get("alternatives", [])
+                        if alt["table_id"] == table_id
+                    ),
+                    None,
+                )
+                if choice is None:
+                    self.fail("Review the current manager choices for this party.")
+                if choice["displaced_party_names"]:
+                    self.fail(
+                        "This table choice would displace another waiting party. Choose a current option that protects the queue."
+                    )
+            if self.state["staff_mode"]:
+                self.event(
+                    f"{table['name']}: seated using the current staff readiness check.",
+                    "staff",
+                )
             party.update(
                 status="seated", table_id=table_id, seated_at=self.state["now"]
             )
@@ -572,6 +854,9 @@ class Operations(ServiceMixin):
                 grace_until=self.state["now"] + 30,
                 seen_present=False,
                 manual_hold=False,
+                hold_until=None,
+                departure_review=False,
+                review_dismissed=False,
                 note=f"{party['name']} seated by staff; awaiting visual confirmation.",
             )
             prefix = "Manager override: " if override else ""
@@ -581,7 +866,14 @@ class Operations(ServiceMixin):
     def estimates(self):
         from app.simulation import simulate
 
-        schedules = simulate(self.state, horizon_minutes=240)["baseline"]
+        state = {
+            **self.state,
+            "tables": [
+                dict(t, seating_eligible=self.seating_eligible(t))
+                for t in self.state["tables"]
+            ],
+        }
+        schedules = simulate(state, horizon_minutes=240)["baseline"]
         by_bound = {
             bound: {
                 party["party_id"]: party["wait_minutes"] for party in value["seated"]
@@ -604,13 +896,21 @@ class Operations(ServiceMixin):
             )
         return estimates
 
-    def snapshot(self, source=None, model=None):
+    def snapshot(self, source=None, model=None, fresh=None):
         with self.lock:
-            if source is not None:
-                self.source = source
-            if model is not None:
-                self.model = model
+            self.update_camera(
+                self.source if source is None else source,
+                self.model if model is None else model,
+                self.fresh if fresh is None else fresh,
+            )
             result = copy.deepcopy(self.state)
+            for table in result["tables"]:
+                table.update(
+                    seating_eligible=self.seating_eligible(table),
+                    table_key=self.table_key(table),
+                    blocked=table.get("blocked", False),
+                    departure_review=table.get("departure_review", False),
+                )
             result["availability"] = self.availability()
             result["analytics"] = self.operational_analytics()
             result.update(
@@ -619,7 +919,7 @@ class Operations(ServiceMixin):
                 observations_fresh=self.fresh,
                 recommendations=self.recommendations(),
                 wait_estimates=self.estimates()
-                if self.fresh and self.source == "LIVE" and self.model == "ready"
+                if self.camera_ready and not self.state["staff_mode"]
                 else {},
             )
             waiting = [p for p in self.state["parties"] if p["status"] == "waiting"]

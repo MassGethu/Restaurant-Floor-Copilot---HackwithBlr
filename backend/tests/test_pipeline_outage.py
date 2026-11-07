@@ -25,6 +25,7 @@ class SwitchableSource:
     def __init__(self, source: str) -> None:
         self.source = source
         self.sending = True
+        self.level = 0
 
     @property
     def status(self) -> SourceStatus:
@@ -35,7 +36,7 @@ class SwitchableSource:
             time.sleep(min(timeout, 0.05))
             return False, None
         time.sleep(0.02)
-        return True, np.zeros((180, 320, 3), np.uint8)
+        return True, np.full((180, 320, 3), self.level, np.uint8)
 
     def release(self) -> None:
         self.sending = False
@@ -90,6 +91,14 @@ def test_an_outage_ends_the_run_and_occupancy_starts_over(tmp_path: Path) -> Non
         assert [e["new_status"] for e in events] == ["PENDING_OCCUPIED", "OCCUPIED"] * 2  # started over
         sessions = rebuild_sessions(events, runs)
         assert len(sessions) == 2 and sessions[0].end == runs[0][1]
+
+        # Frames continue arriving, but the frozen image must stop authorizing actions.
+        wait_until(lambda: pipeline.playback()["source_frozen"])
+        assert not pipeline.playback()["inference_fresh"]
+        assert pipeline.status().source_status == "RECONNECTING"
+        sources[0].level = 1
+        wait_until(lambda: pipeline.playback()["inference_fresh"])
+        assert not pipeline.playback()["source_frozen"]
     finally:
         pipeline.stop()
         db.close()

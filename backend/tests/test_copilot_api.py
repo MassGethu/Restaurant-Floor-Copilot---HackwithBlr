@@ -265,3 +265,39 @@ def test_entrance_region_does_not_become_a_dining_table(client):
         ).status_code
         == 422
     )
+
+
+def test_staff_service_keeps_queue_clock_and_party_through_reconnect(client):
+    client.post("/api/copilot/play", json={"video_id": "floor"}).raise_for_status()
+    client.post("/api/stream/stop").raise_for_status()
+    initial = client.post("/api/copilot/service-mode", json={"mode": "staff"}).json()
+    assert initial["staff_mode"] and not initial["observations_fresh"]
+    payload = {
+        "name": "Walk-in",
+        "size": 2,
+        "session_id": initial["session_id"],
+        "request_id": "lost-response",
+    }
+    client.post("/api/copilot/parties", json=payload).raise_for_status()
+    queued = client.post("/api/copilot/parties", json=payload).json()
+    assert len(queued["parties"]) == 1 and not queued["recommendations"]
+    ready = client.post(
+        "/api/copilot/tables/T1",
+        json={"action": "clean", "table_key": queued["tables"][0]["table_key"]},
+    ).json()
+    rec = ready["recommendations"][0]
+    payload = {k: rec[k] for k in ("party_id", "table_id", "version", "decision_key")}
+    seated = client.post("/api/copilot/seat", json=payload)
+    seated.raise_for_status()
+    assert client.post("/api/copilot/seat", json=payload).status_code == 409
+    assert (
+        client.post("/api/copilot/play", json={"video_id": "floor"}).status_code == 409
+    )
+    reconnect = client.post("/api/copilot/reconnect")
+    reconnect.raise_for_status()
+    state = reconnect.json()
+    assert state["session_id"] == initial["session_id"] and state["staff_mode"]
+    assert state["tables"][0]["party_id"] == rec["party_id"]
+    assert state["now"] > initial["now"]
+    brief = client.get("/api/supervisor/handover").json()
+    assert brief["mode"] == "operations" and brief["evidence"] == []

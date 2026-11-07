@@ -75,8 +75,10 @@ try:
     assert table(state,'T1')['status']=='occupied'
     assert not any('cleaning required' in e['text'] and 'Table 1' in e['text'] for e in state['events'])
     record('Brief 40–42 second absence does not release the table', state)
-    state = wait(lambda s: table(s,'T1')['status']=='cleaning_required', 40)
-    record('Sustained visual absence triggers cleaning required', state)
+    state = wait(lambda s: table(s,'T1')['departure_review'], 40)
+    assert table(state,'T1')['party_id'] and table(state,'T1')['status']=='occupied'
+    state = api('/tables/T1', {'action':'depart'})
+    record('Camera flags vacancy and staff departure confirmation opens cleaning', state)
     state = api('/tables/T1', {'action':'clean'})
     rec = next(r for r in state['recommendations'] if r['table_id']=='T1')
     state = api('/seat', {k:rec[k] for k in ('party_id','table_id','version')})

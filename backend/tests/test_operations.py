@@ -65,7 +65,9 @@ def test_seating_survives_miss_then_requests_verification(floor):
     floor.observe('demo', [observation('T1', 'AVAILABLE')], 2)
     assert floor.table('T1')['status'] == 'occupied'
     floor.observe('demo', [observation('T1', 'AVAILABLE')], 31)
-    assert floor.table('T1')['status'] == 'needs_verification'
+    assert floor.table('T1')['departure_review']
+    assert floor.table('T1')['party_id'] == party['id']
+    assert floor.table('T1')['status'] == 'occupied'
     with pytest.raises(OperationError, match='seated party'):
         floor.action('T1', 'clean')
 
@@ -78,8 +80,22 @@ def test_departure_requires_cleaning_and_closes_party(floor):
     floor.observe('demo', [observation('T1', 'PENDING_AVAILABLE')], 35)
     assert floor.table('T1')['status'] == 'occupied'
     floor.observe('demo', [observation('T1', 'AVAILABLE')], 41)
+    assert floor.table('T1')['departure_review']
+    assert floor.state['parties'][0]['status'] == 'seated'
+    assert not floor.state['tasks'] and not floor.state['completed_sessions']
+    floor.action('T1', 'still_seated')
+    floor.observe('demo', [observation('T1', 'AVAILABLE')], 42)
+    assert not floor.table('T1')['departure_review']
+    floor.observe('demo', [observation('T1', 'OCCUPIED')], 43)
+    floor.observe('demo', [observation('T1', 'AVAILABLE')], 55)
+    assert floor.table('T1')['departure_review']
+    floor.action('T1', 'depart')
     assert floor.table('T1')['status'] == 'cleaning_required'
     assert floor.state['parties'][0]['status'] == 'departed'
+    floor.observe('demo', [observation('T1', 'OCCUPIED')], 56)
+    assert floor.table('T1')['status'] == 'cleaning_required'
+    assert [task['status'] for task in floor.state['tasks'] if task['kind'] == 'cleaning'] == ['open']
+    floor.observe('demo', [observation('T1', 'AVAILABLE')], 57)
     floor.action('T1', 'clean')
     assert floor.table('T1')['status'] == 'ready'
 
@@ -99,6 +115,47 @@ def test_cleaning_requires_fresh_confirmed_absence(floor):
     floor.observe('demo', [observation('T1', 'PENDING_OCCUPIED')], 1)
     with pytest.raises(OperationError, match='Fresh'):
         floor.action('T1', 'clean')
+
+
+def test_staff_check_expires_and_camera_conflict_needs_a_new_check(floor, monkeypatch):
+    wall = [10_000.0]
+    monkeypatch.setattr('app.operations.time.time', lambda: wall[0])
+    floor.set_staff_mode(True)
+    floor.snapshot('RECONNECTING', 'ready', False)
+    floor.action('T1', 'clean')
+    party = floor.add_party('Pair', 2)
+    choice = floor.recommendations()[0]
+    wall[0] += 61
+    with pytest.raises(OperationError, match='changed'):
+        floor.seat(party['id'], 'T1', choice['version'], decision_key=choice['decision_key'])
+    assert floor.table('T1')['status'] == 'needs_verification'
+    floor.action('T1', 'clean')
+    floor.observe('demo', [observation('T1', 'OCCUPIED')], 100)
+    floor.snapshot('LIVE', 'ready', True)
+    assert not floor.recommendations()
+    with pytest.raises(OperationError, match='conflicts'):
+        floor.action('T1', 'hold_ready')
+    floor.snapshot('RECONNECTING', 'ready', False)
+    assert not floor.recommendations()  # a lost feed cannot revive the previous staff check
+
+
+def test_queue_retry_and_seating_key_ignore_unrelated_service_work(floor):
+    make_ready(floor)
+    session = floor.state['session_id']
+    party = floor.add_party('Pair', 2, request_id='retry-key', session_id=session)
+    before = floor.recommendations()[0]
+    assert floor.add_party('Pair', 2, request_id='retry-key', session_id=session) == party
+    with pytest.raises(OperationError, match='different party'):
+        floor.add_party('Pair', 4, request_id='retry-key', session_id=session)
+    floor.action('T3', 'hold_occupied')
+    floor.action('T3', 'block')
+    changed = floor.recommendations()[0]
+    assert changed['decision_key'] != before['decision_key']
+    with pytest.raises(OperationError, match='changed'):
+        floor.seat(party['id'], 'T1', before['version'], decision_key=before['decision_key'])
+    floor.request_service('T3')
+    floor.seat(party['id'], 'T1', changed['version'], decision_key=changed['decision_key'])
+    assert len(floor.state['parties']) == 1 and floor.table('T1')['party_id'] == party['id']
 
 
 def test_outages_disable_recommendations_and_estimates(floor):

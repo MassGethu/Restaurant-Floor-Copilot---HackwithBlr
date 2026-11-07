@@ -1,14 +1,14 @@
 """Staff workflow endpoints. Inputs are validated before operational transitions."""
 
+import os
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from app.config_store import default_occupancy
-from app.settings import BACKEND_DIR
-import os
 from app.schemas import TableConfig
+from app.settings import BACKEND_DIR
 
 router = APIRouter(prefix="/api/copilot", tags=["floor copilot"])
 
@@ -16,6 +16,8 @@ router = APIRouter(prefix="/api/copilot", tags=["floor copilot"])
 class PartyInput(BaseModel):
     name: str = Field(default="", max_length=60)
     size: int = Field(ge=1, le=20)
+    request_id: str | None = Field(default=None, min_length=1, max_length=100)
+    session_id: str | None = Field(default=None, max_length=100)
 
 
 class SeatInput(BaseModel):
@@ -23,10 +25,25 @@ class SeatInput(BaseModel):
     table_id: str
     version: int
     override: bool = False
+    decision_key: str | None = Field(default=None, min_length=64, max_length=64)
 
 
 class TableAction(BaseModel):
-    action: Literal["clean", "depart", "hold_occupied", "hold_ready", "release"]
+    action: Literal[
+        "clean",
+        "depart",
+        "still_seated",
+        "hold_occupied",
+        "hold_ready",
+        "release",
+        "block",
+        "unblock",
+    ]
+    table_key: str | None = Field(default=None, min_length=64, max_length=64)
+
+
+class ServiceModeInput(BaseModel):
+    mode: Literal["camera", "staff"]
 
 
 class PlayInput(BaseModel):
@@ -49,7 +66,15 @@ class ServiceInput(BaseModel):
 
 
 class TaskInput(BaseModel):
-    action: Literal["assign", "acknowledge", "start", "complete", "cancel", "priority_high", "priority_normal"]
+    action: Literal[
+        "assign",
+        "acknowledge",
+        "start",
+        "complete",
+        "cancel",
+        "priority_high",
+        "priority_normal",
+    ]
     staff_id: str | None = None
 
 
@@ -80,15 +105,16 @@ class SimulationInput(BaseModel):
 @router.get("")
 def snapshot(request: Request):
     app = request.app.state
-    playback = app.pipeline.playback()
-    app.operations.fresh = playback["inference_fresh"]
-    state = app.operations.snapshot(playback["source_status"], playback["model_state"])
+    playback = app.pipeline.refresh_operations()
+    state = app.operations.snapshot()
     return dict(**state, playback=playback)
 
 
 @router.post("/play")
 def play(body: PlayInput, request: Request):
     app = request.app.state
+    with app.operations.lock:
+        app.operations.validate_session_change(body.video_id, reset=True)
     path = app.library.path(body.video_id)
     if path is None:
         raise HTTPException(404, "Video not found.")
@@ -104,10 +130,10 @@ def play(body: PlayInput, request: Request):
             occupancy=default_occupancy(app.pipeline.settings),
         )
         app.store.save(config)
-    app.streams.stop()
     app.pipeline.activate(
         body.video_id, source_override=str(path), reset_operations=True
     )
+    app.streams.stop()
     return snapshot(request)
 
 
@@ -120,9 +146,28 @@ def pause(body: PauseInput, request: Request):
     return snapshot(request)
 
 
+@router.post("/service-mode")
+def service_mode(body: ServiceModeInput, request: Request):
+    snapshot(request)
+    request.app.state.operations.set_staff_mode(body.mode == "staff")
+    return snapshot(request)
+
+
+@router.post("/reconnect")
+def reconnect(request: Request):
+    app = request.app.state
+    try:
+        app.pipeline.reconnect(app.operations.state["video_id"])
+    except ValueError as error:
+        raise HTTPException(409, str(error)) from error
+    return snapshot(request)
+
+
 @router.post("/parties", status_code=201)
 def add_party(body: PartyInput, request: Request):
-    request.app.state.operations.add_party(body.name, body.size)
+    request.app.state.operations.add_party(
+        body.name, body.size, request_id=body.request_id, session_id=body.session_id
+    )
     return snapshot(request)
 
 
@@ -143,7 +188,11 @@ def seat(body: SeatInput, request: Request):
     # Refresh inference health before validating an approval.
     snapshot(request)
     request.app.state.operations.seat(
-        body.party_id, body.table_id, body.version, override=body.override
+        body.party_id,
+        body.table_id,
+        body.version,
+        override=body.override,
+        decision_key=body.decision_key,
     )
     return snapshot(request)
 
@@ -151,14 +200,16 @@ def seat(body: SeatInput, request: Request):
 @router.post("/decline")
 def decline(body: SeatInput, request: Request):
     snapshot(request)
-    request.app.state.operations.decline(body.party_id, body.table_id, body.version)
+    request.app.state.operations.decline(
+        body.party_id, body.table_id, body.version, decision_key=body.decision_key
+    )
     return snapshot(request)
 
 
 @router.post("/tables/{table_id}")
 def table_action(table_id: str, body: TableAction, request: Request):
     snapshot(request)
-    request.app.state.operations.action(table_id, body.action)
+    request.app.state.operations.action(table_id, body.action, table_key=body.table_key)
     return snapshot(request)
 
 

@@ -259,7 +259,7 @@ class ServiceMixin:
             if action == "dismiss":
                 arrival["status"] = "dismissed"
             elif action == "register":
-                party = self.add_party(name, size)
+                party = self.add_party(name, size, request_id=f"arrival:{arrival_id}")
                 arrival.update(status="registered", party_id=party["id"])
             else:
                 self.fail("Unknown arrival action.")
@@ -272,11 +272,15 @@ class ServiceMixin:
         for table in self.state["tables"]:
             low = high = None
             reason = "Staff verification or a manual estimate is required."
-            if table["status"] == "ready":
-                low = high = 0
+            if table.get("blocked"):
+                reason = "Staff blocked this table from walk-in seating."
+            elif table.get("departure_review"):
                 reason = (
-                    "Staff-confirmed ready; visual freshness and capacity still apply."
+                    "Staff must verify the departure before estimating availability."
                 )
+            elif self.seating_eligible(table):
+                low = high = 0
+                reason = "Eligible now for a party that fits."
             elif table["status"] == "cleaning_required":
                 low = a["cleaning_min"]
                 high = a["cleaning_max"]

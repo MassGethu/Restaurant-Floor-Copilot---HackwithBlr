@@ -116,11 +116,7 @@ def create_app(
         app.state.store, app.state.db, app.state.library = store, db, library
         app.state.streams, app.state.broadcaster, app.state.pipeline = streams, broadcaster, pipeline
         def refresh_supervisor_floor():
-            playback = pipeline.playback()
-            with operations.lock:
-                operations.fresh = playback["inference_fresh"]
-                operations.source = playback["source_status"]
-                operations.model = playback["model_state"]
+            pipeline.refresh_operations()
 
         supervisor = Supervisor(operations, settings, refresh=refresh_supervisor_floor)
         app.state.supervisor = supervisor
@@ -129,7 +125,10 @@ def create_app(
         shutdown_requested.clear()
 
         await asyncio.to_thread(streams.ensure_mediamtx)
-        default_video = settings.default_video_id or None
+        default_video = (
+            operations.state["video_id"] if operations.state["service_epoch"] is not None
+            else settings.default_video_id or None
+        )
         pipeline.start(default_video)
         if default_video and library.get(default_video) and "://" in (pipeline.current_config().source if pipeline.current_config() else settings.fake_camera_rtsp_url):
             await asyncio.to_thread(streams.start, default_video, library.path(default_video))
@@ -277,6 +276,10 @@ def create_app(
     def delete_video(request: Request, video_id: str) -> Response:
         """Delete a video with its thumbnail, table config and analytics history (stops its stream first)."""
         library: VideoLibrary = request.app.state.library
+        operations: Operations = request.app.state.operations
+        with operations.lock:
+            if operations.state["video_id"] == video_id:
+                operations.validate_session_change(None, reset=True)
         streams: StreamManager = request.app.state.streams
         pipeline: Pipeline = request.app.state.pipeline
         if library.get(video_id) is None:
@@ -300,8 +303,8 @@ def create_app(
             available = ", ".join(video["id"] for video in library.list()) or "none, upload one first"
             raise HTTPException(404, f"No video with id '{body.video_id}'. Available ids: {available}.")
         streams: StreamManager = request.app.state.streams
-        streams.stop()  # the old video stops publishing before the pipeline switches to the new tables
         request.app.state.pipeline.activate(body.video_id)
+        streams.stop()
         streams.start(body.video_id, path)
         return stream_status(request)
 

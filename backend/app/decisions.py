@@ -5,13 +5,19 @@ measure the immediate queue effect if staff choose a different ready table.
 """
 
 
+def ready_table(table):
+    if "seating_eligible" in table:
+        return table["seating_eligible"]
+    return (
+        table["status"] == "ready"
+        and table["observed"] == "absent"
+        and not table.get("blocked")
+        and not table.get("party_id")
+    )
+
+
 def ready_tables(tables):
-    return [
-        table
-        for table in tables
-        if table["status"] == "ready"
-        and (table["observed"] == "absent" or table["manual_hold"])
-    ]
+    return [table for table in tables if ready_table(table)]
 
 
 def allocate(waiting, tables, declined, policy=None, now=0):
