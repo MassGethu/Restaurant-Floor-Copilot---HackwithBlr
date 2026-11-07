@@ -10,6 +10,12 @@ export type FloorTable = {
   occupied_since: number | null;
   duration_known: boolean;
   manual_hold: boolean;
+  hold_until?: number | null;
+  seating_eligible: boolean;
+  departure_review: boolean;
+  blocked: boolean;
+  table_key: string;
+  party_id: string | null;
   note: string;
 };
 export type Party = {
@@ -28,6 +34,7 @@ export type Recommendation = {
   explanation: string;
   unused_seats: number;
   version: number;
+  decision_key: string;
   alternatives: {
     table_id: string;
     table_name: string;
@@ -39,6 +46,8 @@ export type Recommendation = {
   }[];
 };
 export type FloorState = {
+  staff_mode: boolean;
+  service_epoch: number | null;
   policy: {
     strategy: "fairness" | "balanced" | "throughput";
     max_wait_minutes: number;
@@ -134,6 +143,8 @@ export type FloorState = {
     position_seconds: number;
     processing_fps: number;
     inference_fresh: boolean;
+    source_frozen: boolean;
+    is_file: boolean;
     session_id: number;
   };
 };
@@ -143,16 +154,16 @@ export async function floorRequest<T = FloorState>(
   body?: unknown,
   method = "POST",
 ): Promise<T> {
-  const response = await fetch(
-    apiUrl(`/api/copilot${path}`),
-    body === undefined && method === "POST"
-      ? undefined
+  const response = await fetch(apiUrl(`/api/copilot${path}`), {
+    signal: AbortSignal.timeout(12_000),
+    ...(body === undefined && method === "POST"
+      ? {}
       : {
           method,
           headers: { "Content-Type": "application/json" },
           body: body === undefined ? undefined : JSON.stringify(body),
-        },
-  );
+        }),
+  });
   const data = await response.json();
   if (!response.ok)
     throw new Error(

@@ -1,60 +1,144 @@
+import { useEffect, useRef } from "react";
 import {
-  Bell,
-  Brain,
+  ArrowUpRight,
+  ChevronRight,
   LayoutGrid,
-  MonitorPlay,
-  PenLine,
-  ScanEye,
-  Video,
+  Menu,
+  Plus,
+  X,
 } from "lucide-react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import { navigation, operationsView } from "../lib/workspaceNavigation";
+import "./workspace.css";
 
-const LINKS = [
-  { to: "/floor", label: "Floor Copilot", icon: LayoutGrid },
-  { to: "/supervisor", label: "Supervisor", icon: Brain },
-  { to: "/operations", label: "Operations", icon: Bell },
-  { to: "/videos", label: "Videos", icon: Video },
-  { to: "/live", label: "Vision Monitor", icon: MonitorPlay },
-  { to: "/setup", label: "Table Setup", icon: PenLine },
-];
-
-/** Top navigation bar and page frame. */
 export default function Layout() {
-  return (
-    <div className="min-h-screen">
-      <header className="bg-[#132d2d] text-white shadow">
-        <div className="mx-auto flex h-14 max-w-[1480px] items-center justify-between px-4">
+  const { pathname, search, hash } = useLocation();
+  const menu = useRef<HTMLDialogElement>(null);
+  let currentPath = pathname.toLowerCase().replace(/\/+$/, "");
+  if (currentPath === "/operations") {
+    const view = operationsView(search);
+    if (view !== "staff") currentPath = `/operations?tab=${view}`;
+  } else if (currentPath.startsWith("/setup/")) {
+    currentPath = "/setup";
+  }
+  const currentGroup = navigation.find(({ items }) =>
+    items.some(({ to }) => to === currentPath),
+  );
+  const current = currentGroup?.items.find(({ to }) => to === currentPath);
+
+  useEffect(() => {
+    if (!hash) window.scrollTo(0, 0);
+  }, [pathname, search, hash]);
+
+  function links(onNavigate?: () => void) {
+    return navigation.map(({ label, items }) => (
+      <div className="workspace-nav-group" key={label}>
+        <p>{label}</p>
+        {items.map(({ to, label, icon: Icon }) => (
           <Link
-            to="/floor"
-            className="flex items-center gap-2 font-semibold tracking-tight"
+            key={to}
+            to={to}
+            aria-current={to === currentPath ? "page" : undefined}
+            onClick={onNavigate}
           >
-            <ScanEye className="h-5 w-5 text-emerald-400" />
-            FLOOR <span className="font-normal text-slate-400">/ COPILOT</span>
+            <Icon size={17} aria-hidden="true" />
+            {label}
           </Link>
-          <nav className="flex gap-1">
-            {LINKS.map(({ to, label, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                aria-label={label}
-                className={({ isActive }) =>
-                  `flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-slate-700 text-white"
-                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
-                  }`
-                }
-              >
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{label}</span>
-              </NavLink>
-            ))}
-          </nav>
+        ))}
+      </div>
+    ));
+  }
+
+  return (
+    <div className="workspace">
+      <a className="workspace-skip" href="#workspace-main">
+        Skip to content
+      </a>
+      <aside className="workspace-sidebar">
+        <Link className="workspace-brand" to="/floor">
+          <span className="workspace-mark">
+            <LayoutGrid size={19} aria-hidden="true" />
+          </span>
+          <span>
+            <strong>Floor Copilot</strong>
+            <small>Restaurant workspace</small>
+          </span>
+        </Link>
+        <nav aria-label="Main navigation">{links()}</nav>
+        <Link className="workspace-handover" to="/supervisor#handover">
+          <span>Shift handover</span>
+          <ArrowUpRight size={16} aria-hidden="true" />
+        </Link>
+      </aside>
+
+      <div className="workspace-content">
+        <header className="workspace-topbar">
+          <div className="workspace-trail">
+            <span>{currentGroup?.label ?? "Workspace"}</span>
+            <ChevronRight size={14} aria-hidden="true" />
+            <strong>{current?.label ?? "Floor overview"}</strong>
+          </div>
+          <Link className="workspace-add" to="/floor#add-party">
+            <Plus size={17} aria-hidden="true" />
+            Add party
+          </Link>
+        </header>
+        <main className="workspace-main" id="workspace-main" tabIndex={-1}>
+          <Outlet />
+        </main>
+      </div>
+
+      <nav className="workspace-mobile-nav" aria-label="Shift navigation">
+        {navigation[0].items.map(({ to, label, shortLabel, icon: Icon }) => (
+          <Link
+            key={to}
+            to={to}
+            aria-current={to === currentPath ? "page" : undefined}
+          >
+            <Icon size={19} aria-hidden="true" />
+            {shortLabel ?? label}
+          </Link>
+        ))}
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          onClick={() => menu.current?.showModal()}
+        >
+          <Menu size={19} aria-hidden="true" />
+          Menu
+        </button>
+      </nav>
+
+      <dialog
+        className="workspace-menu"
+        ref={menu}
+        aria-labelledby="workspace-menu-title"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) menu.current?.close();
+        }}
+      >
+        <div className="workspace-menu-content">
+          <header>
+            <h2 id="workspace-menu-title">Workspace menu</h2>
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => menu.current?.close()}
+            >
+              <X size={22} aria-hidden="true" />
+            </button>
+          </header>
+          <nav aria-label="All pages">{links(() => menu.current?.close())}</nav>
+          <Link
+            className="workspace-handover"
+            to="/supervisor#handover"
+            onClick={() => menu.current?.close()}
+          >
+            <span>Shift handover</span>
+            <ArrowUpRight size={16} aria-hidden="true" />
+          </Link>
         </div>
-      </header>
-      <main className="mx-auto max-w-[1480px] px-4 py-6">
-        <Outlet />
-      </main>
+      </dialog>
     </div>
   );
 }

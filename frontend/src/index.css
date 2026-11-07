@@ -1011,24 +1011,6 @@ input:focus-visible {
 .ops-heading p {
   color: #758a79;
 }
-.ops-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 22px;
-}
-.ops-tabs button {
-  padding: 10px 16px;
-  background: #fff;
-  color: #6e8567;
-  border: 1px solid #dce5d5;
-  border-radius: 7px;
-}
-.ops-tabs button.selected {
-  color: #fff;
-  background: #2c745a;
-  border-color: #2c745a;
-}
 .ops-card {
   background: #fff;
   border: 1px solid #dde6d7;
@@ -1318,12 +1300,5 @@ input:focus-visible {
   }
   .ops-task-grid {
     grid-template-columns: 1fr;
-  }
-  .ops-tabs {
-    gap: 5px;
-  }
-  .ops-tabs button {
-    font-size: 11px;
-    padding: 9px 11px;
   }
 }

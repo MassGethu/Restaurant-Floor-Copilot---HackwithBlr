@@ -225,8 +225,8 @@ export default function SupervisorCards({
               : "Cloud"}
           </small>
         </div>
-        <Link to="/supervisor">
-          <ArrowRight size={16} />
+        <Link to="/supervisor" aria-label="Open Supervisor">
+          <ArrowRight size={16} aria-hidden="true" />
         </Link>
       </div>
       <p className="decision-intro">

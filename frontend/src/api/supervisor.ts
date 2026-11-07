@@ -87,7 +87,7 @@ export type SupervisorState = {
   };
 };
 export type Handover = {
-  mode: "sources" | "reflect";
+  mode: "operations" | "sources" | "reflect";
   text: string;
   evidence: Evidence[];
   created_at: string;

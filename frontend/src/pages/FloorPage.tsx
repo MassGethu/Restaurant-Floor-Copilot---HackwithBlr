@@ -10,7 +10,9 @@ import {
   ArrowDown,
   ArrowRight,
   Check,
+  ClipboardList,
   Clock3,
+  DoorOpen,
   LayoutGrid,
   Pause,
   Play,
@@ -30,6 +32,7 @@ import {
   type Recommendation,
 } from "../api/copilot";
 import type { Video as VideoItem } from "../api/types";
+import { useSectionJump } from "../hooks/useSectionJump";
 
 const statusLabels = {
   ready: "Ready to seat",
@@ -63,8 +66,11 @@ function SeatingSuggestion({
   const party = state.parties.find((p) => p.id === rec.party_id);
   const options = state.tables.filter(
     (t) =>
-      t.status === "ready" &&
-      (t.observed === "absent" || t.manual_hold) &&
+      t.seating_eligible &&
+      rec.alternatives.some(
+        (option) =>
+          option.table_id === t.id && !option.displaced_party_names.length,
+      ) &&
       t.capacity >= (party?.size ?? Infinity),
   );
   const selected = options.some((t) => t.id === alternative)
@@ -138,11 +144,16 @@ function SeatingSuggestion({
             party_id: rec.party_id,
             table_id: selected,
             version: rec.version,
+            decision_key: rec.decision_key,
             override,
           })
         }
       >
-        {override ? "Confirm manager choice" : "Approve seating"}{" "}
+        {state.staff_mode
+          ? "Seat using staff check"
+          : override
+            ? "Confirm manager choice"
+            : "Approve seating"}{" "}
         <ArrowRight size={15} />
       </button>
       <button
@@ -153,6 +164,7 @@ function SeatingSuggestion({
             party_id: rec.party_id,
             table_id: rec.table_id,
             version: rec.version,
+            decision_key: rec.decision_key,
           })
         }
       >
@@ -163,6 +175,7 @@ function SeatingSuggestion({
 }
 
 export default function FloorPage() {
+  useSectionJump();
   const [state, setState] = useState<FloorState | null>(null);
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [selected, setSelected] = useState("");
@@ -179,6 +192,7 @@ export default function FloorPage() {
   });
   const [staffTable, setStaffTable] = useState<string | null>(null);
   const requestId = useRef(0);
+  const queueAttempt = useRef<{ input: string; id: string } | null>(null);
   const refresh = useCallback(async () => {
     const id = ++requestId.current;
     try {
@@ -231,13 +245,29 @@ export default function FloorPage() {
   };
   const addParty = async (e: FormEvent) => {
     e.preventDefault();
-    if (await act("/parties", { name, size })) setName("");
+    if (!state) return;
+    const input = JSON.stringify([state.session_id, name.trim(), size]);
+    if (queueAttempt.current?.input !== input) {
+      queueAttempt.current = { input, id: crypto.randomUUID() };
+    }
+    if (
+      await act("/parties", {
+        name,
+        size,
+        session_id: state.session_id,
+        request_id: queueAttempt.current.id,
+      })
+    ) {
+      queueAttempt.current = null;
+      setName("");
+    }
   };
   const tables = state?.tables ?? [];
   const waiting = state?.parties.filter((p) => p.status === "waiting") ?? [];
-  const ready = tables.filter((t) => t.status === "ready").length;
+  const ready = tables.filter((t) => t.seating_eligible).length;
   const occupied = tables.filter((t) => t.status === "occupied").length;
   const dirty = tables.filter((t) => t.status === "cleaning_required").length;
+  const departures = tables.filter((t) => t.departure_review);
   const live =
     connected &&
     state?.source_status === "LIVE" &&
@@ -245,22 +275,28 @@ export default function FloorPage() {
     state.observations_fresh;
   const now = state?.now ?? 0;
   const activeVideo = state?.playback.video_id;
+  const staffMode = Boolean(state?.staff_mode);
+  const canCheckClean = (table: FloorTable) =>
+    !table.blocked &&
+    !table.party_id &&
+    (live ? table.observed === "absent" : staffMode);
   const currentVideo = videos.find((v) => v.id === state?.video_id);
   const isControlled = state?.video_id?.includes("controlled");
   const tableAction = (table: FloorTable, action: string) =>
-    void act(`/tables/${encodeURIComponent(table.id)}`, { action });
+    void act(`/tables/${encodeURIComponent(table.id)}`, {
+      action,
+      table_key: table.table_key,
+    });
 
   return (
     <div className="floor-page">
-      <div className="floor-heading">
+      <div className="floor-heading workspace-intro">
         <div>
-          <div className="eyebrow">
-            RESTAURANT OPERATIONS <span>/</span> FLOOR OVERVIEW
-          </div>
-          <h1>
-            Your floor, in focus<span>.</span>
-          </h1>
-          <p>See what’s happening. Know what to do next.</p>
+          <div className="eyebrow">Service desk</div>
+          <h1>Floor overview</h1>
+          <p>
+            See which tables are ready, who’s waiting, and what needs attention.
+          </p>
         </div>
         <div className={`live-pill ${live ? "is-live" : ""}`}>
           <i />
@@ -278,19 +314,52 @@ export default function FloorPage() {
         </div>
       </div>
 
-      {state && tables.length > 0 && !live && (
-        <div className="floor-stale" role="status">
-          Last known floor state.{" "}
-          {state.model_state === "failed"
-            ? "The detector is unavailable."
-            : !activeVideo
-              ? "Start footage to resume observation."
-              : state.playback.ended
-                ? "The clip has ended."
-                : "Waiting for fresh inference."}{" "}
-          Seating suggestions are disabled until current observations are
-          available.
-        </div>
+      {state && tables.length > 0 && (
+        <section
+          className={`service-mode-bar ${staffMode || !live ? "needs-attention" : ""}`}
+          aria-label="Service mode"
+        >
+          <div>
+            <strong>
+              {staffMode
+                ? "Staff-confirmed service"
+                : live
+                  ? "Camera-assisted service"
+                  : "Camera unavailable"}
+            </strong>
+            <p role="status">
+              {!connected
+                ? "Connection lost. Use your venue’s floor board until the app returns."
+                : staffMode
+                  ? "Check each table in person. A readiness check lasts 60 seconds."
+                  : state.playback.source_frozen
+                    ? "The camera image stopped changing. Use staff checks to continue service."
+                    : live
+                      ? "Staff confirm departures, cleaning, and seating."
+                      : "Use staff checks to continue seating while camera observations are unavailable."}
+            </p>
+          </div>
+          <button
+            className="floor-btn"
+            disabled={busy || !connected || (staffMode && !live)}
+            onClick={() =>
+              void act("/service-mode", {
+                mode: staffMode ? "camera" : "staff",
+              })
+            }
+          >
+            {staffMode ? "Resume camera assistance" : "Use staff checks"}
+          </button>
+          {(!live || !state.playback.is_file) && (
+            <button
+              className="floor-btn"
+              disabled={busy || !connected}
+              onClick={() => void act("/reconnect", {})}
+            >
+              Reconnect source
+            </button>
+          )}
+        </section>
       )}
       {error && (
         <div className="floor-error" role="alert">
@@ -347,113 +416,267 @@ export default function FloorPage() {
         ))}
       </div>
 
-      <div className="floor-attention-strip">
-        <Link to="/operations?tab=staff">
-          {state?.tasks?.filter((t) =>
-            ["open", "acknowledged", "in_progress"].includes(t.status),
-          ).length ?? 0}{" "}
-          active staff tasks →
+      <nav className="floor-attention-strip" aria-label="Floor shortcuts">
+        <Link to="#add-party">
+          <Users size={16} aria-hidden="true" />
+          Waiting room <span className="count-chip">{waiting.length}</span>
+        </Link>
+        <Link to="/operations">
+          <ClipboardList size={16} aria-hidden="true" />
+          Staff tasks
+          <span className="count-chip">
+            {state?.tasks?.filter((t) =>
+              ["open", "acknowledged", "in_progress"].includes(t.status),
+            ).length ?? 0}
+          </span>
         </Link>
         <Link to="/operations?tab=arrivals">
-          {state?.arrivals?.filter((a) => a.status === "pending").length ?? 0}{" "}
-          arrivals to review →
+          <DoorOpen size={16} aria-hidden="true" />
+          Arrivals to review
+          <span className="count-chip">
+            {state?.arrivals?.filter((a) => a.status === "pending").length ?? 0}
+          </span>
         </Link>
-        <Link to="/operations?tab=simulation">What-if lab →</Link>
-        <Link to="/operations?tab=analytics">Operational analytics →</Link>
-      </div>
-      <div className="floor-main-grid">
-        <div className="floor-left">
-          <section className="floor-panel camera-panel">
-            <div className="panel-title">
+      </nav>
+      {(departures.length > 0 || dirty > 0) && (
+        <section className="floor-panel cleaning-panel">
+          <div className="panel-title">
+            <div>
+              <Sparkles size={17} />
+              <h2>Table turnover</h2>
+            </div>
+            <span className="count-chip">{dirty + departures.length}</span>
+          </div>
+          {departures.map((table) => (
+            <div className="turnover-review" key={table.id}>
               <div>
-                <Video size={17} />
-                <h2>Visual observation</h2>
+                <b>{table.name}</b>
+                <p>Check in person before ending the party.</p>
               </div>
-              <span className="mini-label">
-                {(state?.playback.processing_fps ?? 0).toFixed(1)} detections /
-                sec
-              </span>
-            </div>
-            <div className="camera-window">
-              {activeVideo && state ? (
-                <img
-                  key={state.playback.session_id}
-                  src={apiUrl("/api/stream")}
-                  alt="Actual person detection with manually configured table regions"
-                />
-              ) : (
-                <div className="camera-empty">
-                  <ScanLine size={42} strokeWidth={1} />
-                  <h3>Give your copilot a view</h3>
-                  <p>Select a video below or upload footage to get started.</p>
-                  <Link to="/videos">
-                    Manage footage <ArrowRight size={14} />
-                  </Link>
-                </div>
-              )}
-              {activeVideo && state && (
-                <div className="camera-caption">
-                  <span>
-                    <i />
-                    {isControlled
-                      ? "CONTROLLED DEMO · EDITED STOCK FOOTAGE"
-                      : "PRERECORDED FOOTAGE · ACTUAL INFERENCE"}
-                  </span>
-                  <b>{duration(now)}</b>
-                </div>
-              )}
-            </div>
-            <div className="camera-controls">
-              <select
-                aria-label="Select footage"
-                value={selected || state?.video_id || ""}
-                onChange={(e) => setSelected(e.target.value)}
-              >
-                <option value="" disabled>
-                  Select footage
-                </option>
-                {videos.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))}
-              </select>
               <button
                 className="floor-btn primary"
-                disabled={busy || !(selected || state?.video_id)}
-                onClick={() =>
-                  void act("/play", { video_id: selected || state?.video_id })
-                }
+                disabled={busy || !connected}
+                onClick={() => tableAction(table, "depart")}
               >
-                <Play size={14} />
-                {activeVideo ? "Restart" : "Start"}
+                Confirm departed
               </button>
               <button
                 className="floor-btn"
-                disabled={
-                  busy || !activeVideo || !state || state.playback.ended
-                }
-                onClick={() =>
-                  void act("/pause", { paused: !state?.playback.paused })
-                }
+                disabled={busy || !connected}
+                onClick={() => tableAction(table, "still_seated")}
               >
-                {state?.playback.paused ? (
-                  <Play size={15} />
-                ) : (
-                  <Pause size={15} />
-                )}
-                {state?.playback.paused ? "Resume" : "Pause"}
+                Still seated
               </button>
             </div>
-            <div className="camera-note">
-              Restart begins a new scenario and clears queue and staff actions.
-              Pausing freezes scenario timers.
-              {state?.playback.ended && (
-                <strong> Clip ended. Restart to run again.</strong>
-              )}
+          ))}
+          {state?.cleaning_priorities.map((task, i) => (
+            <div className="cleaning-task" key={task.table_id}>
+              <span>{i + 1}</span>
+              <div>
+                <h3>{task.table_name}</h3>
+                <p>{task.explanation}</p>
+              </div>
+              <button
+                aria-label={`Confirm ${task.table_name} clean`}
+                disabled={
+                  busy ||
+                  !connected ||
+                  !tables.some(
+                    (t) => t.id === task.table_id && canCheckClean(t),
+                  )
+                }
+                onClick={() => {
+                  const table = tables.find((t) => t.id === task.table_id);
+                  if (table) tableAction(table, "clean");
+                }}
+              >
+                <Check size={17} />
+              </button>
             </div>
-          </section>
-
+          ))}
+        </section>
+      )}
+      <div className="service-desk-grid">
+        <section
+          className="floor-panel queue-panel"
+          id="add-party"
+          data-section
+        >
+          <div className="panel-title">
+            <div>
+              <Users size={17} />
+              <h2>Waiting room</h2>
+              <span className="count-chip">{waiting.length} parties</span>
+            </div>
+            <span className="mini-label">
+              {state?.policy?.strategy === "balanced"
+                ? "Balanced queue matching"
+                : state?.policy?.strategy === "throughput"
+                  ? "Guest throughput matching"
+                  : "Oldest feasible party first · smallest suitable table"}
+            </span>
+          </div>
+          <form className="party-form" onSubmit={(e) => void addParty(e)}>
+            <label>
+              Party name
+              <input
+                data-section-focus
+                placeholder="e.g. The Sharma party"
+                maxLength={60}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </label>
+            <label>
+              Guests
+              <input
+                aria-label="Party size"
+                type="number"
+                min={1}
+                max={20}
+                required
+                value={size}
+                onChange={(e) => setSize(Number(e.target.value))}
+              />
+            </label>
+            <button
+              className="floor-btn primary"
+              disabled={busy || !connected || !tables.length}
+            >
+              <Plus size={15} />
+              Add to queue
+            </button>
+          </form>
+          <div className="queue-scroll">
+            <table className="queue-table">
+              <thead>
+                <tr>
+                  <th>PARTY</th>
+                  <th>GUESTS</th>
+                  <th>
+                    WAITING <ArrowDown size={11} />
+                  </th>
+                  <th>ESTIMATED ADDITIONAL WAIT</th>
+                  <th>NEXT STEP</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {waiting.map((party) => {
+                  const rec = state?.recommendations.find(
+                    (r) => r.party_id === party.id,
+                  );
+                  const estimate = state?.wait_estimates[party.id];
+                  return (
+                    <tr key={party.id}>
+                      <td>
+                        <span className="party-avatar">
+                          {party.name.slice(0, 1).toUpperCase()}
+                        </span>
+                        <b>{party.name}</b>
+                      </td>
+                      <td>
+                        <Users size={13} /> {party.size}
+                      </td>
+                      <td>{duration(now - party.arrived_at)}</td>
+                      <td title={estimate?.note}>
+                        {estimate?.min_minutes !== null &&
+                        estimate?.min_minutes !== undefined &&
+                        estimate.max_minutes !== null
+                          ? `${estimate.min_minutes}–${estimate.max_minutes} min · heuristic`
+                          : "Needs staff estimate"}
+                      </td>
+                      <td>
+                        {rec ? (
+                          <span className="queue-ready">
+                            Ready for {rec.table_name}
+                          </span>
+                        ) : (
+                          <span className="queue-waiting">
+                            Waiting for a suitable table
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <button
+                          aria-label={`Remove ${party.name}`}
+                          disabled={busy}
+                          onClick={() =>
+                            void act(
+                              `/parties/${party.id}`,
+                              undefined,
+                              "DELETE",
+                            )
+                          }
+                        >
+                          <X size={15} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {!waiting.length && (
+              <div className="small-empty">
+                Your queue is clear. Add the next arriving party above.
+              </div>
+            )}
+          </div>
+        </section>
+        <section className="decision-panel">
+          <div className="panel-title">
+            <div>
+              <Sparkles size={18} />
+              <h2>Next best move</h2>
+            </div>
+            <span className="rule-badge">EXPLAINED</span>
+          </div>
+          <p className="decision-intro">A recommendation you can act on.</p>
+          {state?.recommendations.length ? (
+            state.recommendations.map((rec, index) => (
+              <SeatingSuggestion
+                key={rec.party_id}
+                rec={rec}
+                index={index}
+                state={state}
+                busy={busy}
+                connected={connected}
+                act={act}
+              />
+            ))
+          ) : (
+            <div className="decision-empty">
+              <div>
+                <Check size={24} />
+              </div>
+              <h3>
+                {!live
+                  ? "Waiting for a clear view"
+                  : waiting.length
+                    ? "Prepare a suitable table"
+                    : "You’re all caught up"}
+              </h3>
+              <p>
+                {!live
+                  ? "Recommendations appear after fresh detection and staff readiness confirmation."
+                  : waiting.length
+                    ? "No seating suggestion is eligible under current readiness, capacity and recorded staff decisions."
+                    : "Add an arriving party to receive an explained seating recommendation."}
+              </p>
+            </div>
+          )}
+          <div className="policy-note">
+            <ScanLine size={14} />
+            <span>
+              Pretrained vision observes. Explicit allocation rules recommend.
+              You approve.
+            </span>
+          </div>
+        </section>
+      </div>
+      <div className="floor-main-grid">
+        <div className="floor-left">
           <section className="floor-panel">
             <div className="panel-title">
               <div>
@@ -505,7 +728,13 @@ export default function FloorPage() {
                       <i />
                     </div>
                     <span className="table-status">
-                      {statusLabels[table.status]}
+                      {table.blocked
+                        ? "Blocked for walk-ins"
+                        : table.departure_review
+                          ? "Check departure"
+                          : table.status === "ready" && !table.seating_eligible
+                            ? "Needs a readiness check"
+                            : statusLabels[table.status]}
                     </span>
                     <div className="table-timer">
                       {table.status === "occupied" &&
@@ -516,21 +745,44 @@ export default function FloorPage() {
                           {!table.duration_known && " observed"}
                         </>
                       ) : table.manual_hold ? (
-                        "Staff override active"
+                        table.hold_until ? (
+                          `Staff check · ${Math.max(0, Math.ceil(table.hold_until - Date.now() / 1000))}s left`
+                        ) : (
+                          "Staff check"
+                        )
                       ) : (
                         `Vision: ${table.observed.replaceAll("_", " ")}`
                       )}
                     </div>
                     <div className="table-actions">
+                      {table.departure_review && (
+                        <>
+                          <button
+                            disabled={busy || !connected}
+                            onClick={() => tableAction(table, "depart")}
+                          >
+                            Confirm departed
+                          </button>
+                          <button
+                            disabled={busy || !connected}
+                            onClick={() => tableAction(table, "still_seated")}
+                          >
+                            Still seated
+                          </button>
+                        </>
+                      )}
                       {(table.status === "cleaning_required" ||
-                        table.status === "needs_verification") &&
-                        !table.manual_hold && (
+                        table.status === "needs_verification" ||
+                        (table.status === "ready" &&
+                          staffMode &&
+                          !table.seating_eligible)) &&
+                        canCheckClean(table) && (
                           <button
                             disabled={busy || !connected}
                             onClick={() => tableAction(table, "clean")}
                           >
                             <Check size={12} />
-                            Confirm clean
+                            Confirm empty and clean
                           </button>
                         )}
                       <button
@@ -547,10 +799,9 @@ export default function FloorPage() {
                     {staffTable === table.id && (
                       <div className="staff-actions">
                         <p>{table.note}</p>
-                        {table.status === "occupied" ||
-                        table.status === "needs_verification" ? (
+                        {table.status === "occupied" || table.party_id ? (
                           <button
-                            disabled={busy}
+                            disabled={busy || !connected}
                             onClick={() => tableAction(table, "depart")}
                           >
                             Confirm departure
@@ -573,20 +824,27 @@ export default function FloorPage() {
                           disabled={busy}
                           onClick={() => tableAction(table, "hold_occupied")}
                         >
-                          Override: occupied
+                          Confirm occupied
                         </button>
                         <button
-                          disabled={busy}
-                          onClick={() => tableAction(table, "hold_ready")}
+                          disabled={busy || !connected}
+                          onClick={() =>
+                            tableAction(
+                              table,
+                              table.blocked ? "unblock" : "block",
+                            )
+                          }
                         >
-                          Override: clean & ready
+                          {table.blocked
+                            ? "Remove table block"
+                            : "Block for walk-ins"}
                         </button>
                         {table.manual_hold && (
                           <button
                             disabled={busy}
                             onClick={() => tableAction(table, "release")}
                           >
-                            Release override
+                            End staff check
                           </button>
                         )}
                       </div>
@@ -596,93 +854,108 @@ export default function FloorPage() {
               </div>
             )}
           </section>
+          <section className="floor-panel camera-panel">
+            <div className="panel-title">
+              <div>
+                <Video size={17} />
+                <h2>Visual observation</h2>
+              </div>
+              <span className="mini-label">
+                {(state?.playback.processing_fps ?? 0).toFixed(1)} detections /
+                sec
+              </span>
+            </div>
+            <div className="camera-window">
+              {activeVideo && state ? (
+                <img
+                  key={state.playback.session_id}
+                  src={apiUrl("/api/stream")}
+                  alt="Actual person detection with manually configured table regions"
+                />
+              ) : (
+                <div className="camera-empty">
+                  <ScanLine size={42} strokeWidth={1} />
+                  <h3>Give your copilot a view</h3>
+                  <p>Select a video below or upload footage to get started.</p>
+                  <Link to="/videos">
+                    Manage footage <ArrowRight size={14} />
+                  </Link>
+                </div>
+              )}
+              {activeVideo && state && (
+                <div className="camera-caption">
+                  <span>
+                    <i />
+                    {!state.playback.is_file
+                      ? "CAMERA FEED · ACTUAL INFERENCE"
+                      : isControlled
+                        ? "CONTROLLED DEMO · EDITED STOCK FOOTAGE"
+                        : "PRERECORDED FOOTAGE · ACTUAL INFERENCE"}
+                  </span>
+                  <b>{duration(state.playback.position_seconds)}</b>
+                </div>
+              )}
+            </div>
+            <div className="camera-controls">
+              <select
+                aria-label="Select footage"
+                value={selected || state?.video_id || ""}
+                onChange={(e) => setSelected(e.target.value)}
+              >
+                <option value="" disabled>
+                  Select footage
+                </option>
+                {videos.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                className="floor-btn primary"
+                disabled={busy || !(selected || state?.video_id)}
+                onClick={() =>
+                  void act("/play", { video_id: selected || state?.video_id })
+                }
+              >
+                <Play size={14} />
+                {activeVideo ? "Restart replay" : "Start replay"}
+              </button>
+              <button
+                className="floor-btn"
+                disabled={
+                  busy ||
+                  !activeVideo ||
+                  !state?.playback.is_file ||
+                  state.playback.ended
+                }
+                onClick={() =>
+                  void act("/pause", { paused: !state?.playback.paused })
+                }
+              >
+                {state?.playback.paused ? (
+                  <Play size={15} />
+                ) : (
+                  <Pause size={15} />
+                )}
+                {state?.playback.paused ? "Resume" : "Pause"}
+              </button>
+            </div>
+            <div className="camera-note">
+              Restart replay archives the scenario. Use Reconnect to keep the
+              current floor.
+              {state?.service_epoch != null
+                ? " Service time continues when the video pauses."
+                : " Replay time pauses with the clip."}
+              {state?.playback.ended && (
+                <strong> Clip ended. Restart to run again.</strong>
+              )}
+            </div>
+          </section>
         </div>
 
         <aside className="floor-right">
-          <SupervisorCards floor={state} />
-          <section className="decision-panel">
-            <div className="panel-title">
-              <div>
-                <Sparkles size={18} />
-                <h2>Next best move</h2>
-              </div>
-              <span className="rule-badge">EXPLAINED</span>
-            </div>
-            <p className="decision-intro">A recommendation you can act on.</p>
-            {state?.recommendations.length ? (
-              state.recommendations.map((rec, index) => (
-                <SeatingSuggestion
-                  key={rec.party_id}
-                  rec={rec}
-                  index={index}
-                  state={state}
-                  busy={busy}
-                  connected={connected}
-                  act={act}
-                />
-              ))
-            ) : (
-              <div className="decision-empty">
-                <div>
-                  <Check size={24} />
-                </div>
-                <h3>
-                  {!live
-                    ? "Waiting for a clear view"
-                    : waiting.length
-                      ? "Prepare a suitable table"
-                      : "You’re all caught up"}
-                </h3>
-                <p>
-                  {!live
-                    ? "Recommendations appear after fresh detection and staff readiness confirmation."
-                    : waiting.length
-                      ? "No seating suggestion is eligible under current readiness, capacity and recorded staff decisions."
-                      : "Add an arriving party to receive an explained seating recommendation."}
-                </p>
-              </div>
-            )}
-            <div className="policy-note">
-              <ScanLine size={14} />
-              <span>
-                Pretrained vision observes. Explicit allocation rules recommend.
-                You approve.
-              </span>
-            </div>
-          </section>
-
-          <section className="floor-panel cleaning-panel">
-            <div className="panel-title">
-              <div>
-                <Sparkles size={17} />
-                <h2>Prepare next</h2>
-              </div>
-              <span className="count-chip">{dirty}</span>
-            </div>
-            {state?.cleaning_priorities.length ? (
-              state.cleaning_priorities.map((task, i) => (
-                <div className="cleaning-task" key={task.table_id}>
-                  <span>{i + 1}</span>
-                  <div>
-                    <h3>{task.table_name}</h3>
-                    <p>{task.explanation}</p>
-                  </div>
-                  <button
-                    aria-label={`Confirm ${task.table_name} clean`}
-                    disabled={busy || !connected}
-                    onClick={() =>
-                      void act(`/tables/${task.table_id}`, { action: "clean" })
-                    }
-                  >
-                    <Check size={17} />
-                  </button>
-                </div>
-              ))
-            ) : (
-              <div className="small-empty">No tables awaiting cleaning.</div>
-            )}
-          </section>
-
+          {!staffMode && <SupervisorCards floor={state} />}
           <section className="floor-panel assumptions">
             <div className="eyebrow">ESTIMATION ASSUMPTIONS</div>
             <p>
@@ -748,125 +1021,6 @@ export default function FloorPage() {
           </section>
         </aside>
       </div>
-
-      <section className="floor-panel queue-panel">
-        <div className="panel-title">
-          <div>
-            <Users size={17} />
-            <h2>Waiting room</h2>
-            <span className="count-chip">{waiting.length} parties</span>
-          </div>
-          <span className="mini-label">
-            {state?.policy?.strategy === "balanced"
-              ? "Balanced queue matching"
-              : state?.policy?.strategy === "throughput"
-                ? "Guest throughput matching"
-                : "Oldest feasible party first · smallest suitable table"}
-          </span>
-        </div>
-        <form className="party-form" onSubmit={(e) => void addParty(e)}>
-          <label>
-            Party name
-            <input
-              placeholder="e.g. The Sharma party"
-              maxLength={60}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </label>
-          <label>
-            Guests
-            <input
-              aria-label="Party size"
-              type="number"
-              min={1}
-              max={20}
-              required
-              value={size}
-              onChange={(e) => setSize(Number(e.target.value))}
-            />
-          </label>
-          <button
-            className="floor-btn primary"
-            disabled={busy || !connected || !tables.length}
-          >
-            <Plus size={15} />
-            Add to queue
-          </button>
-        </form>
-        <div className="queue-scroll">
-          <table className="queue-table">
-            <thead>
-              <tr>
-                <th>PARTY</th>
-                <th>GUESTS</th>
-                <th>
-                  WAITING <ArrowDown size={11} />
-                </th>
-                <th>ESTIMATED ADDITIONAL WAIT</th>
-                <th>NEXT STEP</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {waiting.map((party) => {
-                const rec = state?.recommendations.find(
-                  (r) => r.party_id === party.id,
-                );
-                const estimate = state?.wait_estimates[party.id];
-                return (
-                  <tr key={party.id}>
-                    <td>
-                      <span className="party-avatar">
-                        {party.name.slice(0, 1).toUpperCase()}
-                      </span>
-                      <b>{party.name}</b>
-                    </td>
-                    <td>
-                      <Users size={13} /> {party.size}
-                    </td>
-                    <td>{duration(now - party.arrived_at)}</td>
-                    <td title={estimate?.note}>
-                      {estimate?.min_minutes !== null &&
-                      estimate?.min_minutes !== undefined &&
-                      estimate.max_minutes !== null
-                        ? `${estimate.min_minutes}–${estimate.max_minutes} min · heuristic`
-                        : "Needs staff estimate"}
-                    </td>
-                    <td>
-                      {rec ? (
-                        <span className="queue-ready">
-                          Ready for {rec.table_name}
-                        </span>
-                      ) : (
-                        <span className="queue-waiting">
-                          Waiting for a suitable table
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <button
-                        aria-label={`Remove ${party.name}`}
-                        disabled={busy}
-                        onClick={() =>
-                          void act(`/parties/${party.id}`, undefined, "DELETE")
-                        }
-                      >
-                        <X size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {!waiting.length && (
-            <div className="small-empty">
-              Your queue is clear. Add the next arriving party above.
-            </div>
-          )}
-        </div>
-      </section>
 
       <section className="floor-panel activity-panel">
         <div className="panel-title">

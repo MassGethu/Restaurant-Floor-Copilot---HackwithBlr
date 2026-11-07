@@ -5,16 +5,8 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import {
-  Bell,
-  Check,
-  Download,
-  Play,
-  Users,
-  Clock3,
-  ArrowRight,
-} from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Bell, Check, Download, Play, Users, Clock3 } from "lucide-react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -27,6 +19,7 @@ import {
 } from "recharts";
 import { floorRequest, type FloorState } from "../api/copilot";
 import { apiUrl } from "../api/client";
+import { operationsView, operationsViews } from "../lib/workspaceNavigation";
 
 type Schedule = {
   parties_seated: number;
@@ -55,18 +48,9 @@ const minute = (value: number) =>
   `${Math.floor(value / 60)}:${Math.floor(value % 60)
     .toString()
     .padStart(2, "0")}`;
-const tabs = [
-  ["staff", "Staff desk"],
-  ["arrivals", "Arrivals"],
-  ["availability", "Availability"],
-  ["simulation", "What-if lab"],
-  ["analytics", "Analytics"],
-  ["policy", "Policies"],
-];
-
 export default function OperationsPage() {
-  const [params, setParams] = useSearchParams();
-  const tab = params.get("tab") ?? "staff";
+  const tab = operationsView(useLocation().search);
+  const view = operationsViews[tab];
   const [state, setState] = useState<FloorState | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -187,9 +171,7 @@ export default function OperationsPage() {
   const selectedParty = waiting.find((p) => p.id === simParty) ?? waiting[0];
   const choices = state.tables.filter(
     (t) =>
-      t.status === "ready" &&
-      (t.observed === "absent" || t.manual_hold) &&
-      t.capacity >= (selectedParty?.size ?? Infinity),
+      t.seating_eligible && t.capacity >= (selectedParty?.size ?? Infinity),
   );
   const chosenTable = choices.find((t) => t.id === simTable) ?? choices[0];
   const submitSimulation = async (e: FormEvent) => {
@@ -215,15 +197,12 @@ export default function OperationsPage() {
   const analytics = state.analytics;
   return (
     <div className="ops-page">
-      <div className="ops-heading">
+      <div className="ops-heading workspace-intro">
         <div>
-          <div className="eyebrow">FLOOR COPILOT / OPERATIONS WORKSPACE</div>
-          <h1>Coordinate the next move.</h1>
-          <p>Staff work, arrivals, availability and measurable decisions.</p>
+          <div className="eyebrow">Restaurant operations</div>
+          <h1>{view.label}</h1>
+          <p>{view.description}</p>
         </div>
-        <Link className="floor-btn" to="/floor">
-          Back to floor <ArrowRight size={14} />
-        </Link>
       </div>
       {!connected && (
         <div className="floor-error" role="alert">
@@ -244,29 +223,13 @@ export default function OperationsPage() {
           <button onClick={() => setNotice("")}>Dismiss</button>
         </div>
       )}
-      <nav className="ops-tabs" aria-label="Operations sections">
-        {tabs.map(([id, label]) => (
-          <button
-            key={id}
-            className={tab === id ? "selected" : ""}
-            onClick={() => setParams({ tab: id })}
-          >
-            {label}
-            {id === "staff" && tasks.some((t) => active(t.status))
-              ? ` (${tasks.filter((t) => active(t.status)).length})`
-              : id === "arrivals" && arrivals.length
-                ? ` (${arrivals.length})`
-                : ""}
-          </button>
-        ))}
-      </nav>
       {tab === "staff" && (
         <>
           <section className="ops-card">
             <div className="ops-section-heading">
               <h2>
                 <Bell size={18} />
-                Central staff alerts
+                Open work
               </h2>
               <label>
                 <input

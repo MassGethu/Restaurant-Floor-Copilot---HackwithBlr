@@ -5,7 +5,14 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { Brain, BookOpen, ArrowRight, RefreshCw } from "lucide-react";
+import {
+  Brain,
+  BookOpen,
+  ArrowRight,
+  RefreshCw,
+  History,
+  PenLine,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { floorRequest, type FloorState } from "../api/copilot";
 import {
@@ -17,6 +24,7 @@ import {
   type SupervisorState,
 } from "../api/supervisor";
 import { AdviceCards, EvidenceList } from "../components/SupervisorCards";
+import { useSectionJump } from "../hooks/useSectionJump";
 
 function ExperienceCard({
   item,
@@ -141,6 +149,7 @@ function ExperienceCard({
 }
 
 export default function SupervisorPage() {
+  useSectionJump();
   const [state, setState] = useState<SupervisorState | null>(null);
   const [floor, setFloor] = useState<FloorState | null>(null);
   const [context, setContext] = useState<ShiftContext>({
@@ -252,20 +261,27 @@ export default function SupervisorPage() {
     ) ?? [];
   return (
     <div className="supervisor-page">
-      <div className="floor-heading">
+      <div className="floor-heading workspace-intro">
         <div>
-          <div className="eyebrow">
-            RESTAURANT EXPERIENCE / SHIFT SUPERVISOR
-          </div>
-          <h1>
-            The next shift starts wiser<span>.</span>
-          </h1>
-          <p>
-            Remember the reason. Review the evidence. Choose the next action.
-          </p>
+          <div className="eyebrow">Shift memory</div>
+          <h1>Supervisor</h1>
+          <p>Review advice, record what happened, and brief the next shift.</p>
         </div>
-        <Brain size={42} />
       </div>
+      <nav className="workspace-jumps" aria-label="Supervisor shortcuts">
+        <Link to="#advice">
+          <Brain size={16} aria-hidden="true" /> Review advice
+        </Link>
+        <Link to="#correction">
+          <PenLine size={16} aria-hidden="true" /> Record a correction
+        </Link>
+        <Link to="#handover">
+          <BookOpen size={16} aria-hidden="true" /> Shift handover
+        </Link>
+        <Link to="#experience">
+          <History size={16} aria-hidden="true" /> Experience timeline
+        </Link>
+      </nav>
       {(error || connectionError) && (
         <p role="alert" className="floor-stale">
           {error || connectionError}
@@ -277,30 +293,33 @@ export default function SupervisorPage() {
         </p>
       )}
       <div className="supervisor-status">
-        <span>
-          Memory:{" "}
-          {state?.integration.memory_profile === "local"
-            ? "Local Docker"
-            : "Cloud"}
-        </span>
         <b>{state?.shift.label ?? "Loading shift…"}</b>
-        <span>
-          {state?.integration.memory_configured
-            ? "Memory configured"
-            : "Memory awaiting setup"}
-        </span>
-        <span>
-          {state?.integration.reasoner_configured
-            ? "Reasoning configured"
-            : "Reasoning awaiting setup"}
-        </span>
-        <span>
-          {state?.integration.retained ?? 0} retained ·{" "}
-          {state?.integration.pending ?? 0} pending ·{" "}
-          {state?.integration.failed ?? 0} failed
-        </span>
+        {state && (
+          <details>
+            <summary>
+              {state.integration.memory_profile === "local"
+                ? "Local Docker"
+                : "Cloud"}{" "}
+              memory
+            </summary>
+            <p>
+              {state.integration.retained} retained ·{" "}
+              {state.integration.pending} pending · {state.integration.failed}{" "}
+              failed
+            </p>
+            <p>
+              {state.integration.memory_configured
+                ? "Memory configured"
+                : "Memory awaiting setup"}
+              {" · "}
+              {state.integration.reasoner_configured
+                ? "Reasoning configured"
+                : "Reasoning awaiting setup"}
+            </p>
+          </details>
+        )}
         <button className="floor-btn" onClick={() => void refresh()}>
-          <RefreshCw size={13} /> Refresh
+          <RefreshCw size={13} /> Refresh status
         </button>
       </div>
       {state &&
@@ -323,67 +342,75 @@ export default function SupervisorPage() {
       )}
       <div className="supervisor-grid">
         <div>
-          <section className="floor-panel">
+          <section
+            className="floor-panel"
+            id="advice"
+            data-section
+            tabIndex={-1}
+          >
             <div className="panel-title">
               <div>
                 <Brain size={18} />
-                <h2>What should we do next?</h2>
+                <h2>Shift advice</h2>
               </div>
             </div>
-            <div className="memory-question-pills">
-              {[
-                "Why this table?",
-                "What worked before?",
-                "How should we recover this rush?",
-              ].map((q) => (
+            <details className="workspace-advice-form" open={!displayed}>
+              <summary>Ask a question or generate advice</summary>
+              <div className="memory-question-pills">
+                {[
+                  "Why this table?",
+                  "What worked before?",
+                  "How should we recover this rush?",
+                ].map((q) => (
+                  <button
+                    key={q}
+                    className="floor-btn"
+                    onClick={() => setQuestion(q)}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+              <form onSubmit={ask}>
+                <label>
+                  Operational question
+                  <input
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    maxLength={500}
+                    required
+                  />
+                </label>
+                <label className="memory-check">
+                  <input
+                    type="checkbox"
+                    checked={compare}
+                    onChange={(e) => setCompare(e.target.checked)}
+                  />{" "}
+                  Compare identical inputs with memory removed
+                </label>
                 <button
-                  key={q}
-                  className="floor-btn"
-                  onClick={() => setQuestion(q)}
+                  className="floor-btn primary"
+                  disabled={
+                    busy ||
+                    state?.integration.generating ||
+                    !state?.integration.memory_configured ||
+                    !state.integration.reasoner_configured
+                  }
                 >
-                  {q}
+                  {busy || state?.integration.generating
+                    ? "Gathering evidence…"
+                    : "Ask supervisor"}
+                  <ArrowRight size={14} />
                 </button>
-              ))}
-            </div>
-            <form onSubmit={ask}>
-              <label>
-                Operational question
-                <input
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  maxLength={500}
-                  required
-                />
-              </label>
-              <label className="memory-check">
-                <input
-                  type="checkbox"
-                  checked={compare}
-                  onChange={(e) => setCompare(e.target.checked)}
-                />{" "}
-                Compare identical inputs with memory removed
-              </label>
-              <button
-                className="floor-btn primary"
-                disabled={
-                  busy ||
-                  state?.integration.generating ||
-                  !state?.integration.memory_configured ||
-                  !state.integration.reasoner_configured
-                }
-              >
-                {busy || state?.integration.generating
-                  ? "Gathering evidence…"
-                  : "Ask supervisor"}
-                <ArrowRight size={14} />
-              </button>
-            </form>
+              </form>
+            </details>
             {displayed && (
               <AdviceCards
                 key={displayed.id}
                 advice={displayed}
                 floor={floor}
-                stale={stale(displayed.token)}
+                stale={stale(displayed.token) || Boolean(floor?.staff_mode)}
                 onChanged={() => {
                   setAnswer(null);
                   void refresh();
@@ -392,7 +419,12 @@ export default function SupervisorPage() {
             )}
           </section>
 
-          <section className="floor-panel">
+          <section
+            className="floor-panel"
+            id="handover"
+            data-section
+            tabIndex={-1}
+          >
             <div className="panel-title">
               <div>
                 <BookOpen size={18} />
@@ -405,6 +437,17 @@ export default function SupervisorPage() {
             </p>
             <button
               className="floor-btn primary"
+              disabled={busy || !floor}
+              onClick={() =>
+                void run(async () => {
+                  setHandover(await supervisorRequest<Handover>("/handover"));
+                })
+              }
+            >
+              Prepare current-work brief
+            </button>{" "}
+            <button
+              className="floor-btn"
               disabled={
                 busy ||
                 state?.integration.generating ||
@@ -418,7 +461,7 @@ export default function SupervisorPage() {
                 })
               }
             >
-              Prepare memory-backed briefing
+              Recall past lessons
             </button>
             {handover && (
               <>
@@ -429,9 +472,11 @@ export default function SupervisorPage() {
                   </p>
                 )}
                 <h3>
-                  {handover.mode === "sources"
-                    ? "Source brief · Hindsight recall"
-                    : "Synthesis · Hindsight Reflect"}
+                  {handover.mode === "operations"
+                    ? "Current floor and tasks"
+                    : handover.mode === "sources"
+                      ? "Source brief · Hindsight recall"
+                      : "Synthesis · Hindsight Reflect"}
                 </h3>
                 <div className="handover-text">{handover.text}</div>
                 <EvidenceList items={handover.evidence} />
@@ -458,7 +503,12 @@ export default function SupervisorPage() {
             <Link to="/operations">Open staff desk →</Link>
           </section>
 
-          <section className="floor-panel">
+          <section
+            className="floor-panel"
+            id="experience"
+            data-section
+            tabIndex={-1}
+          >
             <h2>Experience timeline</h2>
             <p>
               Staff reports and measured actions retain their source. An
@@ -534,7 +584,12 @@ export default function SupervisorPage() {
               </small>
             </form>
           </section>
-          <section className="floor-panel">
+          <section
+            className="floor-panel"
+            id="correction"
+            data-section
+            tabIndex={-1}
+          >
             <h2>Remember a correction</h2>
             <p>
               Record why you chose differently. This records experience; seating
