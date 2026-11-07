@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "profile": "local",
+  "hindsight_server_version": "1.2.0",
+  "existing_retained_records": 6,
+  "fresh_retain_requests": 0,
+  "cloud_requests": 0,
+  "groq_generation_requests": 0,
+  "checks": {
+    "recall_after_application_restart": true,
+    "current_tasks_match_operations": true
+  },
+  "handover": {
+    "mode": "sources",
+    "evidence": [
+      {
+        "id": "8e3ad048-c4eb-4f4a-8ed2-c2755beb8395",
+        "text": "Manager chose table T3 because table T2 beside pickup had interruptions during a delivery rush, as reported in a staff correction | When: 2026-11-06 | Where: Restaurant shift | Involving: Manager | T2 was unsuitable due to delivery rush interruptions; T3 offered a quieter alternative",
+        "source_id": "1d04e6f1-558f-4ffc-a85c-37cbf983516b",
+        "recorded_at": "2026-11-06T20:09:18.121699+00:00",
+        "kind": "correction",
+        "source": "staff_report",
+        "supports_preference": false,
+        "preference_scope": null,
+        "qualification": "Manager report; chosen alternative is not proof of success."
+      },
+      {
+        "id": "95b7eff2-0613-489f-be03-59421e33e07c",
+        "text": "Manager chose table T3 instead of T2 during a delivery rush because T2 beside pickup had interruptions | When: 2026-11-06 | Where: Restaurant layout 7a8d51d8759bd72918731eb1 | Involving: Manager (staff report) | T2 had interruptions; T3 is quieter alternative during rush",
+        "source_id": "af0cd4e7-2b03-419c-979b-9661894b0ff5",
+        "recorded_at": "2026-11-06T20:09:23.972219+00:00",
+        "kind": "outcome",
+        "source": "staff_report",
+        "supports_preference": false,
+        "preference_scope": null,
+        "qualification": "Staff-reported outcome, not a measured causal improvement."
+      },
+      {
+        "id": "e1cf0ae1-85b1-4103-bb17-f8c322f0607e",
+        "text": "Cleaning task with ID 6c7c244e-deb9-4793-9fb8-7e0bde144ecf was completed at table T3 | When: 2026-11-06",
+        "source_id": "task-event-6b922e596751b021e7c682cc",
+        "recorded_at": "2026-11-06T20:53:37.021094+00:00",
+        "kind": "task_outcome",
+        "source": "operational_event",
+        "supports_preference": false,
+        "preference_scope": null,
+        "qualification": "Recorded lifecycle event in scenario time; does not establish causal improvement."
+      }
+    ],
+    "text": "Current delivery activity: rush (staff context).\nCarry-over sources to review for this shift:\n\u2022 Manager correction from earlier conditions: Synthetic browser walkthrough: during delivery rushes, T2 beside pickup has interruptions. The manager reports choosing T3. Outcome has not yet been observed.\n\u2022 Staff outcome report: unknown. Synthetic feedback: outcome unknown; this walkthrough does not establish real restaurant improvement.\n\u2022 Recorded task event: Recorded cleaning task completed at T3.",
+    "created_at": "2026-11-07T10:08:48.454055+00:00"
+  },
+  "open_task_count": 1,
+  "scope": "One sourced handover from an existing Local Docker bank after backend restart; separate from the staged outage rehearsal."
+}

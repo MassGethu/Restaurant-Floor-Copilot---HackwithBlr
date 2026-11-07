@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "session_preserved": true,
+  "checks": [
+    "Practice browser selected and started the controlled replay",
+    "Turnover panel confirmed departure; table card confirmed cleaning",
+    "Queue form and staff-confirmed seat",
+    "Service clock while camera disconnected",
+    "Reconnect and explicit return to camera mode",
+    "Current-work handover with memory and reasoner unconfigured",
+    "Mobile fit and queue focus"
+  ],
+  "browser": "Headless Chrome",
+  "scope": "Latest frontend and backend on the isolated manual rehearsal launcher, with staged staff actions and real YOLO inference.",
+  "console_exceptions": 0
+}

@@ -2,6 +2,8 @@
 
 A local hackathon prototype connecting pretrained person detection to table readiness, a waiting queue, and explained seating decisions.
 
+See the [project guide](docs/PROJECT_GUIDE.md) for the full feature inventory, exactly where Hindsight affects decisions, a safe busy-shift rehearsal with an outage and reconnect, and what needs a real restaurant pilot.
+
 ## Learning across shifts
 
 This independent edition adds an experience ledger and Hindsight retain/recall/reflect integration, contextual seating advice, approved task priority/assignment, logical shifts, feedback, supersession, focused questions and handover. The original `CV AI for restaurants` folder and its servers remain separate.
@@ -22,9 +24,9 @@ The Python 3.14 environment, model, frontend packages, two test videos, and tabl
 
 Open http://127.0.0.1:5174/floor. The API listens on http://127.0.0.1:8001; interactive API documentation is at `/docs`. Ctrl+C in the launcher stops both servers.
 
-Select `controlled-floor-demo.mp4`, click **Start**, and pause during its initial vacant interval. Confirm each table clean. Add a party and approve the explained recommendation. Resume to observe sustained presence, a temporary absence, and a departure. Confirm cleaning to enable seating from the queue again.
+Select `controlled-floor-demo.mp4`, click **Start replay**, and pause during its initial vacant interval. Confirm each table clean. Add a party and approve the explained recommendation. Resume to observe sustained presence, a temporary absence, and a departure check. Confirm departure in person, then confirm cleaning to enable seating from the queue again. Use the [isolated practice launcher](docs/PROJECT_GUIDE.md#try-the-busy-shift) if you have open service work.
 
-**Restart starts a new scenario, archiving the previous queue and staff actions.** Roster, policies and duration assumptions persist. Pause freezes footage time, occupancy timers, and queue waits. The demo does not loop automatically.
+**Restart replay starts a new scenario and archives the previous queue and staff actions.** It is blocked when active service work would be abandoned. **Reconnect source** preserves the queue and tasks. Replay uses clip time until you switch to staff checks, after which the service clock tracks wall time. The demo does not loop automatically.
 
 ## Reproduce setup
 
@@ -56,7 +58,7 @@ This generates the controlled visual fixture and portable relative-path table co
 - **Wait ranges:** deterministic schedules using stated 30–60 minute dining and 2–5 minute cleaning assumptions, including queue allocation. Displayed ranges span two duration scenarios, whose allocations can differ; they are not guaranteed bounds or learned departure predictions. Unknown or overdue sessions are excluded and may need staff estimates.
 - **Cleaning priority:** number of current waiting parties that fit, then time awaiting cleaning.
 
-Visual absence never proves cleanliness. New tables require staff verification. Staff overrides persist until released. A seated party receives a 30-second arrival grace period; continued absence without any visual confirmation requests verification rather than silently releasing the table. Freshness failures disable recommendations.
+Visual absence never ends a recorded seating or proves cleanliness. New tables require staff verification. Staff readiness checks in outage mode expire after 60 seconds. A seated party receives a 30-second arrival grace period; continued absence requests verification. Freshness failures suspend camera-assisted recommendations until fresh observations return or staff explicitly switch to in-person checks.
 
 ## Honest demonstration inputs
 

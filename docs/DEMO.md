@@ -1,7 +1,9 @@
 # Demonstration runbook
 
+For the current service desk, camera outage, reconnect, and shift handover, use the [isolated busy-shift walkthrough](PROJECT_GUIDE.md#try-the-busy-shift).
+
 ## Before presenting
-1. Run `./run_all.sh`; open http://127.0.0.1:5173/floor.
+1. Run `./run_all.sh`; open http://127.0.0.1:5174/floor.
 2. Verify the model is ready. Model weights and videos are local, so the prepared demo does not require internet.
 3. State the provenance: the four-region clip is an edited, repeated stock scene for a controlled systems demonstration. It does not establish real CCTV accuracy. Original single-table stock footage is separately available for actual detector inspection.
 
@@ -12,10 +14,10 @@
 4. Add a pair and approve its two-seat table. Resume; stock guests appear in T1 after 12 seconds and T2 after 25 seconds. Detection is actual pretrained inference.
 5. If demonstrating overflow, staff-mark T3 and T4 occupied using the explicit override controls, then add another pair. Explain the overrides and heuristic wait range. These are visible staff actions, not model observations.
 6. T1 briefly loses visual presence at 40–42 seconds. It remains occupied.
-7. T1 loses sustained presence at 65 seconds. Around 71 seconds it becomes cleaning required. The waiting pair still cannot be seated there.
+7. T1 loses sustained presence at 65 seconds. Around 71 seconds it asks for a departure check. Confirm departure in person to open the cleaning task. The waiting pair still cannot be seated there.
 8. Staff confirms cleaning. Show the recommendation update, explain its rules, approve it, and pause.
 
-Keep playback paused while explaining queue logic. Scenario timers freeze with playback. Restart always clears queue and staff actions; it is not a resume control.
+Keep playback paused while explaining queue logic. Clip-time timers freeze with playback; wall-time service does not. Restart archives the scenario and is blocked when active service work would be abandoned. Reconnect keeps the current floor and queue.
 
 
 ## Immediate decision comparison

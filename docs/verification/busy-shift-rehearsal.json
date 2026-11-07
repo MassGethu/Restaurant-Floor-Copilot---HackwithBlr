@@ -1,0 +1,80 @@
+{
+  "date_utc": "2026-11-07T10:04:48.946637+00:00",
+  "clip": "controlled-floor-demo.mp4",
+  "clip_sha256": "718e993b7b132c7a9460ca1922dc919aa9fd35c94bc3c1b736632f4a999013a0",
+  "scope": "Staged staff actions with real YOLO inference on a synthetic stock montage.",
+  "outage_injection": "Stopped the configured replay source via POST /api/stream/stop.",
+  "provider_calls": 0,
+  "checks": [
+    {
+      "check": "Two parties seated, two waiting; retry deduplicated and concurrent approval accepted once",
+      "clip_seconds": 0.7,
+      "service_seconds": 0.6,
+      "concurrent_statuses": [
+        200,
+        409
+      ],
+      "blocked_table": "T3"
+    },
+    {
+      "check": "YOLO presence at T1",
+      "clip_seconds": 15.0,
+      "service_seconds": 15.0
+    },
+    {
+      "check": "YOLO presence at T2",
+      "clip_seconds": 28.1,
+      "service_seconds": 28.1
+    },
+    {
+      "check": "Two-second visual gap did not release T1",
+      "clip_seconds": 43.0,
+      "service_seconds": 43.0
+    },
+    {
+      "check": "Sustained absence asked staff to check; party and table remained seated",
+      "clip_seconds": 71.0,
+      "service_seconds": 71.0
+    },
+    {
+      "check": "Staff confirmed departure, opened cleaning, set high priority and assigned a cleaner",
+      "clip_seconds": 71.0,
+      "service_seconds": 71.0,
+      "wrong_role_status": 409
+    },
+    {
+      "check": "Source stopped; camera seating suspended and staff-mode queue clock advanced",
+      "clip_seconds": 0.0,
+      "service_seconds": 73.03,
+      "source_status": "NO SOURCE",
+      "waiting_parties": 2,
+      "open_tasks": 2
+    },
+    {
+      "check": "Staff confirmed T1 empty and clean, then seated the next pair with camera down",
+      "clip_seconds": 0.0,
+      "service_seconds": 73.03
+    },
+    {
+      "check": "Reconnect restored inference and preserved every party and task",
+      "clip_seconds": 0.5,
+      "service_seconds": 73.66
+    },
+    {
+      "check": "Incoming shift received current-work handover from SQLite",
+      "clip_seconds": 0.5,
+      "service_seconds": 73.66,
+      "handover": "1 parties waiting. 0 departure checks. 1 open staff tasks.",
+      "open_task": "Rehearsal: refill water."
+    }
+  ],
+  "summary": {
+    "seatings": 3,
+    "confirmed_departures": 1,
+    "cleaning_tasks_completed": 1,
+    "waiting_at_handover": 1,
+    "open_service_tasks_at_handover": 1,
+    "same_operational_session_through_reconnect_and_shift_change": true
+  },
+  "passed": true
+}

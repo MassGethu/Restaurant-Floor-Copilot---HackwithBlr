@@ -5,11 +5,11 @@ This maps the user's 35-item feature attachment to the current local application
 | # | Feature | Current behavior / qualification |
 |---|---|---|
 | 1 | Table occupancy | Actual pretrained YOLO + ByteTrack, manually drawn regions and temporal confirmation. |
-| 2 | Occupancy duration | Media-time timers; observed-only sessions disclose uncertain start. |
-| 3 | Departure | Sustained visual absence, with manual/seated-party safeguards. |
+| 2 | Occupancy duration | Replay timers use clip time; live and staff-confirmed service use wall time. Observed-only sessions disclose uncertain start. |
+| 3 | Departure | Sustained visual absence requests staff review. Staff confirmation ends the seating. |
 | 4 | Availability | Separate unknown, occupied, verification, dirty and staff-confirmed ready states. |
 | 5 | Waiter assistance | **Partial:** manual requests and configurable timed check-ins. Customer intent/gestures are not detected. |
-| 6 | Cleaning assistance | Departure creates cleaning-required state and a task; camera does not detect dirt. |
+| 6 | Cleaning assistance | Staff-confirmed departure creates cleaning-required state and a task; the camera does not detect dirt. |
 | 7 | Staff notifications | Local role-filtered task desk, new-task notices and optional sound. No external push/SMS. |
 | 8 | Arriving customers | **Partial:** tracked outside→inside entrance crossings create host-review candidates. Staff/passers-by may trigger them; host confirms true party size. |
 | 9 | Table recommendations | Automatic suggestions, staff approval required. |
@@ -34,7 +34,7 @@ This maps the user's 35-item feature attachment to the current local application
 | 28 | Uncertainty | Envelope of two scenarios; not statistical confidence or guaranteed bounds. |
 | 29 | Floor visualization | Live region feed and table status cards. |
 | 30 | Camera overlay | Actual detections/tracks, dining regions and optional entrance region. |
-| 31 | Timers | Occupancy and waiting media-time counters; pause freezes them. |
+| 31 | Timers | Pausing freezes footage time; live and staff-confirmed service track wall time. |
 | 32 | Central alerts | Floor attention links and operations task desk with role/assignment/lifecycle controls. |
 | 33 | Recommendations panel | Floor seating decisions, cleaning queue and staff tasks. |
 | 34 | Manual control | Approve, alternate-table override, decline, cancel, corrections, task handling and host review. |
