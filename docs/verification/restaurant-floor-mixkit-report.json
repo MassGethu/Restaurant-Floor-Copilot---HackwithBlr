@@ -1,0 +1,220 @@
+{
+  "passed": true,
+  "verified_at": "2026-11-07T04:47:19.997451+00:00",
+  "source": {
+    "asset": "Mixkit 4385",
+    "url": "https://mixkit.co/free-stock-video/customers-in-a-minimalist-style-restaurant-4385/",
+    "download_url": "https://assets.mixkit.co/videos/4385/4385-720.mp4",
+    "license": "Mixkit Stock Video Free License",
+    "local_path": "fake_camera/videos/restaurant-floor-mixkit.mp4",
+    "sha256": "0949077e575842910401fda801dea0aaa47f259064ccd0d32d89f53652a45af3",
+    "resolution": [
+      1280,
+      720
+    ],
+    "fps": 24,
+    "frame_count": 359,
+    "duration_seconds": 14.958,
+    "format": "Unedited source time-lapse of a restaurant"
+  },
+  "detector": {
+    "model": "yolo26s.pt",
+    "tracker": "ByteTrack",
+    "device": "CPU",
+    "ultralytics": "8.4.160",
+    "opencv": "5.0.0.93",
+    "config": "backend/configs/restaurant-floor-mixkit.json",
+    "occupancy": {
+      "confidence_threshold": 0.15,
+      "enter_seconds": 3.6,
+      "leave_seconds": 2.25,
+      "reference_point": "center",
+      "presence_hold_seconds": 0.65
+    }
+  },
+  "initial_calibration": {
+    "enter_seconds": 1.25,
+    "issue": "Brief activity by the empty rear booth was counted as occupancy during full-rate playback.",
+    "vision_events": [
+      {
+        "at_seconds": 1.667,
+        "event": "Window-side middle: occupied, confirmed by vision."
+      },
+      {
+        "at_seconds": 1.667,
+        "event": "Aisle-side middle: occupied, confirmed by vision."
+      },
+      {
+        "at_seconds": 7.375,
+        "event": "Rear booth: occupied, confirmed by vision."
+      },
+      {
+        "at_seconds": 8.625,
+        "event": "Window-side middle: cleaning required."
+      },
+      {
+        "at_seconds": 8.625,
+        "event": "Window-side middle: cleaning task opened. Vacated table requires staff cleaning confirmation."
+      },
+      {
+        "at_seconds": 9.792,
+        "event": "Front table: occupied, confirmed by vision."
+      },
+      {
+        "at_seconds": 10.958,
+        "event": "Rear booth: cleaning required."
+      },
+      {
+        "at_seconds": 10.958,
+        "event": "Rear booth: cleaning task opened. Vacated table requires staff cleaning confirmation."
+      }
+    ]
+  },
+  "camera_only": {
+    "end_of_clip_reached": true,
+    "vision_events": [
+      {
+        "at_seconds": 3.625,
+        "event": "Window-side middle: occupied, confirmed by vision."
+      },
+      {
+        "at_seconds": 3.625,
+        "event": "Aisle-side middle: occupied, confirmed by vision."
+      },
+      {
+        "at_seconds": 8.625,
+        "event": "Window-side middle: cleaning required."
+      },
+      {
+        "at_seconds": 8.625,
+        "event": "Window-side middle: cleaning task opened. Vacated table requires staff cleaning confirmation."
+      },
+      {
+        "at_seconds": 12.167,
+        "event": "Front table: occupied, confirmed by vision."
+      }
+    ],
+    "rear_booth_became_occupied": false
+  },
+  "workflow": {
+    "staff_inputs": "Queue entries, cleaning and service actions, correction and outcome are explicit test inputs.",
+    "checks": [
+      "End of clip disables seating recommendations",
+      "Playback restart creates a fresh session and pause freezes the scenario clock",
+      "Staff confirmation gates readiness and occupied table cleaning is rejected",
+      "Staff roster, policy, assumptions and role-checked service task lifecycle",
+      "Queue capacity, stale approval rejection, availability and read-only what-if",
+      "Manager correction retained in local Hindsight and duplicate capture deduplicated",
+      "Logical shift preserves floor and queue; local handover recalls cited correction",
+      "Cited Local memory changes T1 baseline to T4; staff approval seats the party exactly once",
+      "Outcome is recorded separately from approval",
+      "Camera departure opens cleaning work, handover shows it, and staff completion restores readiness",
+      "Cleaned table reseats the next party and analytics and CSV agree",
+      "Final playback paused on the real occupied scene; local outbox fully delivered"
+    ],
+    "memory_advice": {
+      "deterministic_baseline": "T1",
+      "suggested_table": "T4",
+      "summary": "Seat the waiting party at table T4, following the manager\u2019s correction that during a delivery rush the front table T4 is preferred over the noisy rear booth T1.",
+      "evidence": [
+        {
+          "id": "58faf1ae-dbbd-4738-bf58-01a8509927d8",
+          "text": "Manager corrected table assignment during delivery rush, choosing clean front table T4 over noisy rear booth T1 for waiting pair | When: Saturday, November 07, 2026 | Where: Restaurant layout 82977be5a558ceea0a164c32 | Involving: Manager (staff_report) | Pickup noise at T1 made it unsuitable; preference applies only to delivery rushes, effectiveness unknown",
+          "source_id": "0b70efda-9e58-4549-96af-f37a8b79ecda",
+          "recorded_at": "2026-11-07T04:43:31.403953+00:00",
+          "kind": "correction",
+          "source": "staff_report",
+          "supports_preference": true,
+          "qualification": "Manager report; chosen alternative is not proof of success."
+        }
+      ]
+    },
+    "final_floor": {
+      "media_seconds": 12.29,
+      "processing_fps": 24.0,
+      "tables": {
+        "T1": [
+          "absent",
+          "ready",
+          0
+        ],
+        "T2": [
+          "absent",
+          "occupied",
+          0
+        ],
+        "T3": [
+          "present",
+          "occupied",
+          3
+        ],
+        "T4": [
+          "present",
+          "occupied",
+          3
+        ]
+      }
+    },
+    "test_guests_seated": 4,
+    "tasks_completed": 2,
+    "sqlite_verified": {
+      "seated_parties": 2,
+      "closed_tasks": 2,
+      "archived_sessions": 3,
+      "source_kinds": [
+        "correction",
+        "action",
+        "outcome"
+      ]
+    }
+  },
+  "memory": {
+    "profile": "Local Docker",
+    "api_version": "1.2.0",
+    "retained": 3,
+    "pending": 0,
+    "failed": 0,
+    "hosted_action_requests": 1,
+    "hindsight_cloud_calls": 0
+  },
+  "entrance_calibration": {
+    "passed": true,
+    "input": "Existing synthetic entrance calibration clip with actual YOLO/ByteTrack",
+    "observed_crossings": 1,
+    "host_confirmed_size": 4,
+    "duplicate_registration_rejected": true
+  },
+  "browser": {
+    "passed": true,
+    "browser": "Headless Chrome",
+    "checked": [
+      "Annotated video playback",
+      "Staff tasks",
+      "Analytics",
+      "Supervisor source timeline",
+      "Table editor regions",
+      "Mobile queue shortcut and focus"
+    ],
+    "mutating_requests": 0,
+    "screenshots": [
+      "backend/data/restaurant-footage-review/browser.cwfp1n/restaurant-floor-browser.png",
+      "backend/data/restaurant-footage-review/browser.cwfp1n/restaurant-setup-browser.png"
+    ]
+  },
+  "regression": {
+    "backend_tests_passed": 198,
+    "frontend_tests_passed": 17,
+    "production_build": "passed"
+  },
+  "preview": {
+    "url": "http://127.0.0.1:5175/floor",
+    "api": "http://127.0.0.1:8002",
+    "paused": true,
+    "fresh": true
+  },
+  "limitations": [
+    "The time-lapse cannot establish actual dining durations.",
+    "Passers-by and adjacent seating zones make frame-level headcounts fluctuate.",
+    "Natural arrivals were outside the testable camera region. Entrance registration used the separate synthetic calibration clip."
+  ]
+}

@@ -65,3 +65,4 @@ backend/configs/*.json
 !backend/configs/controlled-floor-demo.json
 !backend/configs/restaurant-stock.json
 !backend/configs/entrance-calibration.json
+!backend/configs/restaurant-floor-mixkit.json

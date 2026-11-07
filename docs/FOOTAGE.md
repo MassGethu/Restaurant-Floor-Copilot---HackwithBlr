@@ -32,3 +32,13 @@ Manual queue entries and staff actions are explicit. Synthetic capacities and di
 ## Entrance calibration added 6 November
 
 scripts/verify_arrivals.py translates a frame of the same permitted stock clip across a configured entrance region and writes entrance-calibration.mp4 plus its portable config. This artificial motion checks actual YOLO/ByteTrack region-crossing plumbing. The generated input is synthetic and is not evidence of natural arrival, group-size, or customer-versus-staff accuracy. The host must independently confirm party size. Video remains excluded from Git; annotated evidence and the JSON report are in docs/verification.
+
+## Multi-table restaurant footage
+
+The unedited Mixkit time-lapse shows four seating areas in a real restaurant from a high camera angle. The downloaded clip is 1280×720 at 24 fps and runs for just under 15 seconds. Save the 720p asset as `fake_camera/videos/restaurant-floor-mixkit.mp4`. The video is kept out of Git. [Source and license](https://mixkit.co/free-stock-video/customers-in-a-minimalist-style-restaurant-4385/) · [720p download](https://assets.mixkit.co/videos/4385/4385-720.mp4)
+
+The [table configuration](../backend/configs/restaurant-floor-mixkit.json) covers four visible seating areas. The pendant light obscures the left foreground, so that area is outside the calibrated floor. An initial 1.25-second presence delay counted a passer-by at the rear booth as occupancy. A 3.6-second delay filtered that event on the repeat while still confirming occupancy at the middle and front tables. The 2.25-second absence delay, 0.65-second detection hold, box-centre anchor and 0.15 confidence threshold apply to this clip.
+
+The camera-only pass ran from start to end. A second pass used test queue entries, staff actions and an explicitly simulated manager correction. It exercised capacity checks, seating approval, cleaning, task assignment, forecasting, analytics, CSV export and Local Hindsight recall and handover. Camera counts fluctuated when people passed through adjacent zones. The clip's time-lapse timing and partly obscured entrance prevent it from establishing real dining durations, exact guest counts or natural entrance accuracy. Entrance registration was checked separately with the motion-edited calibration clip. [Verification report](verification/restaurant-floor-mixkit-report.json)
+
+The isolated preview uses API port 8002 and dashboard port 5175. It is paused after the test seating and cleaning workflow. Floor status includes the recorded test staff actions alongside the camera observations. [Open the preview](http://127.0.0.1:5175/floor)
