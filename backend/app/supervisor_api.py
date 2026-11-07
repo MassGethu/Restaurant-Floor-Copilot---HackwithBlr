@@ -109,3 +109,8 @@ def decision(advice_id: str, body: ApprovalInput, request: Request):
 @router.post("/handover")
 def handover(request: Request):
     return service(request).handover()
+
+
+@router.get("/handover")
+def current_work(request: Request):
+    return service(request).current_work()

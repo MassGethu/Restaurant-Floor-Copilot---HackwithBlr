@@ -12,13 +12,14 @@ import json
 import threading
 import time
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from app.memory_clients import GroqReasoner, HindsightMemory, Selection
 from app.operations import OperationError
 
 ACTIVE = ("open", "acknowledged", "in_progress")
 RETAIN_SCHEMA_VERSION = 2
+PREFERENCE_VALID_FOR = timedelta(days=7)
 DELIVERY_FIELDS = (
     "delivery",
     "attempts",
@@ -439,9 +440,7 @@ class Supervisor:
 
     def candidates(self):
         result = [{"id": "none", "type": "no_action", "baseline": True}]
-        if not (
-            self.ops.fresh and self.ops.source == "LIVE" and self.ops.model == "ready"
-        ):
+        if self.ops.state["staff_mode"] or not self.ops.camera_ready:
             return result
         recs = self.ops.recommendations()
         if recs:
@@ -492,6 +491,7 @@ class Supervisor:
     def evidence(self, raw, layout_id):
         result = []
         with self.lock:
+            preferences = self.applicable_preferences(layout_id)
             for fact in raw.get("results", []):
                 metadata = fact.get("metadata") or {}
                 record_id = metadata.get("experience_id") or fact.get("document_id")
@@ -512,7 +512,8 @@ class Supervisor:
                             "recorded_at": item["recorded_at"],
                             "kind": item["kind"],
                             "source": item["source"],
-                            "supports_preference": self.preference_source(item),
+                            "supports_preference": item["id"] in preferences,
+                            "preference_scope": preferences.get(item["id"]),
                             "qualification": item["content"].get(
                                 "qualification", "Historical evidence"
                             ),
@@ -520,19 +521,84 @@ class Supervisor:
                     )
         return result
 
-    def preference_source(self, item, path=None):
-        """Withdrawal/update records alone do not establish an alternative preference."""
-        path = path or set()
-        if item["id"] in path:
-            return False
-        if item["kind"] == "correction":
-            return True
-        dependencies = item.get("depends_on", []) + (
-            [item["parent_id"]] if item["parent_id"] else []
-        )
-        return any(
-            self.preference_source(self.record(key), path | {item["id"]})
-            for key in dependencies
+    def applicable_preferences(self, layout_id):
+        """Only a matching manager correction can authorize a seating alternative."""
+        shift = self.current_shift()
+        condition = shift["context"].get("delivery_activity")
+        if not shift["context_confirmed_at"] or condition not in ("normal", "rush"):
+            return {}
+        active = [
+            x for x in self.state["experiences"] if self.active_record(x, layout_id)
+        ]
+        records = {x["id"]: x for x in active}
+        disputed = set()
+        pending = [
+            x["parent_id"]
+            for x in active
+            if x["kind"] == "outcome" and x["content"].get("outcome") == "did_not_help"
+        ]
+        while pending:
+            key = pending.pop()
+            if key in disputed or key not in records:
+                continue
+            disputed.add(key)
+            record = records[key]
+            pending.extend(record.get("depends_on", []))
+            if record["parent_id"]:
+                pending.append(record["parent_id"])
+        now = datetime.now(UTC)
+        scopes = {}
+        for item in active:
+            if item["kind"] != "correction" or item["id"] in disputed:
+                continue
+            content = item["content"]
+            baseline = content.get("baseline_table_id")
+            table = content.get("chosen_table_id")
+            situation = content.get("situation") or {}
+            if (
+                not baseline
+                or not table
+                or baseline == table
+                or not situation.get("context_confirmed_at")
+            ):
+                continue
+            if situation.get("context", {}).get("delivery_activity") != condition:
+                continue
+            try:
+                recorded = datetime.fromisoformat(item["recorded_at"])
+                expires = recorded + PREFERENCE_VALID_FOR
+                if not recorded <= now < expires:
+                    continue
+            except (ValueError, TypeError):
+                continue
+            scopes[item["id"]] = {
+                "table_id": table,
+                "baseline_table_id": baseline,
+                "delivery_activity": condition,
+                "expires_at": expires.isoformat(),
+            }
+        targets = {}
+        for scope in scopes.values():
+            targets.setdefault(scope["baseline_table_id"], set()).add(scope["table_id"])
+        return {
+            key: scope
+            for key, scope in scopes.items()
+            if len(targets[scope["baseline_table_id"]]) == 1
+            and records[key]["delivery"] == "retained"
+        }
+
+    @staticmethod
+    def preference_matches(scope, proposal, candidates):
+        return bool(
+            scope
+            and scope["table_id"] == proposal["table_id"]
+            and any(
+                c["type"] == "seat_party"
+                and c["baseline"]
+                and c["party_id"] == proposal["party_id"]
+                and c["table_id"] == scope["baseline_table_id"]
+                for c in candidates
+            )
         )
 
     def prepare(self, question):
@@ -567,12 +633,15 @@ class Supervisor:
                 candidate["type"] == "seat_party"
                 and not candidate["baseline"]
                 and not any(
-                    f["id"] in choice.memory_ids and f.get("supports_preference")
+                    f["id"] in choice.memory_ids
+                    and self.preference_matches(
+                        f.get("preference_scope"), candidate, allowed.values()
+                    )
                     for f in evidence
                 )
             ):
                 raise ServiceUnavailable(
-                    "An alternative seating proposal needs recalled evidence rooted in an active manager correction."
+                    "An alternative needs recalled evidence from an active manager correction for these exact tables and conditions. Use the floor's current seating choices."
                 )
             seen.add(choice.candidate_id)
             choices.append(
@@ -596,6 +665,11 @@ class Supervisor:
         }
 
     def advice(self, question="What should we do next?", compare=False):
+        with self.lock:
+            if self.ops.state["staff_mode"]:
+                raise ServiceUnavailable(
+                    "Staff-confirmed service uses the floor's current choices. Open handover for current work and past lessons."
+                )
         if not self.memory_configured or not self.reasoner_configured:
             raise ServiceUnavailable(
                 "Configure Hindsight and the reasoning model in backend/.env. Existing operations remain available."
@@ -666,9 +740,22 @@ class Supervisor:
             ):
                 raise OperationError("No pending action to approve.")
             if accepted:
-                if not any(c["id"] == candidate_id for c in self.candidates()):
+                candidates = self.candidates()
+                if not any(c["id"] == candidate_id for c in candidates):
                     raise OperationError("The action is no longer eligible.")
                 if proposal["type"] == "seat_party":
+                    if proposal["policy_departure"]:
+                        scopes = self.applicable_preferences(self.layout())
+                        if not any(
+                            f["id"] in proposal["memory_ids"]
+                            and self.preference_matches(
+                                scopes.get(f["source_id"]), proposal, candidates
+                            )
+                            for f in advice["evidence"]
+                        ):
+                            raise OperationError(
+                                "The cited seating preference is no longer applicable. Use the current floor choices."
+                            )
                     self.ops.seat(
                         proposal["party_id"],
                         proposal["table_id"],
@@ -702,6 +789,22 @@ class Supervisor:
                     }
                 ),
             )
+
+    def current_work(self):
+        with self.lock:
+            floor = self.public_floor()
+            waiting = len(floor["waiting"])
+            reviews = sum(
+                bool(t.get("departure_review")) for t in self.ops.state["tables"]
+            )
+            return {
+                "text": f"{waiting} parties waiting. {reviews} departure checks. {len(floor['tasks'])} open staff tasks.",
+                "mode": "operations",
+                "evidence": [],
+                "current_tasks": floor["tasks"],
+                "created_at": utcnow(),
+                "token": self.token(),
+            }
 
     def handover(self):
         if not self.memory_configured:
@@ -807,9 +910,17 @@ class Supervisor:
                 note = f"{content['outcome'].replace('_', ' ')}. {note}"
             if len(note) > 400:
                 note = note[:397] + "…"
-            lines.append(f"• {kinds.get(item['kind'], 'Historical record')}: {note}")
+            label = kinds.get(item["kind"], "Historical record")
+            if item["kind"] == "correction":
+                scope = fact.get("preference_scope")
+                label += (
+                    f" for confirmed {scope['delivery_activity']} service"
+                    if scope
+                    else " from earlier conditions"
+                )
+            lines.append(f"• {label}: {note}")
             selected.append(fact)
-            if len(selected) == 4:
+            if len(selected) == 3:
                 break
         return "\n".join(lines), selected
 
@@ -828,6 +939,7 @@ class Supervisor:
                     self.ops.fresh
                     and self.ops.source == "LIVE"
                     and self.ops.model == "ready"
+                    and not self.ops.state["staff_mode"]
                 )
             experiences = copy.deepcopy(self.state["experiences"][-100:][::-1])
             for item in experiences:

@@ -40,7 +40,8 @@ An environment update that retires a preference is not evidence for that old
 alternative. Obsolete means the old preference no longer applies. With only a
 withdrawal/update and no independent active correction, return to the baseline.
 A seating policy departure must cite evidence marked supports_preference=true
-that explicitly supports that alternative under matching current conditions.
+whose preference_scope matches the current baseline, alternative and delivery activity.
+Keep the baseline if a cited lesson is unscoped or has expired.
 Explain when a lesson matches current context, distinguish staff-reported outcomes
 from measured events, and acknowledge uncertainty/conflicting experiences.
 An approval is not a successful outcome. Cite only supplied memory IDs, citing the

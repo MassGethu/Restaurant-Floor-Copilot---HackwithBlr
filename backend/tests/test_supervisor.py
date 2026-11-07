@@ -61,12 +61,12 @@ class FakeReasoner:
         seats = [c for c in payload["candidates"] if c["type"] == "seat_party"]
         candidate = next((x for x in seats if x["baseline"]), payload["candidates"][0])
         facts = []
-        if (
-            payload["memories"]
-            and payload["current"]["context"]["delivery_activity"] == "rush"
-        ):
+        applicable = [
+            fact for fact in payload["memories"] if fact.get("supports_preference")
+        ]
+        if applicable and payload["current"]["context"]["delivery_activity"] == "rush":
             candidate = next((x for x in seats if x["table_id"] == "T3"), candidate)
-            facts = [payload["memories"][0]["id"]]
+            facts = [applicable[0]["id"]]
         return {
             "summary": "Explicit fake-model test response",
             "choices": [
@@ -572,6 +572,34 @@ def test_conflicting_outcomes_are_preserved_as_distinct_evidence(supervisor):
     result = s.advice()
     assert {first["id"], second["id"]} <= {f["source_id"] for f in result["evidence"]}
     assert "did_not_help" in str(s.reasoner.payloads[-1]["memories"])
+    assert result["proposals"][0]["table_id"] == "T1"
+
+
+def test_valid_citation_cannot_authorize_a_different_table_or_expired_lesson(
+    supervisor,
+):
+    s = supervisor
+    lesson = retain_lesson(s)
+    facts = s.evidence(s.memory.recall("prefer T3", s.layout()), s.layout())
+    other = next(c for c in s.candidates() if c.get("table_id") == "T2")
+    s.reasoner.override = {
+        "summary": "Wrong table",
+        "choices": [
+            {
+                "candidate_id": other["id"],
+                "reason": "Wrong scope",
+                "memory_ids": [facts[0]["id"]],
+            }
+        ],
+    }
+    with pytest.raises(ServiceUnavailable, match="exact tables"):
+        s.advice()
+    s.reasoner.override = None
+    advice = s.advice()
+    s.record(lesson["id"])["recorded_at"] = "2020-01-01T00:00:00+00:00"
+    with pytest.raises(OperationError, match="no longer applicable"):
+        s.approve(advice["id"], advice["proposals"][0]["id"], True)
+    assert s.ops.state["parties"][0]["status"] == "waiting"
 
 
 def test_environment_update_alone_cannot_authorize_an_alternative(supervisor):
