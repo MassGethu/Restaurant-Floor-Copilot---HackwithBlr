@@ -328,7 +328,7 @@ def test_cleaning_priority_serves_demand_then_oldest_task(floor):
     assert '1 waiting parties' in tasks[0]['explanation']
 
 
-def test_extra_chairs_offered_only_for_parties_no_table_fits(floor):
+def test_extra_chairs_never_take_a_table_the_queue_needs(floor):
     make_ready(floor)
     seven = floor.add_party('Seven', 7)
     ten = floor.add_party('Ten', 10)
@@ -337,10 +337,12 @@ def test_extra_chairs_offered_only_for_parties_no_table_fits(floor):
     assert [(r['party_id'], r['table_id']) for r in recs] == [(four['id'], 'T2')]
     options = floor.extra_chair_options()
     # Seven fits the 6-seat table with one chair; ten is too big even with two;
-    # the 4-seat table is kept for the party the normal rules suggest.
-    assert [(o['party_id'], o['table_id'], o['extra_chairs']) for o in options] == [
-        (seven['id'], 'T3', 1)
-    ]
+    # the 4-seat table is kept for the party the normal rules suggest, who may
+    # instead take the 2-seat table with two chairs as an alternative.
+    assert [
+        (o['party_id'], o['table_id'], o['extra_chairs'], o['alternative'])
+        for o in options
+    ] == [(seven['id'], 'T3', 1, False), (four['id'], 'T1', 2, True)]
     assert ten['id'] not in [o['party_id'] for o in options]
 
 
@@ -367,3 +369,15 @@ def test_declining_extra_chairs_keeps_party_waiting_until_table_turns(floor):
     assert next(p for p in floor.state['parties'] if p['id'] == party['id'])['status'] == 'waiting'
     with pytest.raises(OperationError, match='no longer available'):
         floor.decline_extra_chairs(party['id'], 'T3', 2, floor.state['version'])
+
+
+def test_smaller_table_with_a_chair_is_an_alternative_not_the_suggestion(floor):
+    make_ready(floor)
+    party = floor.add_party('Three', 3)
+    rec = floor.recommendations()[0]
+    assert rec['table_id'] == 'T2'
+    option = floor.extra_chair_options()[0]
+    assert (option['table_id'], option['extra_chairs'], option['alternative']) == ('T1', 1, True)
+    floor.seat(party['id'], 'T1', floor.state['version'], extra_chairs=1)
+    assert floor.table('T1')['party_id'] == party['id']
+    assert floor.table('T2')['party_id'] is None

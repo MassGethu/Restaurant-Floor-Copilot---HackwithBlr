@@ -772,9 +772,11 @@ class Operations(ServiceMixin):
     def extra_chair_options(self, recommendations=None):
         """Free tables that would fit a waiting party with one or two extra chairs.
 
-        Only parties without a normal suggestion are considered, and tables the
-        normal suggestions already use are left alone, so the queue is never
-        displaced. Fewest extra chairs first. The manager approves each one.
+        A party with no normal suggestion gets these as its only way to sit.
+        A party that has one gets them as alternatives (alternative=True): a
+        smaller table plus a chair, never the recommendation. Tables the normal
+        suggestions use are left alone, so the queue is never displaced.
+        Fewest extra chairs first. The manager approves each one.
         """
         if not self.camera_ready and not self.state["staff_mode"]:
             return []
@@ -789,7 +791,7 @@ class Operations(ServiceMixin):
         ]
         result = []
         for party in self.state["parties"]:
-            if party["status"] != "waiting" or party["id"] in suggested:
+            if party["status"] != "waiting":
                 continue
             fits = sorted(
                 (
@@ -809,6 +811,7 @@ class Operations(ServiceMixin):
                     table_name=t["name"],
                     capacity=t["capacity"],
                     extra_chairs=party["size"] - t["capacity"],
+                    alternative=party["id"] in suggested,
                     version=self.state["version"],
                 )
                 for t in fits

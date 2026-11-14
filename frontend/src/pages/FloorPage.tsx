@@ -51,6 +51,12 @@ const cameraSees: Record<string, string> = {
   pending_departure: "Camera: guests may be leaving",
 };
 
+/** The Floor never offers more than this many extra chairs (matches the backend). */
+const MAX_EXTRA_CHAIRS = 2;
+const chairs = (n: number) => `${n} extra chair${n === 1 ? "" : "s"}`;
+const checkedOn = (iso: string) =>
+  new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+
 function SeatingSuggestion({
   rec,
   index,
@@ -77,12 +83,29 @@ function SeatingSuggestion({
       ) &&
       t.capacity >= (party?.size ?? Infinity),
   );
-  const selected = options.some((t) => t.id === alternative)
-    ? alternative
-    : rec.table_id;
+  // A smaller free table with one or two extra chairs: offered, never recommended.
+  const chairOptions = (state.extra_chair_options ?? []).filter(
+    (o) => o.party_id === rec.party_id && o.alternative,
+  );
+  const chairValue = (o: ExtraChairOption) => `chair:${o.table_id}`;
+  const chairChoice = chairOptions.find((o) => chairValue(o) === alternative);
+  const selected =
+    chairChoice || options.some((t) => t.id === alternative)
+      ? alternative
+      : rec.table_id;
   const chosen = options.find((t) => t.id === selected);
-  const override = selected !== rec.table_id;
+  const override = !chairChoice && selected !== rec.table_id;
   const comparison = rec.alternatives?.find((t) => t.table_id === selected);
+  const rememberedChair = chairOptions.find((o) => chairFacts(o).roomKnown);
+  const chairRoom = chairChoice ? chairFacts(chairChoice) : null;
+  const seatWithChairs = (o: ExtraChairOption, roomChecked: boolean) =>
+    void act("/seat", {
+      party_id: o.party_id,
+      table_id: o.table_id,
+      version: o.version,
+      extra_chairs: o.extra_chairs,
+      room_checked: roomChecked,
+    });
   return (
     <div className={`decision-card ${index === 0 ? "is-first" : ""}`}>
       <div className="decision-number">
@@ -99,7 +122,18 @@ function SeatingSuggestion({
         <span>{rec.table_name}</span>
       </h3>
       <p>{rec.explanation}</p>
-      {options.length > 1 && (
+      {!chairChoice && rememberedChair && (
+        <button
+          type="button"
+          className="chair-also"
+          onClick={() => setAlternative(chairValue(rememberedChair))}
+        >
+          <Brain size={14} aria-hidden="true" />
+          Also possible: {rememberedChair.table_name} with{" "}
+          {chairs(rememberedChair.extra_chairs)}. You checked there’s room.
+        </button>
+      )}
+      {options.length + chairOptions.length > 1 && (
         <label className="alternative-label">
           Prefer a different table?
           <select
@@ -113,9 +147,16 @@ function SeatingSuggestion({
                 {t.id === rec.table_id ? " · recommended" : ""}
               </option>
             ))}
+            {chairOptions.map((o) => (
+              <option key={chairValue(o)} value={chairValue(o)}>
+                {o.table_name} · {o.capacity} seats + {chairs(o.extra_chairs)}
+                {chairFacts(o).roomKnown ? " · room remembered" : ""}
+              </option>
+            ))}
           </select>
         </label>
       )}
+      {chairChoice && <ChairMemoryNote option={chairChoice} />}
       {override && comparison && (
         <div className="choice-comparison">
           <b>If you pick {chosen?.name}</b>
@@ -135,45 +176,78 @@ function SeatingSuggestion({
           )}
         </div>
       )}
-      <button
-        className="floor-btn primary"
-        disabled={busy || !connected}
-        onClick={() =>
-          void act("/seat", {
-            party_id: rec.party_id,
-            table_id: selected,
-            version: rec.version,
-            decision_key: rec.decision_key,
-            override,
-          })
-        }
-      >
-        <Check size={15} />
-        {override ? `Seat at ${chosen?.name}` : "Seat them"}
-      </button>
-      <button
-        className="decline-suggestion"
-        disabled={busy || !connected}
-        onClick={() =>
-          void act("/decline", {
-            party_id: rec.party_id,
-            table_id: rec.table_id,
-            version: rec.version,
-            decision_key: rec.decision_key,
-          })
-        }
-      >
-        Not this table, keep them waiting
-      </button>
+      {chairChoice && chairRoom ? (
+        <>
+          <button
+            className="floor-btn primary"
+            disabled={busy || !connected || chairRoom.checking}
+            onClick={() => seatWithChairs(chairChoice, !chairRoom.roomKnown)}
+          >
+            <Check size={15} />
+            {chairRoom.roomKnown
+              ? `Seat at ${chairChoice.table_name} with ${chairs(chairChoice.extra_chairs)}`
+              : `There’s room, seat at ${chairChoice.table_name}`}
+          </button>
+          <button
+            className="decline-suggestion"
+            disabled={busy || !connected || chairRoom.checking}
+            onClick={async () => {
+              if (
+                await act("/extra-chairs/decline", {
+                  party_id: chairChoice.party_id,
+                  table_id: chairChoice.table_id,
+                  version: chairChoice.version,
+                  extra_chairs: chairChoice.extra_chairs,
+                  // Only a first-time check is remembered; a remembered "room"
+                  // that is blocked tonight stays remembered.
+                  remember: !chairRoom.roomKnown,
+                })
+              )
+                setAlternative("");
+            }}
+          >
+            {chairRoom.roomKnown
+              ? `Not ${chairChoice.table_name} tonight`
+              : `No room at ${chairChoice.table_name}`}
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            className="floor-btn primary"
+            disabled={busy || !connected}
+            onClick={() =>
+              void act("/seat", {
+                party_id: rec.party_id,
+                table_id: selected,
+                version: rec.version,
+                decision_key: rec.decision_key,
+                override,
+              })
+            }
+          >
+            <Check size={15} />
+            {override ? `Seat at ${chosen?.name}` : "Seat them"}
+          </button>
+          <button
+            className="decline-suggestion"
+            disabled={busy || !connected}
+            onClick={() =>
+              void act("/decline", {
+                party_id: rec.party_id,
+                table_id: rec.table_id,
+                version: rec.version,
+                decision_key: rec.decision_key,
+              })
+            }
+          >
+            Not this table, keep them waiting
+          </button>
+        </>
+      )}
     </div>
   );
 }
-
-/** The Floor never offers more than this many extra chairs (matches the backend). */
-const MAX_EXTRA_CHAIRS = 2;
-const chairs = (n: number) => `${n} extra chair${n === 1 ? "" : "s"}`;
-const checkedOn = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 
 /** How sure we are that this table has room: remembered, unknown, or remembered no. */
 function chairStanding(option: ExtraChairOption) {
@@ -193,6 +267,59 @@ function bestChairOptions(options: ExtraChairOption[]) {
   return [...best.values()];
 }
 
+/** What memory says about extra chairs for this option. */
+function chairFacts(option: ExtraChairOption) {
+  const memory = option.memory;
+  const remembered = memory.status === "found";
+  return {
+    remembered,
+    roomKnown: remembered && memory.max_extra_chairs >= option.extra_chairs,
+    noRoomKnown: remembered && memory.max_extra_chairs === 0,
+    checking: memory.status === "checking",
+  };
+}
+
+/** The 🧠 line: checking memory, remembered room (or not), or first time. */
+function ChairMemoryNote({ option }: { option: ExtraChairOption }) {
+  const { memory, table_name: table } = option;
+  const { roomKnown, noRoomKnown } = chairFacts(option);
+  if (memory.status === "checking")
+    return (
+      <p className="chair-memory is-checking" role="status">
+        <Brain size={15} aria-hidden="true" />
+        Checking memory for {table}…
+      </p>
+    );
+  if (memory.status === "found")
+    return (
+      <div className={`chair-memory ${roomKnown ? "is-room" : "is-no-room"}`}>
+        <Brain size={15} aria-hidden="true" />
+        <span>
+          <b>
+            {roomKnown
+              ? `Remembered: ${table} has room for ${chairs(memory.max_extra_chairs)}.`
+              : noRoomKnown
+                ? `Remembered: ${table} has no room for extra chairs.`
+                : `Remembered: ${table} has room for only ${chairs(memory.max_extra_chairs)}.`}
+          </b>
+          <small>
+            You checked on {checkedOn(memory.recorded_at)}. Saved in Hindsight
+            memory.
+            {!roomKnown && " Check again before seating."}
+          </small>
+        </span>
+      </div>
+    );
+  return (
+    <p className="chair-memory is-unknown">
+      <Brain size={15} aria-hidden="true" />
+      {memory.status === "unavailable"
+        ? "Memory isn’t answering right now. Check there’s room first."
+        : `First time: check there’s room at ${table} first. The app will remember your answer.`}
+    </p>
+  );
+}
+
 function ExtraChairCard({
   option,
   busy,
@@ -204,11 +331,8 @@ function ExtraChairCard({
   connected: boolean;
   act: (path: string, body?: unknown, method?: string) => Promise<boolean>;
 }) {
-  const { memory, extra_chairs: need, table_name: table } = option;
-  const remembered = memory.status === "found";
-  const roomKnown = remembered && memory.max_extra_chairs >= need;
-  const noRoomKnown = remembered && memory.max_extra_chairs === 0;
-  const checking = memory.status === "checking";
+  const { extra_chairs: need, table_name: table } = option;
+  const { roomKnown, checking } = chairFacts(option);
   const seat = (roomChecked: boolean) =>
     void act("/seat", {
       party_id: option.party_id,
@@ -243,37 +367,7 @@ function ExtraChairCard({
         {table} seats {option.capacity}. No free table fits {option.party_size}
         , so they need {chairs(need)}.
       </p>
-      {checking ? (
-        <p className="chair-memory is-checking" role="status">
-          <Brain size={15} aria-hidden="true" />
-          Checking memory for {table}…
-        </p>
-      ) : remembered ? (
-        <div className={`chair-memory ${roomKnown ? "is-room" : "is-no-room"}`}>
-          <Brain size={15} aria-hidden="true" />
-          <span>
-            <b>
-              {roomKnown
-                ? `Remembered: ${table} has room for ${chairs(memory.max_extra_chairs)}.`
-                : noRoomKnown
-                  ? `Remembered: ${table} has no room for extra chairs.`
-                  : `Remembered: ${table} has room for only ${chairs(memory.max_extra_chairs)}.`}
-            </b>
-            <small>
-              You checked on {checkedOn(memory.recorded_at)}. Saved in Hindsight
-              memory.
-              {!roomKnown && " Check again before seating."}
-            </small>
-          </span>
-        </div>
-      ) : (
-        <p className="chair-memory is-unknown">
-          <Brain size={15} aria-hidden="true" />
-          {memory.status === "unavailable"
-            ? "Memory isn’t answering right now. Check there’s room first."
-            : `First time: check there’s room at ${table} first. The app will remember your answer.`}
-        </p>
-      )}
+      <ChairMemoryNote option={option} />
       {roomKnown ? (
         <>
           <button
@@ -422,7 +516,10 @@ export default function FloorPage() {
   const tooBig = (guests: number) =>
     tables.length > 0 && guests > largest + MAX_EXTRA_CHAIRS;
   const oversized = waiting.filter((p) => tooBig(p.size));
-  const chairCards = bestChairOptions(state?.extra_chair_options ?? []);
+  // Parties no normal table fits; alternatives show inside their seating card.
+  const chairCards = bestChairOptions(
+    (state?.extra_chair_options ?? []).filter((o) => !o.alternative),
+  );
   const tooBigHelp = `The largest table seats ${largest}. Push tables together and seat them yourself, then remove them from the list.`;
   const ready = tables.filter((t) => t.seating_eligible).length;
   const occupied = tables.filter((t) => t.status === "occupied").length;

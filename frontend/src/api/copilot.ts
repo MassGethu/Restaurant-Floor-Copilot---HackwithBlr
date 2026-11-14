@@ -64,6 +64,8 @@ export type ExtraChairOption = {
   table_name: string;
   capacity: number;
   extra_chairs: number;
+  /** True when the party also has a normal table: this is just another choice. */
+  alternative: boolean;
   version: number;
   /** What Hindsight recalled about extra chairs at this table. */
   memory: ChairMemory;
