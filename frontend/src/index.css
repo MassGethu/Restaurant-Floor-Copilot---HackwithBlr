@@ -1541,3 +1541,27 @@ input:focus-visible {
 .floor-page .table-grid {
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
+/* What staff are doing about a table (from Staff tasks). */
+.floor-page .task-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: #fbf3e2;
+  color: #93702f;
+}
+.floor-page .task-progress.acknowledged {
+  background: #e7f0fa;
+  color: #2f5f8a;
+}
+.floor-page .task-progress.in_progress {
+  background: #e4f2e6;
+  color: #2f6b4f;
+}
+.floor-page .cleaning-task .task-progress {
+  margin-top: 4px;
+}

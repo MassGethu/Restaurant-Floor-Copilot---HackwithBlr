@@ -8,6 +8,7 @@ import {
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
+  Bell,
   Check,
   ClipboardList,
   Clock3,
@@ -177,6 +178,24 @@ export default function FloorPage() {
   const [name, setName] = useState("");
   const [size, setSize] = useState(2);
   const [staffTable, setStaffTable] = useState<string | null>(null);
+  // Close a table's ••• menu on Escape or a click anywhere outside it.
+  useEffect(() => {
+    if (!staffTable) return;
+    const onPointer = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      if (!target?.closest(`[data-menu-for="${CSS.escape(staffTable)}"]`))
+        setStaffTable(null);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setStaffTable(null);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [staffTable]);
   const requestId = useRef(0);
   const queueAttempt = useRef<{ input: string; id: string } | null>(null);
   const refresh = useCallback(async () => {
@@ -273,6 +292,38 @@ export default function FloorPage() {
       action,
       table_key: table.table_key,
     });
+  // Run an action from a table's ••• menu and close the menu.
+  const fromMenu = (run: () => void) => {
+    setStaffTable(null);
+    run();
+  };
+
+  // What staff are doing about a table, as reported from Staff tasks.
+  const taskProgress = (tableId: string) => {
+    const active = (state?.tasks ?? []).filter(
+      (t) =>
+        t.table_id === tableId &&
+        ["open", "acknowledged", "in_progress"].includes(t.status),
+    );
+    const task =
+      active.find((t) => t.kind === "cleaning") ??
+      active.find((t) => t.kind === "service" || t.kind === "check_in");
+    if (!task) return null;
+    const cleaning = task.kind === "cleaning";
+    const role = cleaning ? "cleaner" : "waiter";
+    const who = state?.staff.find((p) => p.id === task.assigned_to)?.name;
+    const text =
+      task.status === "in_progress"
+        ? cleaning
+          ? `Being cleaned${who ? ` by ${who}` : ""}`
+          : `${who ?? "A waiter"} is at the table`
+        : task.status === "acknowledged"
+          ? `${who ?? `A ${role}`} is on the way`
+          : who
+            ? `${who} has been asked`
+            : `Waiting for a ${role}`;
+    return { text, cleaning, status: task.status };
+  };
 
   const openTasks =
     state?.tasks?.filter((t) =>
@@ -442,6 +493,14 @@ export default function FloorPage() {
               <div>
                 <h3>Clean {task.table_name}</h3>
                 <p>{task.explanation}</p>
+                {(() => {
+                  const progress = taskProgress(task.table_id);
+                  return progress ? (
+                    <small className={`task-progress ${progress.status}`}>
+                      {progress.text}
+                    </small>
+                  ) : null;
+                })()}
               </div>
               <button
                 aria-label={`Mark ${task.table_name} clean`}
@@ -557,6 +616,19 @@ export default function FloorPage() {
                         `Camera: ${table.observed.replaceAll("_", " ")}`)
                       )}
                     </div>
+                    {(() => {
+                      const progress = taskProgress(table.id);
+                      return progress ? (
+                        <div className={`task-progress ${progress.status}`}>
+                          {progress.cleaning ? (
+                            <Sparkles size={12} aria-hidden="true" />
+                          ) : (
+                            <Bell size={12} aria-hidden="true" />
+                          )}
+                          {progress.text}
+                        </div>
+                      ) : null;
+                    })()}
                     <div className="table-actions">
                       {table.departure_review && (
                         <>
@@ -596,17 +668,21 @@ export default function FloorPage() {
                           )
                         }
                         aria-label={`More actions for ${table.name}`}
+                        aria-expanded={staffTable === table.id}
                         title="More actions"
+                        data-menu-for={table.id}
                       >
                         •••
                       </button>
                     </div>
                     {staffTable === table.id && (
-                      <div className="staff-actions">
+                      <div className="staff-actions" data-menu-for={table.id}>
                         {table.status === "occupied" || table.party_id ? (
                           <button
                             disabled={busy || !connected}
-                            onClick={() => tableAction(table, "depart")}
+                            onClick={() =>
+                              fromMenu(() => tableAction(table, "depart"))
+                            }
                           >
                             Guests have left
                           </button>
@@ -616,9 +692,12 @@ export default function FloorPage() {
                           <button
                             disabled={busy}
                             onClick={() =>
-                              void act(`/tables/${table.id}/service`, {
-                                note: "Manager requested a service visit.",
-                              })
+                              fromMenu(
+                                () =>
+                                  void act(`/tables/${table.id}/service`, {
+                                    note: "Manager requested a service visit.",
+                                  }),
+                              )
                             }
                           >
                             Send a waiter
@@ -626,16 +705,20 @@ export default function FloorPage() {
                         )}
                         <button
                           disabled={busy}
-                          onClick={() => tableAction(table, "hold_occupied")}
+                          onClick={() =>
+                            fromMenu(() => tableAction(table, "hold_occupied"))
+                          }
                         >
                           Mark as taken
                         </button>
                         <button
                           disabled={busy || !connected}
                           onClick={() =>
-                            tableAction(
-                              table,
-                              table.blocked ? "unblock" : "block",
+                            fromMenu(() =>
+                              tableAction(
+                                table,
+                                table.blocked ? "unblock" : "block",
+                              ),
                             )
                           }
                         >
@@ -646,7 +729,9 @@ export default function FloorPage() {
                         {table.manual_hold && (
                           <button
                             disabled={busy}
-                            onClick={() => tableAction(table, "release")}
+                            onClick={() =>
+                              fromMenu(() => tableAction(table, "release"))
+                            }
                           >
                             Undo staff check
                           </button>
