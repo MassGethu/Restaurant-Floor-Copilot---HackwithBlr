@@ -196,3 +196,182 @@
     gap: 10px;
   }
 }
+
+/* ---- Simplified supervisor (demo polish) ---- */
+.supervisor-page .floor-heading.workspace-intro {
+  min-height: 0;
+  padding: 18px 24px;
+}
+.supervisor-page .floor-heading.workspace-intro h1 {
+  font-size: 30px;
+  margin: 4px 0 6px;
+}
+.sup-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+.sup-steps a {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  height: 100%;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #dfe6dc;
+  border-radius: 12px;
+  color: #2e4a3c;
+}
+.sup-steps a:hover {
+  border-color: #9fc0a8;
+  background: #f6faf4;
+}
+.sup-steps b {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #2f6b4f;
+  color: #fff;
+  font-size: 14px;
+}
+.sup-steps span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sup-steps strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.sup-steps small {
+  font-size: 12px;
+  color: #7f8b7b;
+}
+.sup-ask .memory-question-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sup-ask .memory-question-pills .floor-btn {
+  font-size: 12.5px;
+  border-radius: 999px;
+}
+.sup-ask .memory-question-pills .is-picked {
+  background: #e3efe2;
+  border-color: #8fb79a;
+  color: #2f6b4f;
+}
+.memory-compare {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: stretch;
+  margin: 18px 0 8px;
+}
+.memory-compare > div:not(.arrow) {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e3dc;
+  background: #f7f7f3;
+}
+.memory-compare .with {
+  border: 2px solid #5a9a6c;
+  background: #eef6ec;
+}
+.memory-compare small {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8f84;
+}
+.memory-compare .with small {
+  color: #2f6b4f;
+}
+.memory-compare b {
+  display: block;
+  font-size: 17px;
+  margin: 6px 0;
+  color: #253c33;
+}
+.memory-compare .without b {
+  color: #6b7368;
+}
+.memory-compare p {
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+  color: #66705f;
+}
+.memory-compare .arrow {
+  display: grid;
+  place-items: center;
+  color: #5a9a6c;
+}
+.memory-summary {
+  font-size: 14px !important;
+  color: #2e4a3c;
+}
+.memory-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #eef0ea;
+  color: #6b7368;
+}
+.memory-tag.learned {
+  background: #e5f0fb;
+  color: #2f5f8a;
+}
+.memory-proposal h3 {
+  font-size: 16px !important;
+}
+.memory-evidence h4 {
+  font-size: 13px;
+  font-weight: 650;
+  margin: 16px 0 8px;
+  color: #3f5a4c;
+}
+.memory-evidence summary {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.memory-evidence summary span {
+  display: block;
+  color: #5d6a5a;
+  font-weight: 400;
+}
+.sup-open {
+  list-style: disc;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.sup-lessons {
+  display: grid;
+  gap: 14px;
+  padding: 0 21px 21px;
+}
+.supervisor-page .floor-more {
+  margin-top: 0;
+}
+@media (max-width: 900px) {
+  .sup-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .memory-compare {
+    grid-template-columns: 1fr;
+  }
+  .memory-compare .arrow {
+    transform: rotate(90deg);
+  }
+}

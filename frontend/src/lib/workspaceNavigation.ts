@@ -26,24 +26,24 @@ export const operationsViews = {
     description: "Assign and track cleaning and service work.",
   },
   arrivals: {
-    label: "Arrivals",
-    description: "Review arrivals before adding parties to the queue.",
+    label: "Door arrivals",
+    description: "The camera spotted people at the door. Add them to the waiting list or dismiss.",
   },
   availability: {
-    label: "Availability",
-    description: "See when tables may be ready for the next party.",
+    label: "Table timing",
+    description: "When each table is likely to free up.",
   },
   simulation: {
-    label: "What-if lab",
-    description: "Compare seating choices before changing the floor.",
+    label: "Try seating plans",
+    description: "See what happens to the waiting list if you seat people differently. Nothing changes on the floor.",
   },
   analytics: {
-    label: "Analytics",
-    description: "Review service activity and past shifts.",
+    label: "Reports",
+    description: "How busy you were, how long guests waited, and past shifts.",
   },
   policy: {
-    label: "Policies",
-    description: "Set the rules for seating, wait estimates, and staff checks.",
+    label: "Seating rules",
+    description: "Choose how the app picks who sits where.",
   },
 };
 
@@ -56,11 +56,11 @@ export function operationsView(search: string): keyof typeof operationsViews {
 
 export const navigation: { label: string; items: Destination[] }[] = [
   {
-    label: "On shift",
+    label: "During service",
     items: [
       {
         to: "/floor",
-        label: "Floor overview",
+        label: "Floor",
         shortLabel: "Floor",
         icon: LayoutGrid,
       },
@@ -75,11 +75,11 @@ export const navigation: { label: string; items: Destination[] }[] = [
         label: operationsViews.arrivals.label,
         icon: DoorOpen,
       },
-      { to: "/supervisor", label: "Supervisor", icon: Brain },
+      { to: "/supervisor", label: "AI Supervisor", shortLabel: "Supervisor", icon: Brain },
     ],
   },
   {
-    label: "Planning",
+    label: "Planning & reports",
     items: [
       {
         to: "/operations?tab=availability",
@@ -104,11 +104,11 @@ export const navigation: { label: string; items: Destination[] }[] = [
     ],
   },
   {
-    label: "Camera setup",
+    label: "Setup",
     items: [
-      { to: "/videos", label: "Video library", icon: Video },
-      { to: "/live", label: "Vision monitor", icon: MonitorPlay },
-      { to: "/setup", label: "Table setup", icon: PenLine },
+      { to: "/videos", label: "Videos", icon: Video },
+      { to: "/live", label: "Live camera", icon: MonitorPlay },
+      { to: "/setup", label: "Draw tables", icon: PenLine },
     ],
   },
 ];

@@ -9,7 +9,6 @@ import {
   Brain,
   BookOpen,
   ArrowRight,
-  RefreshCw,
   History,
   PenLine,
 } from "lucide-react";
@@ -23,7 +22,22 @@ import {
   type ShiftContext,
   type SupervisorState,
 } from "../api/supervisor";
-import { AdviceCards, EvidenceList } from "../components/SupervisorCards";
+import {
+  AdviceCards,
+  EvidenceList,
+  kindLabel,
+} from "../components/SupervisorCards";
+
+const deliveryLabels: Record<string, string> = {
+  retained: "Saved to memory",
+  pending: "Saving…",
+  failed: "Not saved",
+};
+const outcomeLabels = {
+  helped: "It helped",
+  did_not_help: "It didn’t help",
+  unknown: "Not sure",
+};
 import { useSectionJump } from "../hooks/useSectionJump";
 
 function ExperienceCard({
@@ -56,15 +70,12 @@ function ExperienceCard({
   return (
     <article className={`experience-card ${historical ? "historical" : ""}`}>
       <header>
-        <b>{item.kind.replaceAll("_", " ")}</b>
+        <b>{kindLabel(item.kind)}</b>
         <span className={`memory-status ${item.delivery}`}>
-          {item.delivery}
+          {deliveryLabels[item.delivery] ?? item.delivery}
         </span>
       </header>
-      <small>
-        {new Date(item.recorded_at).toLocaleString()} ·{" "}
-        {item.source.replaceAll("_", " ")}
-      </small>
+      <small>{new Date(item.recorded_at).toLocaleString()}</small>
       <p>
         {item.content.note ||
           (item.content.action
@@ -73,23 +84,18 @@ function ExperienceCard({
       </p>
       {item.content.baseline_table_id && (
         <p>
-          Baseline {item.content.baseline_table_id} → reported alternative{" "}
-          {item.content.chosen_table_id || "unspecified"}
+          App suggested {item.content.baseline_table_id} → manager chose{" "}
+          {item.content.chosen_table_id || "another table"}
         </p>
       )}
       {item.content.outcome && (
         <b>Outcome: {item.content.outcome.replaceAll("_", " ")}</b>
       )}
-      <small>{item.content.qualification}</small>
-      <p className="memory-id">
-        {item.id}
-        {item.parent_id ? ` · relates to ${item.parent_id}` : ""}
-      </p>
       {historical && (
         <p className="memory-warning">
           {item.layout_id !== activeLayout
-            ? "Different floor configuration. Historical evidence only."
-            : "This lesson or its source was superseded. Historical evidence only."}
+            ? "Saved for a different table layout, so it won’t be used now."
+            : "This lesson was replaced by a newer one."}
         </p>
       )}
       {item.error && <p role="status">{item.error}</p>}
@@ -99,7 +105,7 @@ function ExperienceCard({
           disabled={busy}
           onClick={() => void send("retry", {})}
         >
-          Retry memory delivery
+          Try saving again
         </button>
       )}
       {!historical &&
@@ -108,12 +114,12 @@ function ExperienceCard({
           item.kind === "environment_update") && (
           <>
             <label>
-              Outcome or changed circumstances
+              How did it go? (optional note)
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 maxLength={1000}
-                placeholder="What did staff observe afterward? Keep customer identities out of notes."
+                placeholder="e.g. Guests at T3 had a quieter meal. No customer names."
               />
             </label>
             <div className="ops-actions">
@@ -125,7 +131,7 @@ function ExperienceCard({
                     disabled={busy}
                     onClick={() => void send("feedback", { outcome, note })}
                   >
-                    {outcome.replaceAll("_", " ")}
+                    {outcomeLabels[outcome]}
                   </button>
                 ),
               )}
@@ -135,7 +141,7 @@ function ExperienceCard({
               disabled={busy || !note.trim()}
               onClick={() => void send("supersede", { note })}
             >
-              Replace lesson with changed circumstances
+              Update this lesson
             </button>
           </>
         )}
@@ -161,7 +167,7 @@ export default function SupervisorPage() {
   const [note, setNote] = useState("");
   const [table, setTable] = useState("");
   const [question, setQuestion] = useState("What should we do next?");
-  const [compare, setCompare] = useState(false);
+  const [compare, setCompare] = useState(true);
   const [answer, setAnswer] = useState<AdviceResult | null>(null);
   const [handover, setHandover] = useState<Handover | null>(null);
   const [busy, setBusy] = useState(false);
@@ -219,7 +225,7 @@ export default function SupervisorPage() {
     e.preventDefault();
     void run(async () => {
       await supervisorRequest("/context", context, "PUT");
-      setNotice("Shift context confirmed by staff.");
+      setNotice("Tonight’s conditions saved.");
     });
   };
   const capture = (e: FormEvent) => {
@@ -235,7 +241,7 @@ export default function SupervisorPage() {
       });
       setNote("");
       setNotice(
-        "Experience recorded locally. Delivery status shows when Hindsight has retained it.",
+        "Lesson saved. It will be used in future advice once it shows “Saved to memory”.",
       );
     });
   };
@@ -259,29 +265,75 @@ export default function SupervisorPage() {
     floor?.tasks.filter((t) =>
       ["open", "acknowledged", "in_progress"].includes(t.status),
     ) ?? [];
+  const ready =
+    state?.integration.memory_configured &&
+    state.integration.reasoner_configured;
+  const thinking = busy || state?.integration.generating;
+  const deliveryText = {
+    unknown: "Not set",
+    normal: "Normal",
+    rush: "Delivery rush",
+  }[context.delivery_activity];
   return (
     <div className="supervisor-page">
       <div className="floor-heading workspace-intro">
         <div>
-          <div className="eyebrow">Shift memory</div>
-          <h1>Supervisor</h1>
-          <p>Review advice, record what happened, and brief the next shift.</p>
+          <div className="eyebrow">Learns from every shift</div>
+          <h1>AI Supervisor</h1>
+          <p>
+            Tell it what worked. It remembers, and uses those lessons to
+            suggest what to do next.
+          </p>
         </div>
+        {state && (
+          <div className={`live-pill ${ready ? "is-live" : ""}`}>
+            <i />
+            {ready
+              ? `Memory on · ${state.integration.retained} lessons saved`
+              : "Memory not connected"}
+          </div>
+        )}
       </div>
-      <nav className="workspace-jumps" aria-label="Supervisor shortcuts">
-        <Link to="#advice">
-          <Brain size={16} aria-hidden="true" /> Review advice
-        </Link>
-        <Link to="#correction">
-          <PenLine size={16} aria-hidden="true" /> Record a correction
-        </Link>
-        <Link to="#handover">
-          <BookOpen size={16} aria-hidden="true" /> Shift handover
-        </Link>
-        <Link to="#experience">
-          <History size={16} aria-hidden="true" /> Experience timeline
-        </Link>
-      </nav>
+
+      <ol className="sup-steps" aria-label="How it works">
+        <li>
+          <Link to="#context">
+            <b>1</b>
+            <span>
+              <strong>Tell it about tonight</strong>
+              <small>Rush? Short-staffed?</small>
+            </span>
+          </Link>
+        </li>
+        <li>
+          <Link to="#advice">
+            <b>2</b>
+            <span>
+              <strong>Ask for advice</strong>
+              <small>It checks past lessons</small>
+            </span>
+          </Link>
+        </li>
+        <li>
+          <Link to="#correction">
+            <b>3</b>
+            <span>
+              <strong>Teach it a lesson</strong>
+              <small>When you’d do it differently</small>
+            </span>
+          </Link>
+        </li>
+        <li>
+          <Link to="#handover">
+            <b>4</b>
+            <span>
+              <strong>Hand over</strong>
+              <small>Brief the next manager</small>
+            </span>
+          </Link>
+        </li>
+      </ol>
+
       {(error || connectionError) && (
         <p role="alert" className="floor-stale">
           {error || connectionError}
@@ -292,58 +344,27 @@ export default function SupervisorPage() {
           {notice}
         </p>
       )}
-      <div className="supervisor-status">
-        <b>{state?.shift.label ?? "Loading shift…"}</b>
-        {state && (
-          <details>
-            <summary>
-              {state.integration.memory_profile === "local"
-                ? "Local Docker"
-                : "Cloud"}{" "}
-              memory
-            </summary>
-            <p>
-              {state.integration.retained} retained ·{" "}
-              {state.integration.pending} pending · {state.integration.failed}{" "}
-              failed
-            </p>
-            <p>
-              {state.integration.memory_configured
-                ? "Memory configured"
-                : "Memory awaiting setup"}
-              {" · "}
-              {state.integration.reasoner_configured
-                ? "Reasoning configured"
-                : "Reasoning awaiting setup"}
-            </p>
-          </details>
-        )}
-        <button className="floor-btn" onClick={() => void refresh()}>
-          <RefreshCw size={13} /> Refresh status
-        </button>
-      </div>
-      {state &&
-        (!state.integration.memory_configured ||
-          !state.integration.reasoner_configured) && (
-          <details className="memory-setup" open>
-            <summary>Connect real memory and reasoning</summary>
-            <p>
-              Add HINDSIGHT_BASE_URL, HINDSIGHT_API_KEY and AGENT_API_KEY to the
-              backend environment, then restart this edition. Notes can be
-              recorded while disconnected; they remain pending. Configured
-              status does not establish successful service access.
-            </p>
-          </details>
-        )}
+      {state && !ready && (
+        <details className="memory-setup" open>
+          <summary>Memory isn’t connected</summary>
+          <p>
+            You can still run the floor and save lessons; they’ll wait until
+            memory is connected. To connect it, add HINDSIGHT_BASE_URL,
+            HINDSIGHT_API_KEY and AGENT_API_KEY to the backend settings and
+            restart.
+          </p>
+        </details>
+      )}
       {state?.integration.last_error && (
         <p role="status" className="memory-warning">
           {state.integration.last_error}
         </p>
       )}
+
       <div className="supervisor-grid">
         <div>
           <section
-            className="floor-panel"
+            className="floor-panel sup-advice"
             id="advice"
             data-section
             tabIndex={-1}
@@ -351,60 +372,52 @@ export default function SupervisorPage() {
             <div className="panel-title">
               <div>
                 <Brain size={18} />
-                <h2>Shift advice</h2>
+                <h2>Ask for advice</h2>
               </div>
             </div>
-            <details className="workspace-advice-form" open={!displayed}>
-              <summary>Ask a question or generate advice</summary>
+            <form onSubmit={ask} className="sup-ask">
               <div className="memory-question-pills">
                 {[
+                  "What should we do next?",
                   "Why this table?",
                   "What worked before?",
-                  "How should we recover this rush?",
+                  "How do we get through this rush?",
                 ].map((q) => (
                   <button
+                    type="button"
                     key={q}
-                    className="floor-btn"
+                    className={`floor-btn ${question === q ? "is-picked" : ""}`}
                     onClick={() => setQuestion(q)}
                   >
                     {q}
                   </button>
                 ))}
               </div>
-              <form onSubmit={ask}>
-                <label>
-                  Operational question
-                  <input
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    maxLength={500}
-                    required
-                  />
-                </label>
-                <label className="memory-check">
-                  <input
-                    type="checkbox"
-                    checked={compare}
-                    onChange={(e) => setCompare(e.target.checked)}
-                  />{" "}
-                  Compare identical inputs with memory removed
-                </label>
-                <button
-                  className="floor-btn primary"
-                  disabled={
-                    busy ||
-                    state?.integration.generating ||
-                    !state?.integration.memory_configured ||
-                    !state.integration.reasoner_configured
-                  }
-                >
-                  {busy || state?.integration.generating
-                    ? "Gathering evidence…"
-                    : "Ask supervisor"}
-                  <ArrowRight size={14} />
-                </button>
-              </form>
-            </details>
+              <label>
+                Your question
+                <input
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  maxLength={500}
+                  required
+                />
+              </label>
+              <label className="memory-check">
+                <input
+                  type="checkbox"
+                  checked={compare}
+                  onChange={(e) => setCompare(e.target.checked)}
+                />{" "}
+                Also show what it would say without memory
+              </label>
+              <button
+                className="floor-btn primary"
+                disabled={thinking || !ready}
+              >
+                {thinking ? "Thinking…" : "Ask"}
+                <ArrowRight size={14} />
+              </button>
+            </form>
             {displayed && (
               <AdviceCards
                 key={displayed.id}
@@ -428,115 +441,116 @@ export default function SupervisorPage() {
             <div className="panel-title">
               <div>
                 <BookOpen size={18} />
-                <h2>Shift handover</h2>
+                <h2>Hand over to the next manager</h2>
               </div>
             </div>
             <p>
-              Past experience explains the context. The task list below reflects
-              current operational records.
+              A short brief of what’s still open, plus the lessons worth
+              knowing.
             </p>
-            <button
-              className="floor-btn primary"
-              disabled={busy || !floor}
-              onClick={() =>
-                void run(async () => {
-                  setHandover(await supervisorRequest<Handover>("/handover"));
-                })
-              }
-            >
-              Prepare current-work brief
-            </button>{" "}
-            <button
-              className="floor-btn"
-              disabled={
-                busy ||
-                state?.integration.generating ||
-                !state?.integration.memory_configured
-              }
-              onClick={() =>
-                void run(async () => {
-                  setHandover(
-                    await supervisorRequest<Handover>("/handover", {}),
-                  );
-                })
-              }
-            >
-              Recall past lessons
-            </button>
+            <div className="ops-actions">
+              <button
+                className="floor-btn primary"
+                disabled={busy || !floor}
+                onClick={() =>
+                  void run(async () => {
+                    setHandover(await supervisorRequest<Handover>("/handover"));
+                  })
+                }
+              >
+                What’s still open
+              </button>
+              <button
+                className="floor-btn"
+                disabled={thinking || !state?.integration.memory_configured}
+                onClick={() =>
+                  void run(async () => {
+                    setHandover(
+                      await supervisorRequest<Handover>("/handover", {}),
+                    );
+                  })
+                }
+              >
+                Add past lessons
+              </button>
+            </div>
             {handover && (
               <>
                 {stale(handover.token) && (
                   <p className="memory-warning">
-                    This briefing is an earlier snapshot. Regenerate for current
-                    advice.
+                    The floor has changed since this brief. Make a new one.
                   </p>
                 )}
-                <h3>
-                  {handover.mode === "operations"
-                    ? "Current floor and tasks"
-                    : handover.mode === "sources"
-                      ? "Source brief · Hindsight recall"
-                      : "Synthesis · Hindsight Reflect"}
-                </h3>
                 <div className="handover-text">{handover.text}</div>
-                <EvidenceList items={handover.evidence} />
+                {handover.mode !== "operations" && (
+                  <EvidenceList items={handover.evidence} />
+                )}
               </>
             )}
-            <h3>Current open work · operational records</h3>
+            <h3>Still open right now</h3>
             {tasks.length ? (
-              tasks.map((t) => (
-                <p key={t.id}>
-                  <b>
-                    {t.table_id} · {t.kind.replaceAll("_", " ")}
-                  </b>{" "}
-                  — {t.status.replaceAll("_", " ")} · {t.priority || "normal"}{" "}
-                  priority ·{" "}
-                  {t.assigned_to
-                    ? (floor?.staff.find((s) => s.id === t.assigned_to)?.name ??
-                      t.assigned_to)
-                    : "unassigned"}
-                </p>
-              ))
+              <ul className="sup-open">
+                {tasks.map((t) => (
+                  <li key={t.id}>
+                    <b>
+                      {floor?.tables.find((x) => x.id === t.table_id)?.name ??
+                        t.table_id}
+                    </b>{" "}
+                    · {t.kind.replaceAll("_", " ")} ·{" "}
+                    {t.assigned_to
+                      ? (floor?.staff.find((s) => s.id === t.assigned_to)
+                          ?.name ?? t.assigned_to)
+                      : "nobody assigned"}
+                    {t.priority === "high" && " · urgent"}
+                  </li>
+                ))}
+              </ul>
             ) : (
-              <p>No active tasks recorded.</p>
+              <p>Nothing open. 🎉</p>
             )}
-            <Link to="/operations">Open staff desk →</Link>
+            <Link to="/operations">Go to staff tasks →</Link>
           </section>
 
+          <details className="floor-panel floor-more" id="experience">
+            <summary>
+              <History size={17} />
+              <span>
+                <b>Lessons learned</b>
+                <small>
+                  {state?.experiences.length ?? 0} saved · mark whether each one
+                  helped
+                </small>
+              </span>
+            </summary>
+            <div className="sup-lessons">
+              {state?.experiences.length ? (
+                state.experiences.map((item) => (
+                  <ExperienceCard
+                    key={item.id}
+                    item={item}
+                    activeLayout={state.layout_id}
+                    changed={() => void refresh()}
+                  />
+                ))
+              ) : (
+                <p>No lessons yet. Teach it one on the right.</p>
+              )}
+            </div>
+          </details>
+        </div>
+
+        <aside>
           <section
             className="floor-panel"
-            id="experience"
+            id="context"
             data-section
             tabIndex={-1}
           >
-            <h2>Experience timeline</h2>
-            <p>
-              Staff reports and measured actions retain their source. An
-              approval never counts as an outcome.
-            </p>
-            {state?.experiences.length ? (
-              state.experiences.map((item) => (
-                <ExperienceCard
-                  key={item.id}
-                  item={item}
-                  activeLayout={state.layout_id}
-                  changed={() => void refresh()}
-                />
-              ))
-            ) : (
-              <p>
-                No experience recorded yet. Start with a manager correction.
-              </p>
-            )}
-          </section>
-        </div>
-        <aside>
-          <section className="floor-panel">
-            <h2>Current shift context</h2>
-            <p>Staff supplied information the camera cannot establish.</p>
+            <h2>Tonight’s conditions</h2>
+            <p>Things the camera can’t see. The advice takes these into account.</p>
             <form onSubmit={submitContext}>
               <label>
-                Delivery activity
+                Delivery orders
                 <select
                   value={context.delivery_activity}
                   onChange={(e) =>
@@ -547,40 +561,40 @@ export default function SupervisorPage() {
                     })
                   }
                 >
-                  <option value="unknown">Unknown / unconfirmed</option>
+                  <option value="unknown">Not sure</option>
                   <option value="normal">Normal</option>
                   <option value="rush">Delivery rush</option>
                 </select>
               </label>
               <label>
-                Staff availability
+                Staff on shift
                 <input
                   value={context.staffing}
                   onChange={(e) =>
                     setContext({ ...context, staffing: e.target.value })
                   }
                   maxLength={240}
-                  placeholder="One cleaner available; runner covering pickup"
+                  placeholder="e.g. One cleaner, two waiters"
                 />
               </label>
               <label>
-                Relevant conditions
+                Anything else
                 <textarea
                   value={context.note}
                   onChange={(e) =>
                     setContext({ ...context, note: e.target.value })
                   }
                   maxLength={500}
-                  placeholder="Describe current arrangements; exclude personal customer data."
+                  placeholder="e.g. Pickup counter is busy. No customer names."
                 />
               </label>
               <button className="floor-btn primary" disabled={busy}>
-                Confirm shift context
+                Save
               </button>
               <small>
                 {state?.shift.context_confirmed_at
-                  ? `Staff confirmed ${new Date(state.shift.context_confirmed_at).toLocaleString()}`
-                  : "Temporary conditions have not been confirmed for this shift."}
+                  ? `Saved ${new Date(state.shift.context_confirmed_at).toLocaleString()} · deliveries: ${deliveryText}`
+                  : "Not saved for this shift yet."}
               </small>
             </form>
           </section>
@@ -590,19 +604,19 @@ export default function SupervisorPage() {
             data-section
             tabIndex={-1}
           >
-            <h2>Remember a correction</h2>
+            <h2>Teach it a lesson</h2>
             <p>
-              Record why you chose differently. This records experience; seating
-              still requires explicit approval.
+              Did you seat someone differently from what the app suggested?
+              Say why, and it’ll remember next time.
             </p>
             <form onSubmit={capture}>
               <label>
-                Reported alternative table
+                Table you chose instead
                 <select
                   value={table}
                   onChange={(e) => setTable(e.target.value)}
                 >
-                  <option value="">General operational experience</option>
+                  <option value="">No specific table</option>
                   {floor?.tables.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name} · {t.capacity} seats
@@ -611,28 +625,28 @@ export default function SupervisorPage() {
                 </select>
               </label>
               <label>
-                Reason and conditions
+                Why?
                 <textarea
                   required
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   maxLength={2000}
-                  placeholder="During delivery rushes, T2 beside pickup had repeated interruptions. We preferred T3. Outcome still needs staff confirmation."
+                  placeholder="e.g. During delivery rushes, T2 next to the pickup counter keeps getting interrupted. T3 is quieter."
                 />
               </label>
               <button
                 className="floor-btn primary"
                 disabled={busy || !floor?.tables.length}
               >
-                Remember experience
+                <PenLine size={14} /> Save lesson
               </button>
             </form>
           </section>
           <section className="floor-panel">
-            <h2>Start the next shift</h2>
+            <h2>Start a new shift</h2>
             <p>
-              Floor, queue and open tasks stay in place. Temporary context
-              resets to unconfirmed.
+              Guests, tables and tasks stay as they are. Tonight’s conditions
+              are cleared so the next manager sets their own.
             </p>
             <form
               onSubmit={(e) => {
@@ -643,31 +657,31 @@ export default function SupervisorPage() {
                   setAnswer(null);
                   setHandover(null);
                   setNotice(
-                    "New shift started. Confirm current operating conditions.",
+                    "New shift started. Fill in tonight’s conditions.",
                   );
                 });
               }}
             >
               <label>
-                Shift label
+                Shift name
                 <input
                   required
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   maxLength={80}
-                  placeholder="Evening shift"
+                  placeholder="e.g. Saturday dinner"
                 />
               </label>
               <button className="floor-btn" disabled={busy}>
                 Start shift
               </button>
             </form>
+            <small>Current shift: {state?.shift.label ?? "…"}</small>
           </section>
           <p className="memory-disclosure">
-            Local prototype. Staff inputs are attributed reports, not
-            authenticated manager identities. Controlled footage and seeded
-            scenarios are synthetic. Memory adaptation does not train the vision
-            model.
+            Prototype for a single trusted desk. Demo video and scenarios are
+            staged. Memory changes advice only; it never trains the camera
+            model, and staff approve every action.
           </p>
         </aside>
       </div>

@@ -1302,3 +1302,270 @@ input:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- Simplified floor (demo polish) ---- */
+.floor-page .floor-heading.workspace-intro {
+  min-height: 0;
+  padding: 18px 24px;
+}
+.floor-page .floor-metric span {
+  font-size: 13px;
+  font-weight: 550;
+}
+.floor-page .floor-metric small {
+  font-size: 12px;
+}
+.floor-page .panel-title h2 {
+  font-size: 17px;
+}
+.floor-page .floor-legend {
+  padding: 0;
+  font-size: 11px;
+}
+.floor-page .table-status {
+  font-size: 13px;
+  font-weight: 600;
+}
+.floor-page .table-timer {
+  font-size: 11.5px;
+}
+.floor-page .table-actions .primary-action {
+  background: #2f6b4f;
+  color: #fff;
+  border-color: #2f6b4f;
+}
+.floor-page .staff-actions button {
+  font-size: 12px;
+}
+.attention-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 4px 21px 18px;
+}
+.attention-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid #d8e2d3;
+  background: #f5f8f2;
+  color: #3f6a4d;
+  border-radius: 8px;
+}
+.attention-links a:hover {
+  background: #e9f1e5;
+}
+.floor-page .turnover-review b {
+  font-size: 14px;
+}
+.floor-page .turnover-review p,
+.floor-page .cleaning-task p {
+  font-size: 12.5px;
+}
+.floor-page .queue-panel {
+  margin-top: 0;
+}
+.floor-page .party-form label {
+  font-size: 12px;
+}
+.floor-page .party-form input {
+  font-size: 14px;
+  padding: 10px 12px;
+}
+.wait-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.wait-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 21px;
+  border-top: 1px solid #edf0e8;
+}
+.wait-list .party-avatar {
+  margin: 0;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.wait-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.wait-who b {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #2e4a3c;
+}
+.wait-who small {
+  font-size: 12.5px;
+  color: #7f8b7b;
+}
+.wait-list .queue-ready,
+.wait-list .queue-waiting {
+  font-size: 12px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.wait-list li > button {
+  color: #a5ad9c;
+  padding: 6px;
+  border-radius: 6px;
+}
+.wait-list li > button:hover {
+  background: #f3f0ea;
+  color: #a75e41;
+}
+.floor-page .small-empty {
+  font-size: 13px;
+}
+.floor-page .decision-panel .panel-title h2 {
+  font-size: 18px;
+}
+.floor-page .decision-card {
+  margin-top: 4px;
+}
+.floor-page .decision-card.is-first {
+  border: 2px solid #5a9a6c;
+  box-shadow: 0 6px 18px -10px #2f6b4f80;
+}
+.floor-page .decision-number {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #3f7a52;
+}
+.floor-page .decision-card h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 21px;
+}
+.floor-page .decision-card h3 > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.floor-page .decision-card h3 small {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6c7d68;
+  background: #eef3ea;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.floor-page .decision-card p {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.floor-page .decision-card .floor-btn.primary {
+  width: 100%;
+  justify-content: center;
+  font-size: 15px;
+  padding: 12px;
+}
+.floor-page .decline-suggestion {
+  font-size: 12px;
+}
+.floor-page .alternative-label {
+  font-size: 12px;
+}
+.floor-page .choice-comparison {
+  font-size: 12.5px;
+}
+.floor-page .decision-empty h3 {
+  font-size: 16px;
+}
+.floor-page .decision-empty p,
+.floor-page .policy-note {
+  font-size: 12.5px;
+}
+.floor-more {
+  margin-top: 16px;
+}
+.floor-more > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 21px;
+  cursor: pointer;
+  list-style: none;
+  color: #3f5a4c;
+}
+.floor-more > summary::-webkit-details-marker {
+  display: none;
+}
+.floor-more > summary::after {
+  content: "Show";
+  margin-left: auto;
+  font-size: 12px;
+  color: #6c8a72;
+}
+.floor-more[open] > summary::after {
+  content: "Hide";
+}
+.floor-more > summary span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.floor-more > summary b {
+  font-size: 15px;
+  font-weight: 600;
+}
+.floor-more > summary small {
+  font-size: 12px;
+  color: #8a9684;
+}
+.floor-more .camera-window {
+  margin: 0 17px;
+}
+.assumptions-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  align-items: end;
+  padding: 0 21px 18px;
+}
+.assumptions-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: #6f7c6b;
+}
+.assumptions-form input {
+  border: 1px solid #dfe5d9;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+.floor-page .activity-list p {
+  font-size: 13px;
+}
+.floor-page .event-origin {
+  font-size: 10px;
+}
+.floor-page .table-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.floor-page .floor-heading.workspace-intro h1 {
+  font-size: 30px;
+  margin: 4px 0 6px;
+}

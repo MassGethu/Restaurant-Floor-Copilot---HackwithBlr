@@ -76,7 +76,7 @@ export default function Layout() {
           <div className="workspace-trail">
             <span>{currentGroup?.label ?? "Workspace"}</span>
             <ChevronRight size={14} aria-hidden="true" />
-            <strong>{current?.label ?? "Floor overview"}</strong>
+            <strong>{current?.label ?? "Floor"}</strong>
           </div>
           <Link className="workspace-add" to="/floor#add-party">
             <Plus size={17} aria-hidden="true" />

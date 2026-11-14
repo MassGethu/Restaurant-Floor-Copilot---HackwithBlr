@@ -7,8 +7,28 @@ import {
   supervisorRequest,
   type AdviceResult,
   type Evidence,
+  type Proposal,
   type SupervisorState,
 } from "../api/supervisor";
+
+const kindLabels: Record<string, string> = {
+  correction: "Manager lesson",
+  outcome: "What happened",
+  action: "Staff decision",
+  task_outcome: "Task result",
+  environment_update: "Change on the floor",
+};
+export const kindLabel = (kind: string) =>
+  kindLabels[kind] ?? kind.replaceAll("_", " ");
+/** Hindsight facts end with "| When: … | Where: …"; keep the readable part. */
+const factText = (text: string) => text.split(" | ")[0];
+const shortDate = (iso: string) =>
+  new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 export function EvidenceList({ items }: { items: Evidence[] }) {
   const groups = new Map<string, Evidence[]>();
@@ -16,29 +36,32 @@ export function EvidenceList({ items }: { items: Evidence[] }) {
     groups.set(item.source_id, [...(groups.get(item.source_id) ?? []), item]);
   return (
     <div className="memory-evidence">
+      <h4>What it remembered</h4>
       {items.length === 0 ? (
-        <p>No relevant active memory was retrieved.</p>
+        <p>No past lessons matched this situation.</p>
       ) : (
-        [...groups.values()].map((facts) => {
+        [...groups.values()]
+          .sort(
+            (a, b) =>
+              Number(b.some((f) => f.text.includes("instead of"))) -
+              Number(a.some((f) => f.text.includes("instead of"))) ||
+              Number(b[0].kind === "correction") -
+              Number(a[0].kind === "correction"),
+          )
+          .map((facts) => {
           const source = facts[0];
           return (
             <details key={source.source_id}>
               <summary>
-                {source.kind.replaceAll("_", " ")} ·{" "}
-                {new Date(source.recorded_at).toLocaleString()} · {facts.length}{" "}
-                recalled facts
+                <b>{kindLabel(source.kind)}</b> · {shortDate(source.recorded_at)}
+                <span>{factText(facts[0].text)}</span>
               </summary>
-              {facts.map((fact) => (
-                <p key={fact.id}>{fact.text}</p>
+              {facts.slice(1).map((fact) => (
+                <p key={fact.id}>{factText(fact.text)}</p>
               ))}
-              <small>
-                {source.source.replaceAll("_", " ")} · {source.qualification}
-              </small>
-              <p className="memory-id">
-                One source experience: {source.source_id}
-              </p>
-              <p className="memory-id">
-                Memory IDs: {facts.map((fact) => fact.id).join(", ")}
+              <small>{source.qualification}</small>
+              <p className="memory-id" title={facts.map((f) => f.id).join(", ")}>
+                Source record {source.source_id.slice(0, 8)}
               </p>
             </details>
           );
@@ -46,6 +69,23 @@ export function EvidenceList({ items }: { items: Evidence[] }) {
       )}
     </div>
   );
+}
+
+function friendlyLabel(p: Proposal, floor?: FloorState | null): string {
+  const party = floor?.parties.find((x) => x.id === p.party_id);
+  const table = floor?.tables.find((t) => t.id === p.table_id);
+  const task = floor?.tasks.find((t) => t.id === p.task_id);
+  const taskTable = floor?.tables.find((t) => t.id === task?.table_id);
+  switch (p.type) {
+    case "seat_party":
+      return `Seat ${party ? `${party.name} (${party.size})` : "the waiting party"} at ${table?.name ?? p.table_id}`;
+    case "prioritize_task":
+      return `Do the ${task?.kind.replaceAll("_", " ") ?? ""} at ${taskTable?.name ?? task?.table_id ?? "this table"} first`;
+    case "assign_task":
+      return `Give the ${task?.kind.replaceAll("_", " ") ?? "task"} to ${floor?.staff.find((s) => s.id === p.staff_id)?.name ?? "a staff member"}`;
+    default:
+      return proposalLabel(p);
+  }
 }
 
 export function AdviceCards({
@@ -79,48 +119,44 @@ export function AdviceCards({
       setBusy(false);
     }
   };
+  const withMemory = advice.proposals[0];
+  const withoutMemory = advice.without_memory?.proposals[0];
   return (
     <div className="memory-advice">
-      <p>{advice.summary}</p>
+      {withMemory && withoutMemory && (
+        <div className="memory-compare" aria-label="Advice with and without memory">
+          <div className="without">
+            <small>Without memory</small>
+            <b>{friendlyLabel(withoutMemory, floor)}</b>
+            <p>{withoutMemory.reason}</p>
+          </div>
+          <div className="arrow" aria-hidden="true">
+            <ArrowRight size={20} />
+          </div>
+          <div className="with">
+            <small>With past lessons</small>
+            <b>{friendlyLabel(withMemory, floor)}</b>
+            <p>{withMemory.reason}</p>
+          </div>
+        </div>
+      )}
+      <p className="memory-summary">{advice.summary}</p>
       {(stale || acted) && (
         <p role="status" className="memory-warning">
-          State changed. Refresh advice before approving another action.
+          {acted
+            ? "Done. Ask again for the next piece of advice."
+            : "The floor has changed since this advice. Ask again for fresh advice."}
         </p>
       )}
       {advice.proposals.map((p) => (
         <article key={p.id} className="memory-proposal">
-          <h3>{proposalLabel(p)}</h3>
-          {p.party_id && (
-            <p>
-              <b>
-                {floor?.parties.find((party) => party.id === p.party_id)
-                  ?.name || "Waiting party"}
-              </b>{" "}
-              ·{" "}
-              {floor?.parties.find((party) => party.id === p.party_id)?.size ??
-                "?"}{" "}
-              guests <small>Party {p.party_id}</small>
-            </p>
-          )}
-          <p>{p.reason}</p>
-          {p.task_id && (
-            <small>
-              {floor?.tasks
-                .find((t) => t.id === p.task_id)
-                ?.kind.replaceAll("_", " ")}{" "}
-              · {floor?.tasks.find((t) => t.id === p.task_id)?.table_id} · Task{" "}
-              {p.task_id}
-              {p.staff_id
-                ? ` → ${floor?.staff.find((s) => s.id === p.staff_id)?.name || p.staff_id}`
-                : ""}
-            </small>
-          )}
-          <small>
+          <span className={`memory-tag ${p.memory_ids.length ? "learned" : ""}`}>
             {p.memory_ids.length
-              ? `${p.memory_ids.length} cited memories`
-              : "Current operational state"}{" "}
-            · Agent interpretation
-          </small>
+              ? `Uses ${p.memory_ids.length} past lesson${p.memory_ids.length === 1 ? "" : "s"}`
+              : "Based on the floor right now"}
+          </span>
+          <h3>{friendlyLabel(p, floor)}</h3>
+          <p>{p.reason}</p>
           {p.type !== "no_action" && (
             <div className="ops-actions">
               <button
@@ -128,14 +164,14 @@ export function AdviceCards({
                 disabled={busy || stale || acted || p.status !== "proposed"}
                 onClick={() => void decide(p.id, true)}
               >
-                Approve {p.type === "seat_party" ? "seating" : "task action"}
+                Do it
               </button>
               <button
                 className="floor-btn"
                 disabled={busy || stale || acted || p.status !== "proposed"}
                 onClick={() => void decide(p.id, false)}
               >
-                Decline
+                No thanks
               </button>
             </div>
           )}
@@ -149,16 +185,11 @@ export function AdviceCards({
       <EvidenceList items={advice.evidence} />
       {advice.without_memory && (
         <details className="memory-comparison">
-          <summary>Same floor without memory</summary>
+          <summary>Full answer without memory</summary>
           <p>{advice.without_memory.summary}</p>
-          {advice.without_memory.proposals.map((p) => (
-            <p key={p.id}>
-              <b>{proposalLabel(p)}</b> — {p.reason}
-            </p>
-          ))}
           <small>
-            Same model, question, candidates and current context; memory
-            evidence removed. Comparison actions cannot be approved.
+            Same AI, same question, same floor, with past lessons removed. This
+            is for comparison only and can’t be approved.
           </small>
         </details>
       )}
@@ -218,11 +249,11 @@ export default function SupervisorCards({
       <div className="panel-title">
         <div>
           <Brain size={18} />
-          <h2>Shift memory</h2>
+          <h2>AI Supervisor</h2>
           <small>
             {state?.integration.memory_profile === "local"
-              ? "Local Docker"
-              : "Cloud"}
+              ? "Memory: local"
+              : "Memory: cloud"}
           </small>
         </div>
         <Link to="/supervisor" aria-label="Open Supervisor">
@@ -230,13 +261,12 @@ export default function SupervisorCards({
         </Link>
       </div>
       <p className="decision-intro">
-        The next shift benefits from what the last shift learned.
+        Remembers what worked on past shifts and suggests what to do.
       </p>
       {!configured ? (
         <p>
-          Memory advice awaits service setup.{" "}
-          <Link to="/supervisor">Open Supervisor</Link> to record experience and
-          see setup status.
+          Memory isn’t connected yet.{" "}
+          <Link to="/supervisor">Open the AI Supervisor</Link> to set it up.
         </p>
       ) : (
         <>
@@ -245,7 +275,7 @@ export default function SupervisorCards({
             disabled={busy || state?.integration.generating}
             onClick={() => void generate()}
           >
-            <RefreshCw size={13} /> Refresh advice
+            <RefreshCw size={13} /> {busy || state?.integration.generating ? "Thinking…" : "Ask for advice"}
           </button>
           {state?.advice ? (
             <AdviceCards
@@ -261,8 +291,7 @@ export default function SupervisorCards({
             />
           ) : (
             <p>
-              Record experience, then ask for advice. Relevant retained memories
-              also trigger proactive cards when the floor changes.
+              Ask for advice when you’re unsure who to seat or what to do next.
             </p>
           )}
         </>
