@@ -285,6 +285,17 @@ export default function SupervisorHint({
     };
   }, [refresh]);
 
+  // While the AI is thinking, tell the host a second opinion is coming.
+  if (
+    state?.integration.generating &&
+    floor?.parties.some((x) => x.status === "waiting")
+  )
+    return (
+      <p className="supervisor-hint-checking" role="status">
+        <Brain size={15} aria-hidden="true" />
+        AI Supervisor is checking past lessons…
+      </p>
+    );
   const advice = state?.advice;
   if (!advice || advice.stale || !floor || advice.token[0] !== floor.session_id)
     return null;

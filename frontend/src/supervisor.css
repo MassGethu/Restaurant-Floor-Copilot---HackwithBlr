@@ -498,3 +498,22 @@
   font-weight: 600;
   color: #2f5f8a;
 }
+.supervisor-hint-checking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px dashed #b9d0e4;
+  border-radius: 12px;
+  background: #f5f9fc;
+  color: #4d6680;
+  font-size: 13px;
+}
+.supervisor-hint-checking svg {
+  animation: hint-pulse 1.2s ease-in-out infinite;
+}
+@keyframes hint-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
