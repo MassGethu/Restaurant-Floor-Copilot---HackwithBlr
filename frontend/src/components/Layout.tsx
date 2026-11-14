@@ -8,7 +8,11 @@ import {
   X,
 } from "lucide-react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { navigation, operationsView } from "../lib/workspaceNavigation";
+import {
+  navigation,
+  operationsView,
+  settingsPages,
+} from "../lib/workspaceNavigation";
 import "./workspace.css";
 
 export default function Layout() {
@@ -21,6 +25,9 @@ export default function Layout() {
   } else if (currentPath.startsWith("/setup/")) {
     currentPath = "/setup";
   }
+  // Setup and planning pages live under Settings in the sidebar.
+  const subPage = settingsPages.find(({ to }) => to === currentPath);
+  if (subPage) currentPath = "/settings";
   const currentGroup = navigation.find(({ items }) =>
     items.some(({ to }) => to === currentPath),
   );
@@ -76,7 +83,15 @@ export default function Layout() {
           <div className="workspace-trail">
             <span>{currentGroup?.label ?? "Workspace"}</span>
             <ChevronRight size={14} aria-hidden="true" />
-            <strong>{current?.label ?? "Floor"}</strong>
+            {subPage ? (
+              <>
+                <Link to="/settings">Settings</Link>
+                <ChevronRight size={14} aria-hidden="true" />
+                <strong>{subPage.label}</strong>
+              </>
+            ) : (
+              <strong>{current?.label ?? "Floor"}</strong>
+            )}
           </div>
           <Link className="workspace-add" to="/floor#add-party">
             <Plus size={17} aria-hidden="true" />

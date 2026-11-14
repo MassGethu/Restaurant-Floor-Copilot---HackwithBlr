@@ -35,15 +35,15 @@ export const operationsViews = {
   },
   simulation: {
     label: "Try seating plans",
-    description: "See what happens to the waiting list if you seat people differently. Nothing changes on the floor.",
+    description: "Test a different seating choice without changing the floor.",
   },
   analytics: {
     label: "Reports",
     description: "How busy you were, how long guests waited, and past shifts.",
   },
   policy: {
-    label: "Seating rules",
-    description: "Choose how the app picks who sits where.",
+    label: "Seating & wait times",
+    description: "Who gets seated first, and how long meals and cleaning usually take.",
   },
 };
 
@@ -58,12 +58,7 @@ export const navigation: { label: string; items: Destination[] }[] = [
   {
     label: "During service",
     items: [
-      {
-        to: "/floor",
-        label: "Floor",
-        shortLabel: "Floor",
-        icon: LayoutGrid,
-      },
+      { to: "/floor", label: "Floor", icon: LayoutGrid },
       {
         to: "/operations",
         label: operationsViews.staff.label,
@@ -71,44 +66,84 @@ export const navigation: { label: string; items: Destination[] }[] = [
         icon: ClipboardList,
       },
       {
-        to: "/operations?tab=arrivals",
-        label: operationsViews.arrivals.label,
-        icon: DoorOpen,
+        to: "/supervisor",
+        label: "AI Supervisor",
+        shortLabel: "Supervisor",
+        icon: Brain,
       },
-      { to: "/supervisor", label: "AI Supervisor", shortLabel: "Supervisor", icon: Brain },
     ],
   },
   {
-    label: "Planning & reports",
+    label: "After service",
     items: [
-      {
-        to: "/operations?tab=availability",
-        label: operationsViews.availability.label,
-        icon: Clock3,
-      },
-      {
-        to: "/operations?tab=simulation",
-        label: operationsViews.simulation.label,
-        icon: Split,
-      },
       {
         to: "/operations?tab=analytics",
         label: operationsViews.analytics.label,
         icon: BarChart3,
       },
-      {
-        to: "/operations?tab=policy",
-        label: operationsViews.policy.label,
-        icon: Settings2,
-      },
     ],
   },
   {
     label: "Setup",
-    items: [
-      { to: "/videos", label: "Videos", icon: Video },
-      { to: "/live", label: "Live camera", icon: MonitorPlay },
-      { to: "/setup", label: "Draw tables", icon: PenLine },
-    ],
+    items: [{ to: "/settings", label: "Settings", icon: Settings2 }],
+  },
+];
+
+/** Pages reached from Settings; the sidebar highlights Settings for them. */
+export const settingsPages: {
+  to: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  group: "Restaurant" | "Camera" | "Planning tools";
+}[] = [
+  {
+    to: "/operations?tab=policy",
+    label: operationsViews.policy.label,
+    description: operationsViews.policy.description,
+    icon: Settings2,
+    group: "Restaurant",
+  },
+  {
+    to: "/setup",
+    label: "Draw tables",
+    description: "Mark where each table is on the camera picture.",
+    icon: PenLine,
+    group: "Camera",
+  },
+  {
+    to: "/videos",
+    label: "Videos",
+    description: "Upload or pick the footage the camera uses.",
+    icon: Video,
+    group: "Camera",
+  },
+  {
+    to: "/live",
+    label: "Live camera",
+    description: "See what the camera detects at each table.",
+    icon: MonitorPlay,
+    group: "Camera",
+  },
+  {
+    to: "/operations?tab=arrivals",
+    label: operationsViews.arrivals.label,
+    description: operationsViews.arrivals.description,
+    icon: DoorOpen,
+    group: "Planning tools",
+  },
+  {
+    to: "/operations?tab=availability",
+    label: operationsViews.availability.label,
+    description: operationsViews.availability.description,
+    icon: Clock3,
+    group: "Planning tools",
+  },
+  {
+    to: "/operations?tab=simulation",
+    label: operationsViews.simulation.label,
+    description: operationsViews.simulation.description,
+    icon: Split,
+    group: "Planning tools",
   },
 ];

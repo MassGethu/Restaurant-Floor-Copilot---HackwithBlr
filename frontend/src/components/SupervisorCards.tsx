@@ -36,19 +36,10 @@ export function EvidenceList({ items }: { items: Evidence[] }) {
     groups.set(item.source_id, [...(groups.get(item.source_id) ?? []), item]);
   return (
     <div className="memory-evidence">
-      <h4>What it remembered</h4>
       {items.length === 0 ? (
         <p>No past lessons matched this situation.</p>
       ) : (
-        [...groups.values()]
-          .sort(
-            (a, b) =>
-              Number(b.some((f) => f.text.includes("instead of"))) -
-              Number(a.some((f) => f.text.includes("instead of"))) ||
-              Number(b[0].kind === "correction") -
-              Number(a[0].kind === "correction"),
-          )
-          .map((facts) => {
+        [...groups.values()].map((facts) => {
           const source = facts[0];
           return (
             <details key={source.source_id}>
@@ -93,11 +84,15 @@ export function AdviceCards({
   stale = false,
   onChanged,
   floor,
+  onAskAgain,
+  asking = false,
 }: {
   advice: AdviceResult;
   stale?: boolean;
   onChanged: () => void;
   floor?: FloorState | null;
+  onAskAgain?: () => void;
+  asking?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [acted, setActed] = useState(false);
@@ -121,9 +116,42 @@ export function AdviceCards({
   };
   const withMemory = advice.proposals[0];
   const withoutMemory = advice.without_memory?.proposals[0];
+  // The facts the AI actually cited, manager lessons first.
+  const citedIds = new Set(advice.proposals.flatMap((p) => p.memory_ids));
+  const cited = advice.evidence
+    .filter((e) => citedIds.has(e.id))
+    .sort(
+      (x, y) =>
+        Number(y.kind === "correction") - Number(x.kind === "correction"),
+    );
+  const lesson = cited[0];
+  const alsoUsed = [
+    ...new Set(cited.slice(1).map((e) => factText(e.text))),
+  ].filter((text) => text !== factText(lesson?.text ?? ""));
+  const others = advice.evidence.filter((e) => !citedIds.has(e.id));
+  const locked = busy || stale || acted;
+  const decisionButtons = (p: Proposal) =>
+    p.type !== "no_action" && (
+      <div className="ops-actions">
+        <button
+          className="floor-btn primary"
+          disabled={locked || p.status !== "proposed"}
+          onClick={() => void decide(p.id, true)}
+        >
+          Do it
+        </button>
+        <button
+          className="floor-btn"
+          disabled={locked || p.status !== "proposed"}
+          onClick={() => void decide(p.id, false)}
+        >
+          No thanks
+        </button>
+      </div>
+    );
   return (
     <div className="memory-advice">
-      {withMemory && withoutMemory && (
+      {withMemory && withoutMemory ? (
         <div className="memory-compare" aria-label="Advice with and without memory">
           <div className="without">
             <small>Without memory</small>
@@ -139,8 +167,40 @@ export function AdviceCards({
             <p>{withMemory.reason}</p>
           </div>
         </div>
+      ) : withMemory ? (
+        <article className="memory-proposal is-hero">
+          <span
+            className={`memory-tag ${withMemory.memory_ids.length ? "learned" : ""}`}
+          >
+            {withMemory.memory_ids.length
+              ? "Uses past lessons"
+              : "Based on the floor right now"}
+          </span>
+          <h3>{friendlyLabel(withMemory, floor)}</h3>
+          <p>{withMemory.reason}</p>
+        </article>
+      ) : (
+        <p className="memory-summary">{advice.summary}</p>
       )}
-      <p className="memory-summary">{advice.summary}</p>
+
+      {lesson && (
+        <div className="memory-lesson">
+          <small>Because of this lesson</small>
+          <blockquote>“{factText(lesson.text)}”</blockquote>
+          <span>
+            {kindLabel(lesson.kind)} · {shortDate(lesson.recorded_at)} · Saved
+            to memory
+          </span>
+          {alsoUsed.length > 0 && (
+            <ul>
+              {alsoUsed.slice(0, 3).map((text) => (
+                <li key={text}>{text}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       {(stale || acted) && (
         <p role="status" className="memory-warning">
           {acted
@@ -148,33 +208,23 @@ export function AdviceCards({
             : "The floor has changed since this advice. Ask again for fresh advice."}
         </p>
       )}
-      {advice.proposals.map((p) => (
+      <div className="memory-actions">
+        {withMemory && decisionButtons(withMemory)}
+        {onAskAgain && (
+          <button
+            className="floor-btn"
+            disabled={asking}
+            onClick={onAskAgain}
+          >
+            <RefreshCw size={13} /> {asking ? "Thinking…" : "Ask again"}
+          </button>
+        )}
+      </div>
+      {advice.proposals.slice(1).map((p) => (
         <article key={p.id} className="memory-proposal">
-          <span className={`memory-tag ${p.memory_ids.length ? "learned" : ""}`}>
-            {p.memory_ids.length
-              ? `Uses ${p.memory_ids.length} past lesson${p.memory_ids.length === 1 ? "" : "s"}`
-              : "Based on the floor right now"}
-          </span>
-          <h3>{friendlyLabel(p, floor)}</h3>
+          <h3>Also: {friendlyLabel(p, floor)}</h3>
           <p>{p.reason}</p>
-          {p.type !== "no_action" && (
-            <div className="ops-actions">
-              <button
-                className="floor-btn primary"
-                disabled={busy || stale || acted || p.status !== "proposed"}
-                onClick={() => void decide(p.id, true)}
-              >
-                Do it
-              </button>
-              <button
-                className="floor-btn"
-                disabled={busy || stale || acted || p.status !== "proposed"}
-                onClick={() => void decide(p.id, false)}
-              >
-                No thanks
-              </button>
-            </div>
-          )}
+          {decisionButtons(p)}
         </article>
       ))}
       {error && (
@@ -182,9 +232,17 @@ export function AdviceCards({
           {error}
         </p>
       )}
-      <EvidenceList items={advice.evidence} />
+      {others.length > 0 && (
+        <details className="memory-more">
+          <summary>
+            {others.length} other thing{others.length === 1 ? "" : "s"} it
+            remembered
+          </summary>
+          <EvidenceList items={others} />
+        </details>
+      )}
       {advice.without_memory && (
-        <details className="memory-comparison">
+        <details className="memory-more">
           <summary>Full answer without memory</summary>
           <p>{advice.without_memory.summary}</p>
           <small>
@@ -197,27 +255,25 @@ export function AdviceCards({
   );
 }
 
-export default function SupervisorCards({
+/**
+ * Floor-page hint: appears only when the AI Supervisor, using a past lesson,
+ * suggests a different table from the simple seating rules. The full
+ * comparison and the lesson live on the AI Supervisor page.
+ */
+export default function SupervisorHint({
   floor,
 }: {
   floor: FloorState | null;
 }) {
-  const floorVersion = floor?.version;
-  const sessionId = floor?.session_id;
   const [state, setState] = useState<SupervisorState | null>(null);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
   const sequence = useRef(0);
   const refresh = useCallback(async () => {
     const id = ++sequence.current;
     try {
       const value = await supervisorRequest<SupervisorState>();
-      if (id === sequence.current) {
-        setState(value);
-        setError("");
-      }
+      if (id === sequence.current) setState(value);
     } catch {
-      if (id === sequence.current) setError("Supervisor is unreachable.");
+      // The hint is optional; the Floor keeps working without it.
     }
   }, []);
   useEffect(() => {
@@ -227,80 +283,47 @@ export default function SupervisorCards({
       clearInterval(timer);
       ++sequence.current;
     };
-  }, [refresh, floorVersion, sessionId]);
-  const generate = async () => {
-    setBusy(true);
-    setError("");
-    ++sequence.current;
-    try {
-      await supervisorRequest("/advice", {});
-      await refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Advice unavailable.");
-    } finally {
-      setBusy(false);
-    }
-  };
-  const configured =
-    state?.integration.memory_configured &&
-    state.integration.reasoner_configured;
+  }, [refresh]);
+
+  const advice = state?.advice;
+  if (!advice || advice.stale || !floor || advice.token[0] !== floor.session_id)
+    return null;
+  const proposal = advice.proposals.find(
+    (p) =>
+      p.type === "seat_party" &&
+      p.status === "proposed" &&
+      p.memory_ids.length > 0 &&
+      floor.parties.some((x) => x.id === p.party_id && x.status === "waiting") &&
+      floor.tables.some((t) => t.id === p.table_id && t.seating_eligible),
+  );
+  if (!proposal) return null;
+  const rule = floor.recommendations.find(
+    (r) => r.party_id === proposal.party_id,
+  );
+  if (rule && rule.table_id === proposal.table_id) return null;
+  const table = floor.tables.find((t) => t.id === proposal.table_id);
+  const party = floor.parties.find((x) => x.id === proposal.party_id);
+  const lesson = advice.evidence.find(
+    (e) => proposal.memory_ids.includes(e.id) && e.kind === "correction",
+  ) ?? advice.evidence.find((e) => proposal.memory_ids.includes(e.id));
   return (
-    <section className="floor-panel memory-panel">
-      <div className="panel-title">
-        <div>
-          <Brain size={18} />
-          <h2>AI Supervisor</h2>
-          <small>
-            {state?.integration.memory_profile === "local"
-              ? "Memory: local"
-              : "Memory: cloud"}
-          </small>
-        </div>
-        <Link to="/supervisor" aria-label="Open Supervisor">
-          <ArrowRight size={16} aria-hidden="true" />
-        </Link>
-      </div>
-      <p className="decision-intro">
-        Remembers what worked on past shifts and suggests what to do.
-      </p>
-      {!configured ? (
-        <p>
-          Memory isn’t connected yet.{" "}
-          <Link to="/supervisor">Open the AI Supervisor</Link> to set it up.
-        </p>
-      ) : (
-        <>
-          <button
-            className="floor-btn"
-            disabled={busy || state?.integration.generating}
-            onClick={() => void generate()}
-          >
-            <RefreshCw size={13} /> {busy || state?.integration.generating ? "Thinking…" : "Ask for advice"}
-          </button>
-          {state?.advice ? (
-            <AdviceCards
-              key={state.advice.id}
-              advice={state.advice}
-              floor={floor}
-              stale={
-                state.advice.stale ||
-                state.advice.token[1] !== floorVersion ||
-                state.advice.token[0] !== sessionId
-              }
-              onChanged={() => void refresh()}
-            />
-          ) : (
-            <p>
-              Ask for advice when you’re unsure who to seat or what to do next.
-            </p>
-          )}
-        </>
-      )}
-      {error && (
-        <p role="alert" className="memory-warning">
-          {error}
-        </p>
-      )}
-    </section>
+    <Link to="/supervisor#advice" className="supervisor-hint">
+      <span className="supervisor-hint-icon">
+        <Brain size={18} aria-hidden="true" />
+      </span>
+      <span>
+        <strong>
+          AI Supervisor suggests {table?.name ?? proposal.table_id}
+          {rule ? " instead" : ""}
+          {party ? ` for ${party.name}` : ""}
+        </strong>
+        <small>
+          {lesson ? `Based on a past lesson: ${factText(lesson.text)}` : "Based on a past lesson"}
+        </small>
+      </span>
+      <span className="supervisor-hint-cta">
+        See why <ArrowRight size={14} aria-hidden="true" />
+      </span>
+    </Link>
   );
 }

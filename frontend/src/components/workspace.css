@@ -593,3 +593,164 @@
   margin-top: 3px;
   color: var(--muted);
 }
+
+/* ---- Plain page titles (replaces the dark banner) ---- */
+.workspace .workspace-intro,
+.workspace .page-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 0;
+  margin: 0 0 18px;
+  padding: 4px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+  overflow: visible;
+}
+.workspace .workspace-intro::before {
+  display: none;
+}
+.workspace .workspace-intro .eyebrow {
+  display: none;
+}
+.workspace .workspace-intro h1,
+.workspace .page-title h1,
+.floor-page .floor-heading.workspace-intro h1,
+.supervisor-page .floor-heading.workspace-intro h1 {
+  color: var(--ink);
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0 0 4px;
+}
+.workspace .workspace-intro p,
+.workspace .page-title p {
+  color: #6f7a6c;
+  font-size: 14px;
+  margin: 0;
+}
+.floor-page .floor-heading.workspace-intro {
+  padding: 4px 0 0;
+}
+@media (max-width: 760px) {
+  .workspace .page-title {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ---- Settings hub ---- */
+.settings-group {
+  margin-bottom: 24px;
+}
+.settings-group h2 {
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7b8478;
+  margin-bottom: 10px;
+}
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.settings-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.settings-card:hover {
+  border-color: #b8ccb6;
+  background: #fbfdf8;
+}
+.settings-card > span:nth-child(2) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.settings-card strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.settings-card small {
+  font-size: 12.5px;
+  color: #7b8478;
+  line-height: 1.4;
+}
+.settings-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 10px;
+  background: #edf3ec;
+  color: #3f7a52;
+}
+.workspace-trail a {
+  color: inherit;
+}
+
+/* ---- Fine print and folded cards on operations pages ---- */
+.ops-fineprint {
+  margin: 4px 0 12px;
+}
+.ops-fineprint > summary {
+  cursor: pointer;
+  width: fit-content;
+  font-size: 12.5px;
+  color: #5d7f66;
+}
+.ops-fineprint > p {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: #6f7a6c;
+  line-height: 1.6;
+}
+.ops-fold > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+.ops-fold > summary::-webkit-details-marker {
+  display: none;
+}
+.ops-fold > summary h2 {
+  margin: 0;
+}
+.ops-fold > summary small {
+  color: #7b8478;
+  font-size: 12.5px;
+}
+.ops-fold > summary::after {
+  content: "Show";
+  margin-left: auto;
+  font-size: 12px;
+  color: #6c8a72;
+}
+.ops-fold[open] > summary::after {
+  content: "Hide";
+}
+.ops-fold[open] > summary {
+  margin-bottom: 14px;
+}
+.ops-muted {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #8a9188;
+}

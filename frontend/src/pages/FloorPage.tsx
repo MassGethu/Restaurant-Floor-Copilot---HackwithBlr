@@ -22,7 +22,7 @@ import {
   Video,
   X,
 } from "lucide-react";
-import SupervisorCards from "../components/SupervisorCards";
+import SupervisorHint from "../components/SupervisorCards";
 import { api, apiUrl } from "../api/client";
 import {
   floorRequest,
@@ -176,12 +176,6 @@ export default function FloorPage() {
   const [connected, setConnected] = useState(false);
   const [name, setName] = useState("");
   const [size, setSize] = useState(2);
-  const [assumptions, setAssumptions] = useState({
-    dining_min: 30,
-    dining_max: 60,
-    cleaning_min: 2,
-    cleaning_max: 5,
-  });
   const [staffTable, setStaffTable] = useState<string | null>(null);
   const requestId = useRef(0);
   const queueAttempt = useRef<{ input: string; id: string } | null>(null);
@@ -800,7 +794,7 @@ export default function FloorPage() {
               <span>The camera watches, the app suggests, you decide.</span>
             </div>
           </section>
-          {!staffMode && <SupervisorCards floor={state} />}
+          {!staffMode && <SupervisorHint floor={state} />}
         </aside>
       </div>
 
@@ -890,62 +884,6 @@ export default function FloorPage() {
           “Start over” begins a fresh service and saves the old one.
           {state?.playback.ended && <strong> The video has ended.</strong>}
         </div>
-      </details>
-
-      <details
-        className="floor-panel floor-more"
-        onToggle={(e) => {
-          if (e.currentTarget.open && state) setAssumptions(state.assumptions);
-        }}
-      >
-        <summary>
-          <Clock3 size={17} />
-          <span>
-            <b>Wait-time settings</b>
-            <small>
-              Meals take {state?.assumptions.dining_min ?? 30}–
-              {state?.assumptions.dining_max ?? 60} min, cleaning{" "}
-              {state?.assumptions.cleaning_min ?? 2}–
-              {state?.assumptions.cleaning_max ?? 5} min
-            </small>
-          </span>
-        </summary>
-        <form
-          className="assumptions-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void act("/assumptions", assumptions);
-          }}
-        >
-          {(
-            [
-              ["dining_min", "Shortest meal (min)"],
-              ["dining_max", "Longest meal (min)"],
-              ["cleaning_min", "Fastest clean (min)"],
-              ["cleaning_max", "Slowest clean (min)"],
-            ] as const
-          ).map(([key, label]) => (
-            <label key={key}>
-              {label}
-              <input
-                type="number"
-                min={1}
-                max={key.startsWith("dining") ? 240 : 60}
-                required
-                value={assumptions[key]}
-                onChange={(e) =>
-                  setAssumptions((current) => ({
-                    ...current,
-                    [key]: Number(e.target.value),
-                  }))
-                }
-              />
-            </label>
-          ))}
-          <button className="floor-btn" disabled={busy || !connected}>
-            Save
-          </button>
-        </form>
       </details>
 
       <details className="floor-panel floor-more">

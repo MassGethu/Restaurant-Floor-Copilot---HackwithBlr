@@ -11,6 +11,7 @@ import VideosPage from "./pages/VideosPage";
 const TableSetupPage = lazy(() => import("./pages/TableSetupPage"));
 const SupervisorPage = lazy(() => import("./pages/SupervisorPage"));
 const OperationsPage = lazy(() => import("./pages/OperationsPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
 const loading = (page: ReactNode) => (
   <Suspense fallback={<p className="text-sm text-slate-400">Loading…</p>}>
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="setup/:videoId?" element={loading(<TableSetupPage />)} />
         <Route path="supervisor" element={loading(<SupervisorPage />)} />
         <Route path="operations" element={loading(<OperationsPage />)} />
+        <Route path="settings" element={loading(<SettingsPage />)} />
         <Route
           path="analytics"
           element={<Navigate to="/operations?tab=analytics" replace />}

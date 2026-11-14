@@ -198,14 +198,6 @@
 }
 
 /* ---- Simplified supervisor (demo polish) ---- */
-.supervisor-page .floor-heading.workspace-intro {
-  min-height: 0;
-  padding: 18px 24px;
-}
-.supervisor-page .floor-heading.workspace-intro h1 {
-  font-size: 30px;
-  margin: 4px 0 6px;
-}
 .sup-steps {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -374,4 +366,135 @@
   .memory-compare .arrow {
     transform: rotate(90deg);
   }
+}
+.memory-lesson {
+  margin: 12px 0;
+  padding: 14px 16px;
+  border-left: 4px solid #5a9a6c;
+  border-radius: 0 10px 10px 0;
+  background: #f4f8f1;
+}
+.memory-lesson small {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2f6b4f;
+}
+.memory-lesson blockquote {
+  margin: 6px 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #253c33;
+}
+.memory-lesson > span {
+  font-size: 12px;
+  color: #6f7a6c;
+}
+.memory-lesson ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  list-style: disc;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #5d6a5a;
+}
+.memory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 4px;
+}
+.memory-actions .ops-actions {
+  margin: 0;
+}
+.memory-actions > .floor-btn {
+  margin-left: auto;
+}
+.memory-more {
+  margin-top: 12px;
+  border-top: 1px solid #ecefe7;
+  padding-top: 10px;
+}
+.memory-more > summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4f6e58;
+}
+.memory-more[open] > summary {
+  margin-bottom: 8px;
+}
+.memory-proposal.is-hero h3 {
+  font-size: 19px !important;
+}
+.sup-empty {
+  padding: 8px 0;
+}
+.sup-form {
+  padding: 0 21px 18px;
+}
+.sup-form p {
+  margin-top: 0 !important;
+}
+.supervisor-page .page-title .live-pill {
+  flex: none;
+}
+/* The Floor page's narrow AI card stacks the comparison. */
+.memory-panel .memory-compare {
+  grid-template-columns: 1fr;
+}
+.memory-panel .memory-compare .arrow {
+  transform: rotate(90deg);
+}
+/* Floor-page hint linking to the AI Supervisor. */
+.supervisor-hint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #b9d0e4;
+  border-radius: 12px;
+  background: #eef5fb;
+  color: #24405a;
+}
+.supervisor-hint:hover {
+  background: #e4eff9;
+}
+.supervisor-hint-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #2f5f8a;
+  color: #fff;
+}
+.supervisor-hint > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.supervisor-hint strong {
+  font-size: 14px;
+  font-weight: 650;
+}
+.supervisor-hint small {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: #4d6680;
+}
+.supervisor-hint-cta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2f5f8a;
 }

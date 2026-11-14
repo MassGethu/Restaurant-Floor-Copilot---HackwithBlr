@@ -70,6 +70,12 @@ export default function OperationsPage() {
     max_wait_minutes: 15,
     check_in_minutes: 10,
   });
+  const [assumptions, setAssumptions] = useState<FloorState["assumptions"]>({
+    dining_min: 30,
+    dining_max: 60,
+    cleaning_min: 2,
+    cleaning_max: 5,
+  });
   const [simParty, setSimParty] = useState("");
   const [simTable, setSimTable] = useState("");
   const [delay, setDelay] = useState(0);
@@ -98,6 +104,15 @@ export default function OperationsPage() {
     const timer = window.setInterval(() => void load(), 1000);
     return () => window.clearInterval(timer);
   }, [load]);
+  useEffect(() => {
+    if (state?.assumptions) setAssumptions(state.assumptions);
+    // Re-sync only when the saved values change, not on every poll.
+  }, [
+    state?.assumptions?.dining_min,
+    state?.assumptions?.dining_max,
+    state?.assumptions?.cleaning_min,
+    state?.assumptions?.cleaning_max,
+  ]);
   useEffect(() => {
     if (state?.policy) setPolicy(state.policy);
   }, [
@@ -240,11 +255,14 @@ export default function OperationsPage() {
                 Sound for new tasks
               </label>
             </div>
+<details className="ops-fineprint">
+            <summary>How does this work?</summary>
             <p>
-              Cleaning tasks follow confirmed departures. Check-in suggestions
-              use elapsed time since recorded staff attention; they do not infer
-              customer intent.
+              Cleaning tasks appear when staff confirm guests have left.
+              Check-in reminders are based on time since a waiter last visited
+              the table; the app does not guess what guests want.
             </p>
+          </details>
             <div className="ops-toolbar">
               <label>
                 Role{" "}
@@ -369,11 +387,14 @@ export default function OperationsPage() {
               <div className="ops-empty">No active tasks for this role.</div>
             )}
           </section>
-          <section className="ops-card">
-            <h2>
-              <Users size={18} />
-              Staff roster
-            </h2>
+          <details className="ops-card ops-fold">
+            <summary>
+              <h2>
+                <Users size={18} />
+                Staff list
+              </h2>
+              <small>{state.staff?.length ?? 0} people · add or view staff</small>
+            </summary>
             <div className="ops-roster">
               {state.staff?.map((s) => (
                 <span key={s.id}>
@@ -416,13 +437,12 @@ export default function OperationsPage() {
                 Add staff member
               </button>
             </form>
-            <p>
-              Role views coordinate work in one local dashboard; this prototype
-              does not implement staff accounts or access control.
-            </p>
-          </section>
+            <small className="ops-muted">
+              Prototype: no staff logins yet.
+            </small>
+          </details>
           <section className="ops-card">
-            <h2>Request a service visit</h2>
+            <h2>Send a waiter to a table</h2>
             <div className="ops-actions">
               {state.tables
                 .filter((t) =>
@@ -439,7 +459,7 @@ export default function OperationsPage() {
                       })
                     }
                   >
-                    {t.name} · request assistance
+                    {t.name}
                   </button>
                 ))}
             </div>
@@ -448,14 +468,21 @@ export default function OperationsPage() {
       )}
       {tab === "arrivals" && (
         <section className="ops-card">
-          <h2>Entrance observations</h2>
+          <h2>People spotted at the door</h2>
           <p>
-            In <Link to="/setup">Table Setup</Link>, draw an entrance region and
-            change its region type to “Entrance crossing zone”. A tracked person
-            crossing from outside to inside generates a review candidate. People
-            first seen inside are not automatically counted as arrivals. Nearby
-            crossings are grouped for review, not assumed to be one party.
+            When the camera sees someone walk in, they show up here. You decide
+            whether to add them to the waiting list.
           </p>
+          <details className="ops-fineprint">
+            <summary>How does this work?</summary>
+            <p>
+              In <Link to="/setup">Draw tables</Link>, draw an area over the
+              entrance and set its type to “Entrance crossing zone”. Someone
+              walking from outside to inside creates a suggestion here. People
+              who walk in together are grouped for you to check, not assumed to
+              be one party.
+            </p>
+          </details>
           {arrivals.map((arrival) => {
             const form = arrivalForms[arrival.id] ?? {
               name: "",
@@ -542,22 +569,25 @@ export default function OperationsPage() {
         <section className="ops-card">
           <h2>
             <Clock3 size={18} />
-            Estimated table availability
+            When will tables free up?
           </h2>
-          <p>
-            Ranges combine the configured dining and cleaning assumptions.
-            Unknown or overdue dining sessions require a staff estimate.
-            Availability does not authorize seating without cleaning
-            confirmation.
-          </p>
+          <details className="ops-fineprint">
+            <summary>How does this work?</summary>
+            <p>
+              Estimates use the meal and cleaning times set in Settings →
+              Seating & wait times. If the app doesn’t know when guests sat
+              down, staff need to estimate. A table still has to be marked
+              clean before anyone is seated.
+            </p>
+          </details>
           <div className="ops-table-wrap">
             <table className="ops-table">
               <thead>
                 <tr>
                   <th>Table</th>
                   <th>Seats</th>
-                  <th>Additional time</th>
-                  <th>Basis</th>
+                  <th>Free in</th>
+                  <th>Why</th>
                 </tr>
               </thead>
               <tbody>
@@ -580,12 +610,10 @@ export default function OperationsPage() {
       )}
       {tab === "simulation" && (
         <section className="ops-card">
-          <h2>What if we choose differently?</h2>
+          <h2>What if we seat them somewhere else?</h2>
           <p>
-            Compare the current allocation policy with seating a selected party
-            at another ready table, now or after a deliberate delay. This is a
-            deterministic forecast under explicit assumptions and does not
-            change live state.
+            Pick a waiting party and a table to see what would happen to
+            everyone else. Nothing on the floor changes.
           </p>
           <form className="ops-form" onSubmit={(e) => void submitSimulation(e)}>
             <label>
@@ -759,17 +787,20 @@ export default function OperationsPage() {
           </div>
           <section className="ops-card">
             <div className="ops-section-heading">
-              <h2>Observed floor trend</h2>
+              <h2>The floor over time</h2>
               <a className="floor-btn" href={apiUrl("/api/copilot/export")}>
                 <Download size={14} />
                 Export party CSV
               </a>
             </div>
+<details className="ops-fineprint">
+            <summary>How does this work?</summary>
             <p>
-              Sampled counts by scenario minute, updated by actual observations
-              and staff actions. These are not historical training data or
-              averaged occupancy rates.
+              Counts are taken every minute from what the camera saw and what
+              staff confirmed. They describe this service only, not long-term
+              averages.
             </p>
+          </details>
             <div style={{ height: 280, width: "100%" }}>
               <ResponsiveContainer>
                 <LineChart data={analytics.trend}>
@@ -820,7 +851,7 @@ export default function OperationsPage() {
             </p>
           </section>
           <section className="ops-card">
-            <h2>Completed table sessions</h2>
+            <h2>Finished tables</h2>
             <div className="ops-table-wrap">
               <table className="ops-table">
                 <thead>
@@ -849,8 +880,11 @@ export default function OperationsPage() {
               <p>No completed sessions recorded yet.</p>
             )}
           </section>
-          <section className="ops-card">
-            <h2>Previous playback sessions</h2>
+          <details className="ops-card ops-fold">
+            <summary>
+              <h2>Past demo runs</h2>
+              <small>{analytics.history.length} saved</small>
+            </summary>
             {analytics.history.map((s) => (
               <p key={s.session_id}>
                 {s.video_id} · {minute(s.now)} observed ·{" "}
@@ -864,16 +898,15 @@ export default function OperationsPage() {
             ))}
             {!analytics.history.length && (
               <p>
-                Completed playback snapshots will appear after a restart or
-                video switch.
+                Past runs appear here after you start the video over.
               </p>
             )}
-          </section>
+          </details>
         </>
       )}
       {tab === "policy" && (
         <section className="ops-card">
-          <h2>Allocation and service policies</h2>
+          <h2>How the app picks who sits where</h2>
           <form
             className="ops-form"
             onSubmit={(e) => {
@@ -892,13 +925,13 @@ export default function OperationsPage() {
                   })
                 }
               >
-                <option value="fairness">Oldest feasible + best fit</option>
-                <option value="balanced">Balanced matching</option>
-                <option value="throughput">Guest throughput matching</option>
+                <option value="fairness">Fairest: longest wait first (recommended)</option>
+                <option value="balanced">Balanced: fairness and full tables</option>
+                <option value="throughput">Busiest nights: seat the most guests</option>
               </select>
             </label>
             <label>
-              Protect overdue parties after (min)
+              Treat a party as overdue after (min)
               <input
                 type="number"
                 min={1}
@@ -913,7 +946,7 @@ export default function OperationsPage() {
               />
             </label>
             <label>
-              Suggest check-in after (min)
+              Remind waiters to check on tables after (min)
               <input
                 type="number"
                 min={1}
@@ -928,9 +961,11 @@ export default function OperationsPage() {
               />
             </label>
             <button className="floor-btn primary" disabled={busy}>
-              Apply policies
+              Save
             </button>
           </form>
+          <details className="ops-fineprint">
+            <summary>How are these scored?</summary>
           <p>
             Balanced score = 100 per party + 10 per guest + 2 per waiting minute
             − 3 per unused seat. Throughput score = 20 per party + 30 per guest
@@ -944,6 +979,54 @@ export default function OperationsPage() {
             This bounded optimization is not a learned model or an optimal
             solution for an unlimited queue.
           </p>
+          </details>
+        </section>
+      )}
+      {tab === "policy" && (
+        <section className="ops-card">
+          <h2>
+            <Clock3 size={18} />
+            How long meals and cleaning usually take
+          </h2>
+          <p>
+            Used to estimate how much longer each waiting party will wait.
+          </p>
+          <form
+            className="ops-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void act("/assumptions", assumptions);
+            }}
+          >
+            {(
+              [
+                ["dining_min", "Shortest meal (min)"],
+                ["dining_max", "Longest meal (min)"],
+                ["cleaning_min", "Fastest clean (min)"],
+                ["cleaning_max", "Slowest clean (min)"],
+              ] as const
+            ).map(([key, label]) => (
+              <label key={key}>
+                {label}
+                <input
+                  type="number"
+                  min={1}
+                  max={key.startsWith("dining") ? 240 : 60}
+                  required
+                  value={assumptions[key]}
+                  onChange={(e) =>
+                    setAssumptions((current) => ({
+                      ...current,
+                      [key]: Number(e.target.value),
+                    }))
+                  }
+                />
+              </label>
+            ))}
+            <button className="floor-btn primary" disabled={busy}>
+              Save
+            </button>
+          </form>
         </section>
       )}
     </div>
