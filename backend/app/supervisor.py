@@ -23,6 +23,11 @@ PREFERENCE_VALID_FOR = timedelta(days=7)
 # A manager's in-person check of the space around one table.
 SPACE_NOTE = "space_note"
 CHAIR_RECALL_RETRY_SECONDS = 30
+# The model gets the most relevant recalled facts, not all of them: a growing
+# memory bank must not push a request past the provider's size limit.
+MAX_REASONING_FACTS = 12
+MAX_FACT_CHARS = 400
+FACT_PRIORITY = {"correction": 0, "outcome": 1, "environment_update": 2}
 DELIVERY_FIELDS = (
     "delivery",
     "attempts",
@@ -760,6 +765,27 @@ class Supervisor:
             )
         )
 
+    @staticmethod
+    def for_reasoning(evidence):
+        """Keep the facts that matter most, in Hindsight's relevance order.
+
+        Facts that can authorize a seating alternative come first, then
+        manager corrections, outcomes and changed conditions, then the rest.
+        Long fact text is shortened.
+        """
+        ranked = sorted(
+            enumerate(evidence),
+            key=lambda pair: (
+                not pair[1].get("supports_preference"),
+                FACT_PRIORITY.get(pair[1]["kind"], len(FACT_PRIORITY)),
+                pair[0],
+            ),
+        )
+        kept = sorted(ranked[:MAX_REASONING_FACTS])
+        return [
+            {**fact, "text": fact["text"][:MAX_FACT_CHARS]} for _, fact in kept
+        ]
+
     def prepare(self, question):
         with self.lock:
             return {
@@ -844,7 +870,7 @@ class Supervisor:
                 + json.dumps(payload)
             )
             raw = self.memory.recall(query, token[3])
-            evidence = self.evidence(raw, token[3])
+            evidence = self.for_reasoning(self.evidence(raw, token[3]))
             answer = self.reason(payload, evidence)
             baseline = self.reason(payload, []) if compare else None
             if self.stopping.is_set():

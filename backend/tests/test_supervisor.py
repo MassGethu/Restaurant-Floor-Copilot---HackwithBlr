@@ -757,3 +757,21 @@ def test_newest_space_check_replaces_older_and_failures_are_reported(supervisor)
     s.memory.fail = True
     s.refresh_chair_memory()
     assert s.chair_status("T2") == {"status": "unavailable"}
+
+
+def test_model_gets_a_bounded_set_of_facts_with_lessons_first(supervisor):
+    s = supervisor
+    lesson = retain_lesson(s)
+    for i in range(30):
+        s.add_record(
+            "task_outcome",
+            {"note": f"Routine task event {i} " + "x" * 600},
+            source="operational_event",
+        )
+    while s.sync_once():
+        pass
+    s.advice()
+    memories = s.reasoner.payloads[-1]["memories"]
+    assert len(memories) <= 12
+    assert memories[0]["source_id"] == lesson["id"]
+    assert all(len(m["text"]) <= 400 for m in memories)
