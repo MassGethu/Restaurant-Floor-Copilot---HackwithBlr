@@ -26,6 +26,9 @@ class OperationError(ValueError):
 
 
 STAFF_CHECK_SECONDS = 60
+# A party one or two guests over a table's seats can sit there with extra
+# chairs, but only when the manager approves it.
+MAX_EXTRA_CHAIRS = 2
 
 
 class Operations(ServiceMixin):
@@ -766,6 +769,81 @@ class Operations(ServiceMixin):
             )
         return result
 
+    def extra_chair_options(self, recommendations=None):
+        """Free tables that would fit a waiting party with one or two extra chairs.
+
+        Only parties without a normal suggestion are considered, and tables the
+        normal suggestions already use are left alone, so the queue is never
+        displaced. Fewest extra chairs first. The manager approves each one.
+        """
+        if not self.camera_ready and not self.state["staff_mode"]:
+            return []
+        recs = self.recommendations() if recommendations is None else recommendations
+        suggested = {r["party_id"] for r in recs}
+        reserved = {r["table_id"] for r in recs}
+        declined = self.state.get("declined", [])
+        free = [
+            t
+            for t in self.state["tables"]
+            if self.seating_eligible(t) and t["id"] not in reserved
+        ]
+        result = []
+        for party in self.state["parties"]:
+            if party["status"] != "waiting" or party["id"] in suggested:
+                continue
+            fits = sorted(
+                (
+                    t
+                    for t in free
+                    if 0 < party["size"] - t["capacity"] <= MAX_EXTRA_CHAIRS
+                    and [party["id"], t["id"]] not in declined
+                ),
+                key=lambda t: (party["size"] - t["capacity"], t["id"]),
+            )
+            result.extend(
+                dict(
+                    party_id=party["id"],
+                    party_name=party["name"],
+                    party_size=party["size"],
+                    table_id=t["id"],
+                    table_name=t["name"],
+                    capacity=t["capacity"],
+                    extra_chairs=party["size"] - t["capacity"],
+                    version=self.state["version"],
+                )
+                for t in fits
+            )
+        return result
+
+    def extra_chair_option(self, party_id, table_id, extra_chairs):
+        option = next(
+            (
+                o
+                for o in self.extra_chair_options()
+                if o["party_id"] == party_id and o["table_id"] == table_id
+            ),
+            None,
+        )
+        if option is None or option["extra_chairs"] != extra_chairs:
+            self.fail(
+                "This extra-chair option is no longer available. Review the current choices."
+            )
+        return option
+
+    def decline_extra_chairs(self, party_id, table_id, extra_chairs, version):
+        """The manager said no to extra chairs here; the party keeps waiting."""
+        with self.lock:
+            self.advance_clock()
+            self.check_seating_request(version, None)
+            option = self.extra_chair_option(party_id, table_id, extra_chairs)
+            self.state.setdefault("declined", []).append([party_id, table_id])
+            self.event(
+                f"No extra chairs at {option['table_name']} for {option['party_name']}; party remains waiting.",
+                "staff",
+            )
+            self.save()
+            return option
+
     def check_seating_request(self, version, decision_key):
         if decision_key is not None:
             current = decision_key == self.seating_key()
@@ -793,10 +871,23 @@ class Operations(ServiceMixin):
             )
             self.save()
 
-    def seat(self, party_id, table_id, version, override=False, *, decision_key=None):
+    def seat(
+        self,
+        party_id,
+        table_id,
+        version,
+        override=False,
+        *,
+        decision_key=None,
+        extra_chairs=0,
+    ):
         with self.lock:
             self.advance_clock()
             self.check_seating_request(version, decision_key)
+            if extra_chairs:
+                if override:
+                    self.fail("Choose either a different table or extra chairs.")
+                self.extra_chair_option(party_id, table_id, extra_chairs)
             party = next(
                 (
                     p
@@ -809,7 +900,7 @@ class Operations(ServiceMixin):
             eligible = (
                 party is not None
                 and self.seating_eligible(table)
-                and table["capacity"] >= party["size"]
+                and table["capacity"] + extra_chairs >= party["size"]
             )
             if not eligible:
                 raise OperationError(
@@ -817,7 +908,7 @@ class Operations(ServiceMixin):
                 )
             recs = self.recommendations()
             recommendation = next((r for r in recs if r["party_id"] == party_id), None)
-            if not override and (
+            if not override and not extra_chairs and (
                 recommendation is None or recommendation["table_id"] != table_id
             ):
                 self.fail("This allocation is no longer eligible.")
@@ -842,7 +933,10 @@ class Operations(ServiceMixin):
                     "staff",
                 )
             party.update(
-                status="seated", table_id=table_id, seated_at=self.state["now"]
+                status="seated",
+                table_id=table_id,
+                seated_at=self.state["now"],
+                extra_chairs=extra_chairs,
             )
             if override:
                 self.state["counters"]["manager_overrides"] += 1
@@ -860,6 +954,9 @@ class Operations(ServiceMixin):
                 note=f"{party['name']} seated by staff; awaiting visual confirmation.",
             )
             prefix = "Manager override: " if override else ""
+            if extra_chairs:
+                chairs = "chair" if extra_chairs == 1 else "chairs"
+                prefix = f"Manager approved {extra_chairs} extra {chairs}: "
             self.event(f"{prefix}{party['name']} seated at {table['name']}.", "staff")
             self.save()
 
@@ -921,6 +1018,9 @@ class Operations(ServiceMixin):
                 wait_estimates=self.estimates()
                 if self.camera_ready and not self.state["staff_mode"]
                 else {},
+            )
+            result["extra_chair_options"] = self.extra_chair_options(
+                result["recommendations"]
             )
             waiting = [p for p in self.state["parties"] if p["status"] == "waiting"]
             dirty = [

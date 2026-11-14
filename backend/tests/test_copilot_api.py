@@ -301,3 +301,46 @@ def test_staff_service_keeps_queue_clock_and_party_through_reconnect(client):
     assert state["now"] > initial["now"]
     brief = client.get("/api/supervisor/handover").json()
     assert brief["mode"] == "operations" and brief["evidence"] == []
+
+
+def test_extra_chair_endpoints_seat_and_remember_the_space_check(client):
+    client.post("/api/copilot/play", json={"video_id": "floor"})
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        if client.get("/api/copilot").json()["tables"][0]["observed"] == "absent":
+            break
+        time.sleep(0.03)
+    client.post("/api/copilot/pause", json={"paused": True})
+    client.post("/api/copilot/tables/T1", json={"action": "clean"})
+    s = client.app.state.supervisor
+    s.close()  # no background recall during this contract test
+    client.post("/api/copilot/parties", json={"name": "Five", "size": 5})
+    client.post("/api/copilot/parties", json={"name": "Six", "size": 6})
+    first = client.get("/api/copilot").json()
+    options = first["extra_chair_options"]
+    assert [(o["table_id"], o["extra_chairs"]) for o in options] == [("T1", 1), ("T1", 2)]
+    assert options[0]["memory"] == {"status": "none"}
+    party = options[0]["party_id"]
+    six = next(p["id"] for p in first["parties"] if p["name"] == "Six")
+    declined = client.post(
+        "/api/copilot/extra-chairs/decline",
+        json={"party_id": six, "table_id": "T1", "extra_chairs": 2,
+              "version": first["version"], "remember": False},
+    )
+    assert declined.status_code == 200
+    assert not any(e["kind"] == "space_note" for e in s.state["experiences"])
+    seated = client.post(
+        "/api/copilot/seat",
+        json={"party_id": party, "table_id": "T1", "version": declined.json()["version"],
+              "extra_chairs": 1, "room_checked": True},
+    )
+    assert seated.status_code == 200
+    assert seated.json()["tables"][0]["party_id"] == party
+    notes = [e for e in s.state["experiences"] if e["kind"] == "space_note"]
+    assert [n["content"]["max_extra_chairs"] for n in notes] == [1]
+    again = client.post(
+        "/api/copilot/seat",
+        json={"party_id": party, "table_id": "T1", "version": seated.json()["version"],
+              "extra_chairs": 1},
+    )
+    assert again.status_code in (400, 409, 422)

@@ -713,3 +713,47 @@ def test_http_experience_advice_approval_and_feedback(floor_client):  # noqa: F8
         ).status_code
         == 422
     )
+
+
+def test_space_check_counts_as_remembered_only_when_hindsight_recalls_it(supervisor):
+    s = supervisor
+    s.ops.add_party("Five guests", 5)
+    assert {o["table_id"] for o in s.ops.extra_chair_options()} == {"T2", "T3"}
+    assert s.chair_status("T2") == {"status": "none"}
+    s.record_space("T2", 1, room=True)
+    # Saved locally but not yet in Hindsight: nothing is claimed.
+    assert s.chair_status("T2") == {"status": "none"}
+    assert s.sync_once()
+    assert s.chair_status("T2") == {"status": "checking"}
+    s.refresh_chair_memory()
+    status = s.chair_status("T2")
+    assert status["status"] == "found" and status["max_extra_chairs"] == 1
+    assert "room for up to 1 extra chair" in s.record(status["source_id"])["content"]["note"]
+    # A saved check that Hindsight does not return is not shown as memory.
+    s.memory.hidden = True
+    s.record_space("T3", 1, room=True)
+    assert s.sync_once()
+    s.refresh_chair_memory()
+    assert s.chair_status("T3") == {"status": "none"}
+
+
+def test_newest_space_check_replaces_older_and_failures_are_reported(supervisor):
+    s = supervisor
+    s.ops.add_party("Five guests", 5)
+    first = s.record_space("T2", 1, room=True)
+    second = s.record_space("T2", 1, room=False)
+    assert s.record(first["id"])["superseded_by"] == second["id"]
+    assert second["content"]["max_extra_chairs"] == 0
+    assert "no room" in second["content"]["note"]
+    while s.sync_once():
+        pass
+    s.refresh_chair_memory()
+    status = s.chair_status("T2")
+    assert status["source_id"] == second["id"] and status["max_extra_chairs"] == 0
+    s.memory.fail = True
+    s.record_space("T2", 2, room=True)
+    s.memory.fail = False
+    assert s.sync_once()
+    s.memory.fail = True
+    s.refresh_chair_memory()
+    assert s.chair_status("T2") == {"status": "unavailable"}

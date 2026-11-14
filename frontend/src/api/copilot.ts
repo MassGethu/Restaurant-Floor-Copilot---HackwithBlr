@@ -45,6 +45,30 @@ export type Recommendation = {
     displaced_party_names: string[];
   }[];
 };
+export type ChairMemory =
+  | { status: "none" | "checking" | "unavailable" }
+  | {
+      status: "found";
+      max_extra_chairs: number;
+      recorded_at: string;
+      source_id: string;
+      fact_id: string | null;
+      text: string;
+    };
+
+export type ExtraChairOption = {
+  party_id: string;
+  party_name: string;
+  party_size: number;
+  table_id: string;
+  table_name: string;
+  capacity: number;
+  extra_chairs: number;
+  version: number;
+  /** What Hindsight recalled about extra chairs at this table. */
+  memory: ChairMemory;
+};
+
 export type FloorState = {
   staff_mode: boolean;
   service_epoch: number | null;
@@ -120,6 +144,8 @@ export type FloorState = {
   model_state: string;
   observations_fresh: boolean;
   recommendations: Recommendation[];
+  /** Parties no free table fits, with a table that fits with 1–2 extra chairs. */
+  extra_chair_options: ExtraChairOption[];
   events: { id: string; text: string; origin: string; scenario_time: number }[];
   cleaning_priorities: {
     table_id: string;

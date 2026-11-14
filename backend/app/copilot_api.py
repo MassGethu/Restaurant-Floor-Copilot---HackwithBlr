@@ -26,6 +26,20 @@ class SeatInput(BaseModel):
     version: int
     override: bool = False
     decision_key: str | None = Field(default=None, min_length=64, max_length=64)
+    # Seat a party one or two over the table's seats with extra chairs.
+    extra_chairs: int = Field(default=0, ge=0, le=2)
+    # The manager checked the space in person: remember the answer.
+    room_checked: bool = False
+
+
+class ExtraChairsDecline(BaseModel):
+    party_id: str
+    table_id: str
+    version: int
+    extra_chairs: int = Field(ge=1, le=2)
+    # True: the manager checked and there is no room; remember it.
+    # False: just not tonight; nothing is remembered.
+    remember: bool = False
 
 
 class TableAction(BaseModel):
@@ -107,6 +121,13 @@ def snapshot(request: Request):
     app = request.app.state
     playback = app.pipeline.refresh_operations()
     state = app.operations.snapshot()
+    supervisor = getattr(app, "supervisor", None)
+    for option in state["extra_chair_options"]:
+        option["memory"] = (
+            supervisor.chair_status(option["table_id"])
+            if supervisor
+            else {"status": "none"}
+        )
     return dict(**state, playback=playback)
 
 
@@ -193,7 +214,25 @@ def seat(body: SeatInput, request: Request):
         body.version,
         override=body.override,
         decision_key=body.decision_key,
+        extra_chairs=body.extra_chairs,
     )
+    if body.extra_chairs and body.room_checked:
+        request.app.state.supervisor.record_space(
+            body.table_id, body.extra_chairs, room=True
+        )
+    return snapshot(request)
+
+
+@router.post("/extra-chairs/decline")
+def decline_extra_chairs(body: ExtraChairsDecline, request: Request):
+    snapshot(request)
+    request.app.state.operations.decline_extra_chairs(
+        body.party_id, body.table_id, body.extra_chairs, body.version
+    )
+    if body.remember:
+        request.app.state.supervisor.record_space(
+            body.table_id, body.extra_chairs, room=False
+        )
     return snapshot(request)
 
 

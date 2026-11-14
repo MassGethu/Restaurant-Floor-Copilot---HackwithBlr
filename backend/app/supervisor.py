@@ -20,6 +20,9 @@ from app.operations import OperationError
 ACTIVE = ("open", "acknowledged", "in_progress")
 RETAIN_SCHEMA_VERSION = 2
 PREFERENCE_VALID_FOR = timedelta(days=7)
+# A manager's in-person check of the space around one table.
+SPACE_NOTE = "space_note"
+CHAIR_RECALL_RETRY_SECONDS = 30
 DELIVERY_FIELDS = (
     "delivery",
     "attempts",
@@ -74,6 +77,8 @@ class Supervisor:
         self.last_reasoning = None
         self.last_signature = None
         self.last_attempt = 0
+        # table_id -> what Hindsight recalled about extra chairs at that table.
+        self.chair_memory = {}
         with self.lock:
             self.ops.db.execute(
                 "CREATE TABLE IF NOT EXISTS supervisor_state (restaurant TEXT PRIMARY KEY, payload TEXT NOT NULL)"
@@ -379,6 +384,160 @@ class Supervisor:
                 raise OperationError("Delivery is already in progress.")
             item.update(delivery="pending", attempts=0, next_retry=0, error=None)
             self.save()
+
+    def space_notes(self, table_id, layout_id):
+        """Active space checks for one table in this floor layout, oldest first."""
+        return [
+            x
+            for x in self.state["experiences"]
+            if x["kind"] == SPACE_NOTE
+            and x["content"].get("table_id") == table_id
+            and self.active_record(x, layout_id)
+        ]
+
+    def record_space(self, table_id, extra_chairs, room):
+        """Save the manager's check: is there room for extra chairs at this table?
+
+        Room for N chairs keeps any larger number already known; no room for N
+        means at most N - 1. The newest check replaces older ones and is sent
+        to Hindsight by the delivery loop like every other experience.
+        """
+        with self.lock:
+            table = self.ops.table(table_id)
+            layout = self.layout()
+            old = self.space_notes(table_id, layout)
+            known = old[-1]["content"]["max_extra_chairs"] if old else 0
+            limit = max(known, extra_chairs) if room else extra_chairs - 1
+            name, seats = table["name"], table["capacity"]
+            party = seats + extra_chairs
+            def count(n):
+                return f"{n} extra chair" + ("" if n == 1 else "s")
+
+            if room:
+                note = f"{name} ({seats} seats) has room for up to {count(limit)}. The manager checked the space in person and seated a party of {party} there."
+            elif limit > 0:
+                note = f"{name} ({seats} seats) has room for at most {count(limit)}, not {extra_chairs}. The manager checked the space in person for a party of {party}."
+            else:
+                note = f"{name} ({seats} seats) has no room for extra chairs. The manager checked the space in person for a party of {party}."
+            new = self.add_record(
+                SPACE_NOTE,
+                {
+                    "note": note,
+                    "table_id": table_id,
+                    "table_name": name,
+                    "capacity": seats,
+                    "max_extra_chairs": limit,
+                    "checked_for_party_of": party,
+                    "qualification": "Manager checked the space in person; it can change on a busy night.",
+                },
+                source="manager_check",
+            )
+            for item in old:
+                item["superseded_by"] = new["id"]
+            if old:
+                self.change()
+            self.chair_memory.pop(table_id, None)
+            return new
+
+    def chair_key(self, table_id, layout_id):
+        retained = [
+            x["id"]
+            for x in self.space_notes(table_id, layout_id)
+            if x["delivery"] == "retained"
+        ]
+        return digest([layout_id, retained]), bool(retained)
+
+    def chair_status(self, table_id):
+        """What the Floor may say about extra chairs at a table.
+
+        "found" only when Hindsight itself recalled an active space check for
+        this table; the local ledger alone never counts as remembered.
+        """
+        with self.lock:
+            key, saved = self.chair_key(table_id, self.layout())
+            if not saved:
+                return {"status": "none"}
+            entry = self.chair_memory.get(table_id)
+            if not entry or entry["key"] != key or entry["status"] == "checking":
+                return {"status": "checking"}
+            if entry["status"] == "error":
+                return {"status": "unavailable"}
+            return {k: v for k, v in entry.items() if k != "key"}
+
+    def chair_evidence(self, raw, table_id, layout_id):
+        found = []
+        for fact in raw.get("results", []):
+            metadata = fact.get("metadata") or {}
+            record_id = metadata.get("experience_id") or fact.get("document_id")
+            item = next(
+                (x for x in self.state["experiences"] if x["id"] == record_id), None
+            )
+            if (
+                item
+                and item["kind"] == SPACE_NOTE
+                and item["content"].get("table_id") == table_id
+                and item["delivery"] == "retained"
+                and self.active_record(item, layout_id)
+            ):
+                found.append((item, fact))
+        if not found:
+            return None
+        item, fact = max(found, key=lambda pair: pair[0]["recorded_at"])
+        return {
+            "status": "found",
+            "max_extra_chairs": item["content"]["max_extra_chairs"],
+            "recorded_at": item["recorded_at"],
+            "source_id": item["id"],
+            "fact_id": fact.get("id"),
+            "text": fact.get("text", "").split(" | ")[0],
+        }
+
+    def refresh_chair_memory(self):
+        """Ask Hindsight about tables the Floor may offer extra chairs at.
+
+        One recall per table and saved-check revision; no network call holds
+        the operational lock.
+        """
+        if not self.memory_configured:
+            return
+        with self.lock:
+            layout = self.layout()
+            todo = []
+            for table_id in dict.fromkeys(
+                o["table_id"] for o in self.ops.extra_chair_options()
+            ):
+                key, saved = self.chair_key(table_id, layout)
+                entry = self.chair_memory.get(table_id)
+                if not saved or (
+                    entry
+                    and entry["key"] == key
+                    and not (
+                        entry["status"] == "error"
+                        and time.time() - entry["at"] >= CHAIR_RECALL_RETRY_SECONDS
+                    )
+                ):
+                    continue
+                table = self.ops.table(table_id)
+                todo.append((table_id, table["name"], table["capacity"], key))
+                self.chair_memory[table_id] = {"key": key, "status": "checking"}
+        for table_id, name, seats, key in todo:
+            if self.stopping.is_set():
+                return
+            try:
+                raw = self.memory.recall(
+                    f"Is there room for extra chairs at {name} ({table_id}, {seats} seats)? "
+                    f"Manager space checks for {name}.",
+                    layout,
+                )
+                with self.lock:
+                    result = self.chair_evidence(raw, table_id, layout) or {
+                        "status": "none"
+                    }
+            except Exception as exc:  # noqa: BLE001 - classify service failures without exposing provider payloads
+                result = {"status": "error", "at": time.time()}
+                self.last_error = f"Memory recall failed ({type(exc).__name__})."
+            with self.lock:
+                self.chair_memory[table_id] = {"key": key, **result}
 
     def sync_once(self):
         if not self.memory_configured or not self.delivering.acquire(blocking=False):
@@ -975,6 +1134,7 @@ class Supervisor:
             try:
                 self.capture_task_outcomes()
                 self.sync_once()
+                self.refresh_chair_memory()
                 if self.stopping.is_set():
                     break
                 if self.refresh:

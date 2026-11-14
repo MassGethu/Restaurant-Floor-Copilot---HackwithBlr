@@ -17,6 +17,7 @@ const kindLabels: Record<string, string> = {
   action: "Staff decision",
   task_outcome: "Task result",
   environment_update: "Change on the floor",
+  space_note: "Space check",
 };
 export const kindLabel = (kind: string) =>
   kindLabels[kind] ?? kind.replaceAll("_", " ");

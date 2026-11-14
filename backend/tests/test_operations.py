@@ -326,3 +326,44 @@ def test_cleaning_priority_serves_demand_then_oldest_task(floor):
     tasks = floor.snapshot()['cleaning_priorities']
     assert [task['table_id'] for task in tasks] == ['T3','T2','T1']
     assert '1 waiting parties' in tasks[0]['explanation']
+
+
+def test_extra_chairs_offered_only_for_parties_no_table_fits(floor):
+    make_ready(floor)
+    seven = floor.add_party('Seven', 7)
+    ten = floor.add_party('Ten', 10)
+    four = floor.add_party('Four', 4)
+    recs = floor.recommendations()
+    assert [(r['party_id'], r['table_id']) for r in recs] == [(four['id'], 'T2')]
+    options = floor.extra_chair_options()
+    # Seven fits the 6-seat table with one chair; ten is too big even with two;
+    # the 4-seat table is kept for the party the normal rules suggest.
+    assert [(o['party_id'], o['table_id'], o['extra_chairs']) for o in options] == [
+        (seven['id'], 'T3', 1)
+    ]
+    assert ten['id'] not in [o['party_id'] for o in options]
+
+
+def test_seat_with_extra_chairs_requires_a_current_option(floor):
+    make_ready(floor)
+    party = floor.add_party('Seven', 7)
+    with pytest.raises(OperationError, match='no longer available'):
+        floor.seat(party['id'], 'T3', floor.state['version'], extra_chairs=2)
+    with pytest.raises(OperationError, match='no longer available'):
+        floor.seat(party['id'], 'T2', floor.state['version'], extra_chairs=1)
+    with pytest.raises(OperationError, match='eligible'):
+        floor.seat(party['id'], 'T3', floor.state['version'])
+    floor.seat(party['id'], 'T3', floor.state['version'], extra_chairs=1)
+    assert floor.table('T3')['party_id'] == party['id']
+    assert 'extra chair' in floor.state['events'][0]['text']
+    assert floor.extra_chair_options() == []
+
+
+def test_declining_extra_chairs_keeps_party_waiting_until_table_turns(floor):
+    make_ready(floor)
+    party = floor.add_party('Eight', 8)
+    floor.decline_extra_chairs(party['id'], 'T3', 2, floor.state['version'])
+    assert floor.extra_chair_options() == []
+    assert next(p for p in floor.state['parties'] if p['id'] == party['id'])['status'] == 'waiting'
+    with pytest.raises(OperationError, match='no longer available'):
+        floor.decline_extra_chairs(party['id'], 'T3', 2, floor.state['version'])

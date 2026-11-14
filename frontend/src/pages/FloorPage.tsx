@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Bell,
+  Brain,
   Check,
   ClipboardList,
   Clock3,
@@ -27,6 +28,7 @@ import SupervisorHint from "../components/SupervisorCards";
 import { api, apiUrl } from "../api/client";
 import {
   floorRequest,
+  type ExtraChairOption,
   type FloorState,
   type FloorTable,
   type Recommendation,
@@ -167,6 +169,152 @@ function SeatingSuggestion({
   );
 }
 
+/** The Floor never offers more than this many extra chairs (matches the backend). */
+const MAX_EXTRA_CHAIRS = 2;
+const chairs = (n: number) => `${n} extra chair${n === 1 ? "" : "s"}`;
+const checkedOn = (iso: string) =>
+  new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+
+/** How sure we are that this table has room: remembered, unknown, or remembered no. */
+function chairStanding(option: ExtraChairOption) {
+  const memory = option.memory;
+  if (memory.status !== "found") return 1;
+  return memory.max_extra_chairs >= option.extra_chairs ? 0 : 2;
+}
+
+/** The best extra-chair option for each party: remembered room first. */
+function bestChairOptions(options: ExtraChairOption[]) {
+  const best = new Map<string, ExtraChairOption>();
+  for (const option of options) {
+    const current = best.get(option.party_id);
+    if (!current || chairStanding(option) < chairStanding(current))
+      best.set(option.party_id, option);
+  }
+  return [...best.values()];
+}
+
+function ExtraChairCard({
+  option,
+  busy,
+  connected,
+  act,
+}: {
+  option: ExtraChairOption;
+  busy: boolean;
+  connected: boolean;
+  act: (path: string, body?: unknown, method?: string) => Promise<boolean>;
+}) {
+  const { memory, extra_chairs: need, table_name: table } = option;
+  const remembered = memory.status === "found";
+  const roomKnown = remembered && memory.max_extra_chairs >= need;
+  const noRoomKnown = remembered && memory.max_extra_chairs === 0;
+  const checking = memory.status === "checking";
+  const seat = (roomChecked: boolean) =>
+    void act("/seat", {
+      party_id: option.party_id,
+      table_id: option.table_id,
+      version: option.version,
+      extra_chairs: need,
+      room_checked: roomChecked,
+    });
+  const decline = (remember: boolean) =>
+    void act("/extra-chairs/decline", {
+      party_id: option.party_id,
+      table_id: option.table_id,
+      version: option.version,
+      extra_chairs: need,
+      remember,
+    });
+  const locked = busy || !connected || checking;
+  return (
+    <div className="decision-card chair-card">
+      <div className="decision-number">Needs {chairs(need)}</div>
+      <h3>
+        <span>
+          {option.party_name}
+          <small>
+            <Users size={13} /> {option.party_size}
+          </small>
+        </span>
+        <ArrowRight size={18} />
+        <span>{table}</span>
+      </h3>
+      <p>
+        {table} seats {option.capacity}. No free table fits {option.party_size}
+        , so they need {chairs(need)}.
+      </p>
+      {checking ? (
+        <p className="chair-memory is-checking" role="status">
+          <Brain size={15} aria-hidden="true" />
+          Checking memory for {table}…
+        </p>
+      ) : remembered ? (
+        <div className={`chair-memory ${roomKnown ? "is-room" : "is-no-room"}`}>
+          <Brain size={15} aria-hidden="true" />
+          <span>
+            <b>
+              {roomKnown
+                ? `Remembered: ${table} has room for ${chairs(memory.max_extra_chairs)}.`
+                : noRoomKnown
+                  ? `Remembered: ${table} has no room for extra chairs.`
+                  : `Remembered: ${table} has room for only ${chairs(memory.max_extra_chairs)}.`}
+            </b>
+            <small>
+              You checked on {checkedOn(memory.recorded_at)}. Saved in Hindsight
+              memory.
+              {!roomKnown && " Check again before seating."}
+            </small>
+          </span>
+        </div>
+      ) : (
+        <p className="chair-memory is-unknown">
+          <Brain size={15} aria-hidden="true" />
+          {memory.status === "unavailable"
+            ? "Memory isn’t answering right now. Check there’s room first."
+            : `First time: check there’s room at ${table} first. The app will remember your answer.`}
+        </p>
+      )}
+      {roomKnown ? (
+        <>
+          <button
+            className="floor-btn primary"
+            disabled={locked}
+            onClick={() => seat(false)}
+          >
+            <Check size={15} />
+            Seat with {chairs(need)}
+          </button>
+          <button
+            className="decline-suggestion"
+            disabled={locked}
+            onClick={() => decline(false)}
+          >
+            Not tonight, keep them waiting
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            className="floor-btn primary"
+            disabled={locked}
+            onClick={() => seat(true)}
+          >
+            <Check size={15} />
+            There’s room, seat them
+          </button>
+          <button
+            className="decline-suggestion"
+            disabled={locked}
+            onClick={() => decline(true)}
+          >
+            No room at {table}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function FloorPage() {
   useSectionJump();
   const [state, setState] = useState<FloorState | null>(null);
@@ -269,6 +417,13 @@ export default function FloorPage() {
   };
   const tables = state?.tables ?? [];
   const waiting = state?.parties.filter((p) => p.status === "waiting") ?? [];
+  // Parties bigger than every table can never get a suggestion; say so.
+  const largest = Math.max(0, ...tables.map((t) => t.capacity));
+  const tooBig = (guests: number) =>
+    tables.length > 0 && guests > largest + MAX_EXTRA_CHAIRS;
+  const oversized = waiting.filter((p) => tooBig(p.size));
+  const chairCards = bestChairOptions(state?.extra_chair_options ?? []);
+  const tooBigHelp = `The largest table seats ${largest}. Push tables together and seat them yourself, then remove them from the list.`;
   const ready = tables.filter((t) => t.seating_eligible).length;
   const occupied = tables.filter((t) => t.status === "occupied").length;
   const dirty = tables.filter((t) => t.status === "cleaning_required").length;
@@ -783,11 +938,25 @@ export default function FloorPage() {
                 Add to list
               </button>
             </form>
+            {tooBig(size) ? (
+              <p className="too-big-note" role="status">
+                No table seats {size}. {tooBigHelp}
+              </p>
+            ) : (
+              tables.length > 0 &&
+              size > largest && (
+                <p className="chair-note" role="status">
+                  No table seats {size}. When the {largest}-seat table is free,
+                  the app will offer it with {chairs(size - largest)}.
+                </p>
+              )
+            )}
             <ul className="wait-list">
               {waiting.map((party) => {
                 const rec = state?.recommendations.find(
                   (r) => r.party_id === party.id,
                 );
+                const chair = chairCards.find((o) => o.party_id === party.id);
                 const estimate = state?.wait_estimates[party.id];
                 const hasEstimate =
                   estimate?.min_minutes != null && estimate.max_minutes != null;
@@ -808,6 +977,14 @@ export default function FloorPage() {
                     </div>
                     {rec ? (
                       <span className="queue-ready">{rec.table_name} is ready</span>
+                    ) : chair ? (
+                      <span className="queue-chair">
+                        {chair.table_name} + {chairs(chair.extra_chairs)}
+                      </span>
+                    ) : tooBig(party.size) ? (
+                      <span className="queue-too-big" title={tooBigHelp}>
+                        Too big for any table
+                      </span>
                     ) : (
                       <span className="queue-waiting">Waiting for a table</span>
                     )}
@@ -841,18 +1018,29 @@ export default function FloorPage() {
                 <h2>Who to seat next</h2>
               </div>
             </div>
-            {state?.recommendations.length ? (
-              state.recommendations.map((rec, index) => (
-                <SeatingSuggestion
-                  key={rec.party_id}
-                  rec={rec}
-                  index={index}
-                  state={state}
-                  busy={busy}
-                  connected={connected}
-                  act={act}
-                />
-              ))
+            {state?.recommendations.length || chairCards.length ? (
+              <>
+                {state?.recommendations.map((rec, index) => (
+                  <SeatingSuggestion
+                    key={rec.party_id}
+                    rec={rec}
+                    index={index}
+                    state={state}
+                    busy={busy}
+                    connected={connected}
+                    act={act}
+                  />
+                ))}
+                {chairCards.map((option) => (
+                  <ExtraChairCard
+                    key={option.party_id}
+                    option={option}
+                    busy={busy}
+                    connected={connected}
+                    act={act}
+                  />
+                ))}
+              </>
             ) : (
               <div className="decision-empty">
                 <div>
@@ -861,18 +1049,31 @@ export default function FloorPage() {
                 <h3>
                   {!waiting.length
                     ? "All caught up"
-                    : !live && !staffMode
+                    : oversized.length === waiting.length
+                      ? "No table is big enough"
+                      : !live && !staffMode
                       ? "Waiting for the camera"
                       : "No table fits yet"}
                 </h3>
                 <p>
                   {!waiting.length
                     ? "Add a party to the waiting list and a suggestion will appear here."
-                    : !live && !staffMode
+                    : oversized.length === waiting.length
+                      ? tooBigHelp
+                      : !live && !staffMode
                       ? "Start the camera, or switch to staff checks, to get a suggestion."
                       : "Mark a table clean and free when one opens up."}
                 </p>
               </div>
+            )}
+            {oversized.length > 0 && oversized.length < waiting.length && (
+              <p className="too-big-note">
+                {oversized
+                  .map((p) => `${p.name} (${p.size})`)
+                  .join(", ")}{" "}
+                {oversized.length === 1 ? "is" : "are"} too big for any table.{" "}
+                {tooBigHelp}
+              </p>
             )}
             <div className="policy-note">
               <ScanLine size={14} />
