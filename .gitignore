@@ -59,6 +59,8 @@ logs/
 Thumbs.db
 desktop.ini
 .idea/
+.playwright-cli/
+.taste-skill/
 
 # Camera configs may contain local paths or credentials; retain prepared fixtures only.
 backend/configs/*.json

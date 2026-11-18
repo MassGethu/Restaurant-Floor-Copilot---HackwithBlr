@@ -1,0 +1,23 @@
+{
+  "started_at": "2026-11-18T09:07:43.576532+00:00",
+  "status": "pass",
+  "memory_profile": "cloud",
+  "disclosure": "Real Hindsight retention and recall with synthetic structured floor inputs. No video, fake memory, or hosted reasoning. No restaurant business-impact claim.",
+  "checks": [
+    "Correction retained by real Hindsight",
+    "Real recall returned an active matching preference",
+    "Controller selected T3 instead of baseline T2 and cited the real recalled fact",
+    "A disputed correction stopped influencing the next allocation"
+  ],
+  "bank_id": "floor-copilot-autonomy-verification-754dfd34d9",
+  "source_id": "491c1e42-fc08-4b7e-9395-f3bb9c5744b5",
+  "baseline_table": "T2",
+  "selected_table": "T3",
+  "evidence": {
+    "source_id": "491c1e42-fc08-4b7e-9395-f3bb9c5744b5",
+    "fact_id": "cb09c862-3afd-4bc7-a84d-f1a265dc6336",
+    "reason": "Matching correction recalled from Hindsight."
+  },
+  "manager_approvals": 0,
+  "finished_at": "2026-11-18T09:07:50.431745+00:00"
+}

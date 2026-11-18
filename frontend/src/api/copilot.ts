@@ -25,6 +25,7 @@ export type Party = {
   arrived_at: number;
   status: string;
   table_id: string | null;
+  arrival_confirmed?: boolean;
 };
 export type Recommendation = {
   party_id: string;
@@ -72,6 +73,41 @@ export type ExtraChairOption = {
 };
 
 export type FloorState = {
+  automation: {
+    acknowledgement_timeout_seconds?: number;
+    enabled: boolean;
+    paused: boolean;
+    departure_seconds: number;
+    task_timeout_seconds: number;
+    seating_timeout_seconds: number;
+    max_tasks_per_staff: number;
+    actions: number;
+    last_tick_at: number | null;
+    last_error: string | null;
+  };
+  exceptions: {
+    id: string;
+    key: string;
+    title: string;
+    detail: string;
+    severity: "warning" | "critical";
+    status: "open" | "acknowledged" | "resolved";
+    created_at: number;
+    resolved_at: number | null;
+    table_id?: string;
+    task_id?: string;
+    party_id?: string;
+  }[];
+  automation_log: {
+    id: string;
+    kind: string;
+    explanation: string;
+    scenario_time: number;
+    recorded_at: number;
+    table_id?: string;
+    party_id?: string;
+    evidence?: { source_id: string; fact_id: string; reason: string } | null;
+  }[];
   staff_mode: boolean;
   service_epoch: number | null;
   policy: {
@@ -79,7 +115,7 @@ export type FloorState = {
     max_wait_minutes: number;
     check_in_minutes: number;
   };
-  staff: { id: string; name: string; role: string }[];
+  staff: { id: string; name: string; role: string; available?: boolean }[];
   tasks: {
     id: string;
     table_id: string;
@@ -92,6 +128,10 @@ export type FloorState = {
     assigned_to: string | null;
     created_at: number;
     completed_at: number | null;
+    party_id?: string;
+    assignment_origin?: string;
+    assignment_revision?: number;
+    problem?: string;
   }[];
   arrivals: {
     id: string;
@@ -177,6 +217,16 @@ export type FloorState = {
   };
 };
 
+export class FloorRequestError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+    this.name = "FloorRequestError";
+  }
+}
+
 export async function floorRequest<T = FloorState>(
   path = "",
   body?: unknown,
@@ -194,10 +244,11 @@ export async function floorRequest<T = FloorState>(
   });
   const data = await response.json();
   if (!response.ok)
-    throw new Error(
+    throw new FloorRequestError(
       typeof data.detail === "string"
         ? data.detail
         : "Please check the form and try again.",
+      response.status,
     );
   return data as T;
 }

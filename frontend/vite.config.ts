@@ -17,14 +17,27 @@ function readEnvFile(path: string): Record<string, string> {
 // Settings: .env.example is the base, .env (and the environment) override it,
 // the same way the backend reads its settings.
 export default defineConfig(({ mode }) => {
-  const env = { ...readEnvFile(".env.example"), ...loadEnv(mode, process.cwd(), "") };
+  const env = {
+    ...readEnvFile(".env.example"),
+    ...loadEnv(mode, process.cwd(), ""),
+  };
   const port = Number(env.FRONTEND_PORT);
   return {
     plugins: [react(), tailwindcss()],
     define: {
       __API_BASE_URL__: JSON.stringify(env.VITE_API_BASE_URL),
     },
-    server: { port, strictPort: true },
+    server: {
+      host: "0.0.0.0",
+      port,
+      strictPort: true,
+      proxy: {
+        "/api": {
+          target: env.VITE_API_BASE_URL || "http://127.0.0.1:8001",
+          ws: true,
+        },
+      },
+    },
     preview: { port, strictPort: true },
     test: { environment: "node" },
   };

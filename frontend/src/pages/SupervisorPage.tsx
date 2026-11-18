@@ -1,3 +1,4 @@
+import { requestId as newRequestId } from "../lib/requestId";
 import {
   useCallback,
   useEffect,
@@ -239,7 +240,7 @@ export default function SupervisorPage() {
         table_id: table || null,
         baseline_table_id: rec?.table_id || null,
         party_id: rec?.party_id || null,
-        request_id: crypto.randomUUID(),
+        request_id: newRequestId(),
       });
       setNote("");
       setNotice(
@@ -288,8 +289,8 @@ export default function SupervisorPage() {
         <div>
           <h1>AI Supervisor</h1>
           <p>
-            Learns from past shifts and uses those lessons to suggest what to
-            do next.
+            Learns from past shifts and uses those lessons to suggest what to do
+            next.
           </p>
         </div>
         {state && (
@@ -448,10 +449,7 @@ export default function SupervisorPage() {
         </div>
 
         <aside>
-          <details
-            className="floor-panel floor-more sup-tonight"
-            id="context"
-          >
+          <details className="floor-panel floor-more sup-tonight" id="context">
             <summary>
               <CloudSun size={17} />
               <span>
@@ -464,7 +462,9 @@ export default function SupervisorPage() {
               </span>
             </summary>
             <form onSubmit={submitContext} className="sup-form">
-              <p>Things the camera can’t see. Advice takes these into account.</p>
+              <p>
+                Things the camera can’t see. Advice takes these into account.
+              </p>
               <label>
                 Delivery orders
                 <select
@@ -522,7 +522,9 @@ export default function SupervisorPage() {
                 <h2>Shift handover</h2>
               </div>
             </div>
-            <p>Brief the next manager on what’s open and what’s been learned.</p>
+            <p>
+              Brief the next manager on what’s open and what’s been learned.
+            </p>
             <div className="ops-actions">
               <button
                 className="floor-btn primary"
@@ -671,7 +673,8 @@ export default function SupervisorPage() {
           </details>
           <p className="memory-disclosure">
             Prototype for a single trusted desk. Demo video and scenarios are
-            staged. Staff approve every action.
+            staged. Routine floor actions run automatically; managers intervene
+            in exceptions.
           </p>
         </aside>
       </div>

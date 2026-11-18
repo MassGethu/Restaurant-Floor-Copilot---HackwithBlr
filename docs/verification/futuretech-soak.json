@@ -1,0 +1,21 @@
+{
+  "disclosure": "Four simulated hours, synthetic observations and scripted physical task reports. No real vision or memory provider.",
+  "status": "pass",
+  "ticks": 2880,
+  "simulated_hours": 4,
+  "generated_parties": 225,
+  "completed_dining_sessions": 187,
+  "completed_staff_tasks": 407,
+  "peak_queue": 30,
+  "automatic_actions": 1390,
+  "manager_approvals": 0,
+  "camera_outages": 2,
+  "invariants": [
+    "Unique table allocations",
+    "Capacity limits",
+    "Party/table consistency",
+    "Staff role matching",
+    "Deduplicated active exceptions",
+    "Bounded decision log"
+  ]
+}

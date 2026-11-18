@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "checks": [
+    "Seven routes fit 1440, 1024, 768, 390 and 320px; all rendered buttons have names.",
+    "Activity expansion and collapse work.",
+    "Review exceptions jumps below the sticky header.",
+    "Staff filter and availability control remain reachable.",
+    "Mobile navigation dialog opens and closes.",
+    "Restyled guest form submits and restores its ticket on reload."
+  ],
+  "pageErrors": []
+}

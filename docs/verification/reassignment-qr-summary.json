@@ -1,0 +1,15 @@
+{
+  "backend_tests": 245,
+  "frontend_tests": 18,
+  "build": "pass",
+  "qr_decode_url": "http://10.108.206.233:5174/check-in",
+  "note": "LAN URL registration verified from the laptop browser; guests must be on the same reachable network.",
+  "guest_browser": {
+    "url": "http://10.108.206.233:5174/check-in",
+    "guestRegistration": "pass"
+  },
+  "staff_browser": {
+    "unavailableHandoff": "pass",
+    "transferredJobs": 2
+  }
+}

@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { settingsPages } from "../lib/workspaceNavigation";
+import AutomationSettings from "../components/AutomationSettings";
 
 const groups = ["Restaurant", "Camera", "Planning tools"] as const;
 
@@ -13,6 +14,7 @@ export default function SettingsPage() {
           <p>Set things up once. You won’t need these during service.</p>
         </div>
       </header>
+      <AutomationSettings />
       {groups.map((group) => (
         <section key={group} className="settings-group">
           <h2>{group}</h2>

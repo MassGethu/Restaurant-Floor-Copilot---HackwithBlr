@@ -204,8 +204,9 @@
   container-type: inline-size;
 }
 
-.workspace-main:focus {
-  outline: none;
+.workspace-main:focus-visible {
+  outline: 2px solid #2d6649;
+  outline-offset: -2px;
 }
 
 .workspace [data-section] {

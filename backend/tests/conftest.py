@@ -137,6 +137,7 @@ def make_settings(tmp_path: Path, **overrides: Any) -> Settings:
         "hindsight_local_retain_interval_seconds": 0,
         "hindsight_api_key": "",
         "agent_api_key": "",
+        "autonomy_worker_enabled": False,
         "fake_camera_rtsp_url": "rtsp://127.0.0.1:9/cam1",  # nothing listens on port 9
         "manage_mediamtx": False,
         # Any existing executable: FakePopen never runs it.

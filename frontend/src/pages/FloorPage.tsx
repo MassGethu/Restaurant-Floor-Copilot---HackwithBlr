@@ -1,3 +1,4 @@
+import { requestId as newRequestId } from "../lib/requestId";
 import {
   useCallback,
   useEffect,
@@ -55,7 +56,10 @@ const cameraSees: Record<string, string> = {
 const MAX_EXTRA_CHAIRS = 2;
 const chairs = (n: number) => `${n} extra chair${n === 1 ? "" : "s"}`;
 const checkedOn = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  new Date(iso).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+  });
 
 function SeatingSuggestion({
   rec,
@@ -364,8 +368,8 @@ function ExtraChairCard({
         <span>{table}</span>
       </h3>
       <p>
-        {table} seats {option.capacity}. No free table fits {option.party_size}
-        , so they need {chairs(need)}.
+        {table} seats {option.capacity}. No free table fits {option.party_size},
+        so they need {chairs(need)}.
       </p>
       <ChairMemoryNote option={option} />
       {roomKnown ? (
@@ -495,7 +499,7 @@ export default function FloorPage() {
     if (!state) return;
     const input = JSON.stringify([state.session_id, name.trim(), size]);
     if (queueAttempt.current?.input !== input) {
-      queueAttempt.current = { input, id: crypto.randomUUID() };
+      queueAttempt.current = { input, id: newRequestId() };
     }
     if (
       await act("/parties", {
@@ -533,6 +537,9 @@ export default function FloorPage() {
   const now = state?.now ?? 0;
   const activeVideo = state?.playback.video_id;
   const staffMode = Boolean(state?.staff_mode);
+  const autonomous = Boolean(
+    state?.automation?.enabled && !state.automation.paused,
+  );
   const canCheckClean = (table: FloorTable) =>
     !table.blocked &&
     !table.party_id &&
@@ -601,13 +608,35 @@ export default function FloorPage() {
         <div>
           <div className="eyebrow">Tonight’s service</div>
           <h1>Floor</h1>
-          <p>Who’s waiting, which tables are free, and who to seat next.</p>
+          <p>
+            {autonomous
+              ? "Live floor state. Routine decisions and staff dispatch run automatically."
+              : "Who’s waiting, which tables are free, and who to seat next."}
+          </p>
         </div>
         <div className={`live-pill ${live ? "is-live" : ""}`}>
           <i />
           {statusText}
         </div>
       </div>
+
+      {autonomous && (
+        <section className="service-mode-bar" aria-label="Autonomous service">
+          <div>
+            <strong>Autonomous service is running</strong>
+            <p>
+              Staff jobs and table assignments are automatic. Open the service
+              overview for exceptions, or pause automation there to take over.
+            </p>
+          </div>
+          <Link className="floor-btn" to="/autonomy">
+            Service overview <ArrowRight size={15} />
+          </Link>
+          <Link className="floor-btn" to="/staff">
+            Staff jobs
+          </Link>
+        </section>
+      )}
 
       {state && tables.length > 0 && (staffMode || !live) && (
         <section
@@ -709,91 +738,97 @@ export default function FloorPage() {
         ))}
       </div>
 
-      {(departures.length > 0 || dirty > 0 || openTasks > 0 || pendingArrivals > 0) && (
-        <section className="floor-panel cleaning-panel">
-          <div className="panel-title">
-            <div>
-              <Sparkles size={17} />
-              <h2>Needs your attention</h2>
-            </div>
-          </div>
-          {departures.map((table) => (
-            <div className="turnover-review" key={table.id}>
+      {!autonomous &&
+        (departures.length > 0 ||
+          dirty > 0 ||
+          openTasks > 0 ||
+          pendingArrivals > 0) && (
+          <section className="floor-panel cleaning-panel">
+            <div className="panel-title">
               <div>
-                <b>Have the guests at {table.name} left?</b>
-                <p>The camera thinks the table is empty. Take a quick look.</p>
+                <Sparkles size={17} />
+                <h2>Needs your attention</h2>
               </div>
-              <button
-                className="floor-btn primary"
-                disabled={busy || !connected}
-                onClick={() => tableAction(table, "depart")}
-              >
-                Yes, they left
-              </button>
-              <button
-                className="floor-btn"
-                disabled={busy || !connected}
-                onClick={() => tableAction(table, "still_seated")}
-              >
-                Still there
-              </button>
             </div>
-          ))}
-          {state?.cleaning_priorities.map((task, i) => (
-            <div className="cleaning-task" key={task.table_id}>
-              <span>{i + 1}</span>
-              <div>
-                <h3>Clean {task.table_name}</h3>
-                <p>{task.explanation}</p>
-                {(() => {
-                  const progress = taskProgress(task.table_id);
-                  return progress ? (
-                    <small className={`task-progress ${progress.status}`}>
-                      {progress.text}
-                    </small>
-                  ) : null;
-                })()}
+            {departures.map((table) => (
+              <div className="turnover-review" key={table.id}>
+                <div>
+                  <b>Have the guests at {table.name} left?</b>
+                  <p>
+                    The camera thinks the table is empty. Take a quick look.
+                  </p>
+                </div>
+                <button
+                  className="floor-btn primary"
+                  disabled={busy || !connected}
+                  onClick={() => tableAction(table, "depart")}
+                >
+                  Yes, they left
+                </button>
+                <button
+                  className="floor-btn"
+                  disabled={busy || !connected}
+                  onClick={() => tableAction(table, "still_seated")}
+                >
+                  Still there
+                </button>
               </div>
-              <button
-                aria-label={`Mark ${task.table_name} clean`}
-                title="Mark clean and free"
-                disabled={
-                  busy ||
-                  !connected ||
-                  !tables.some(
-                    (t) => t.id === task.table_id && canCheckClean(t),
-                  )
-                }
-                onClick={() => {
-                  const table = tables.find((t) => t.id === task.table_id);
-                  if (table) tableAction(table, "clean");
-                }}
-              >
-                <Check size={17} />
-              </button>
-            </div>
-          ))}
-          {(openTasks > 0 || pendingArrivals > 0) && (
-            <nav className="attention-links" aria-label="Other work">
-              {openTasks > 0 && (
-                <Link to="/operations">
-                  <ClipboardList size={15} aria-hidden="true" />
-                  {openTasks} staff task{openTasks === 1 ? "" : "s"} open
-                  <ArrowRight size={13} />
-                </Link>
-              )}
-              {pendingArrivals > 0 && (
-                <Link to="/operations?tab=arrivals">
-                  <DoorOpen size={15} aria-hidden="true" />
-                  {pendingArrivals} new arrival
-                  {pendingArrivals === 1 ? "" : "s"} spotted at the door
-                  <ArrowRight size={13} />
-                </Link>
-              )}
-            </nav>
-          )}
-        </section>
-      )}
+            ))}
+            {state?.cleaning_priorities.map((task, i) => (
+              <div className="cleaning-task" key={task.table_id}>
+                <span>{i + 1}</span>
+                <div>
+                  <h3>Clean {task.table_name}</h3>
+                  <p>{task.explanation}</p>
+                  {(() => {
+                    const progress = taskProgress(task.table_id);
+                    return progress ? (
+                      <small className={`task-progress ${progress.status}`}>
+                        {progress.text}
+                      </small>
+                    ) : null;
+                  })()}
+                </div>
+                <button
+                  aria-label={`Mark ${task.table_name} clean`}
+                  title="Mark clean and free"
+                  disabled={
+                    busy ||
+                    !connected ||
+                    !tables.some(
+                      (t) => t.id === task.table_id && canCheckClean(t),
+                    )
+                  }
+                  onClick={() => {
+                    const table = tables.find((t) => t.id === task.table_id);
+                    if (table) tableAction(table, "clean");
+                  }}
+                >
+                  <Check size={17} />
+                </button>
+              </div>
+            ))}
+            {(openTasks > 0 || pendingArrivals > 0) && (
+              <nav className="attention-links" aria-label="Other work">
+                {openTasks > 0 && (
+                  <Link to="/operations">
+                    <ClipboardList size={15} aria-hidden="true" />
+                    {openTasks} staff task{openTasks === 1 ? "" : "s"} open
+                    <ArrowRight size={13} />
+                  </Link>
+                )}
+                {pendingArrivals > 0 && (
+                  <Link to="/operations?tab=arrivals">
+                    <DoorOpen size={15} aria-hidden="true" />
+                    {pendingArrivals} new arrival
+                    {pendingArrivals === 1 ? "" : "s"} spotted at the door
+                    <ArrowRight size={13} />
+                  </Link>
+                )}
+              </nav>
+            )}
+          </section>
+        )}
 
       <div className="floor-main-grid">
         <div className="floor-left">
@@ -845,17 +880,31 @@ export default function FloorPage() {
                       {table.blocked
                         ? "Not for walk-ins"
                         : table.departure_review
-                          ? "Did they leave?"
+                          ? autonomous
+                            ? "Checking vacancy"
+                            : "Did they leave?"
                           : table.status === "ready" && !table.seating_eligible
                             ? "Check before seating"
-                            : statusLabels[table.status]}
+                            : autonomous &&
+                                table.party_id &&
+                                !state?.parties.find(
+                                  (p) => p.id === table.party_id,
+                                )?.arrival_confirmed
+                              ? "Guests on the way"
+                              : statusLabels[table.status]}
                     </span>
                     <div className="table-timer">
                       {table.status === "occupied" &&
                       table.occupied_since !== null ? (
                         <>
                           <Clock3 size={12} />
-                          Seated {formatSpan(now - table.occupied_since)}
+                          {autonomous &&
+                          table.party_id &&
+                          !state?.parties.find((p) => p.id === table.party_id)
+                            ?.arrival_confirmed
+                            ? "Allocated"
+                            : "Seated"}{" "}
+                          {formatSpan(now - table.occupied_since)}
                         </>
                       ) : table.manual_hold ? (
                         table.hold_until ? (
@@ -882,7 +931,7 @@ export default function FloorPage() {
                       ) : null;
                     })()}
                     <div className="table-actions">
-                      {table.departure_review && (
+                      {!autonomous && table.departure_review && (
                         <>
                           <button
                             disabled={busy || !connected}
@@ -898,11 +947,12 @@ export default function FloorPage() {
                           </button>
                         </>
                       )}
-                      {(table.status === "cleaning_required" ||
-                        table.status === "needs_verification" ||
-                        (table.status === "ready" &&
-                          staffMode &&
-                          !table.seating_eligible)) &&
+                      {!autonomous &&
+                        (table.status === "cleaning_required" ||
+                          table.status === "needs_verification" ||
+                          (table.status === "ready" &&
+                            staffMode &&
+                            !table.seating_eligible)) &&
                         canCheckClean(table) && (
                           <button
                             className="primary-action"
@@ -996,7 +1046,11 @@ export default function FloorPage() {
             )}
           </section>
 
-          <section className="floor-panel queue-panel" id="add-party" data-section>
+          <section
+            className="floor-panel queue-panel"
+            id="add-party"
+            data-section
+          >
             <div className="panel-title">
               <div>
                 <Users size={17} />
@@ -1073,7 +1127,9 @@ export default function FloorPage() {
                       </small>
                     </div>
                     {rec ? (
-                      <span className="queue-ready">{rec.table_name} is ready</span>
+                      <span className="queue-ready">
+                        {rec.table_name} is ready
+                      </span>
                     ) : chair ? (
                       <span className="queue-chair">
                         {chair.table_name} + {chairs(chair.extra_chairs)}
@@ -1112,10 +1168,27 @@ export default function FloorPage() {
             <div className="panel-title">
               <div>
                 <Sparkles size={18} />
-                <h2>Who to seat next</h2>
+                <h2>
+                  {autonomous ? "Automatic allocation" : "Who to seat next"}
+                </h2>
               </div>
             </div>
-            {state?.recommendations.length || chairCards.length ? (
+            {autonomous ? (
+              <div className="decision-empty">
+                <div>
+                  <Check size={24} />
+                </div>
+                <h3>Seating is handled.</h3>
+                <p>
+                  Suitable tables are assigned automatically. Staff guide guests
+                  and the camera verifies arrival. Capacity and evidence
+                  problems appear in the service overview.
+                </p>
+                <Link className="floor-btn" to="/autonomy">
+                  Review exceptions <ArrowRight size={14} />
+                </Link>
+              </div>
+            ) : state?.recommendations.length || chairCards.length ? (
               <>
                 {state?.recommendations.map((rec, index) => (
                   <SeatingSuggestion
@@ -1149,8 +1222,8 @@ export default function FloorPage() {
                     : oversized.length === waiting.length
                       ? "No table is big enough"
                       : !live && !staffMode
-                      ? "Waiting for the camera"
-                      : "No table fits yet"}
+                        ? "Waiting for the camera"
+                        : "No table fits yet"}
                 </h3>
                 <p>
                   {!waiting.length
@@ -1158,26 +1231,45 @@ export default function FloorPage() {
                     : oversized.length === waiting.length
                       ? tooBigHelp
                       : !live && !staffMode
-                      ? "Start the camera, or switch to staff checks, to get a suggestion."
-                      : "Mark a table clean and free when one opens up."}
+                        ? "Start the camera, or switch to staff checks, to get a suggestion."
+                        : "Mark a table clean and free when one opens up."}
                 </p>
               </div>
             )}
             {oversized.length > 0 && oversized.length < waiting.length && (
               <p className="too-big-note">
-                {oversized
-                  .map((p) => `${p.name} (${p.size})`)
-                  .join(", ")}{" "}
+                {oversized.map((p) => `${p.name} (${p.size})`).join(", ")}{" "}
                 {oversized.length === 1 ? "is" : "are"} too big for any table.{" "}
                 {tooBigHelp}
               </p>
             )}
+            {autonomous &&
+              chairCards
+                .filter((option) =>
+                  state?.exceptions.some(
+                    (e) =>
+                      e.party_id === option.party_id && e.status !== "resolved",
+                  ),
+                )
+                .map((option) => (
+                  <ExtraChairCard
+                    key={option.party_id}
+                    option={option}
+                    busy={busy}
+                    connected={connected}
+                    act={act}
+                  />
+                ))}
             <div className="policy-note">
               <ScanLine size={14} />
-              <span>The camera watches, the app suggests, you decide.</span>
+              <span>
+                {autonomous
+                  ? "The system acts. You supervise exceptions."
+                  : "Manual service: review and apply seating choices."}
+              </span>
             </div>
           </section>
-          {!staffMode && <SupervisorHint floor={state} />}
+          {!staffMode && !autonomous && <SupervisorHint floor={state} />}
         </aside>
       </div>
 

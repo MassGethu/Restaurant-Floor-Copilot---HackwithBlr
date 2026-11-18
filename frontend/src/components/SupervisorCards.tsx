@@ -45,14 +45,18 @@ export function EvidenceList({ items }: { items: Evidence[] }) {
           return (
             <details key={source.source_id}>
               <summary>
-                <b>{kindLabel(source.kind)}</b> · {shortDate(source.recorded_at)}
+                <b>{kindLabel(source.kind)}</b> ·{" "}
+                {shortDate(source.recorded_at)}
                 <span>{factText(facts[0].text)}</span>
               </summary>
               {facts.slice(1).map((fact) => (
                 <p key={fact.id}>{factText(fact.text)}</p>
               ))}
               <small>{source.qualification}</small>
-              <p className="memory-id" title={facts.map((f) => f.id).join(", ")}>
+              <p
+                className="memory-id"
+                title={facts.map((f) => f.id).join(", ")}
+              >
                 Source record {source.source_id.slice(0, 8)}
               </p>
             </details>
@@ -132,7 +136,8 @@ export function AdviceCards({
   const others = advice.evidence.filter((e) => !citedIds.has(e.id));
   const locked = busy || stale || acted;
   const decisionButtons = (p: Proposal) =>
-    p.type !== "no_action" && (
+    p.type !== "no_action" &&
+    !(floor?.automation?.enabled && !floor.automation.paused) && (
       <div className="ops-actions">
         <button
           className="floor-btn primary"
@@ -153,7 +158,10 @@ export function AdviceCards({
   return (
     <div className="memory-advice">
       {withMemory && withoutMemory ? (
-        <div className="memory-compare" aria-label="Advice with and without memory">
+        <div
+          className="memory-compare"
+          aria-label="Advice with and without memory"
+        >
           <div className="without">
             <small>Without memory</small>
             <b>{friendlyLabel(withoutMemory, floor)}</b>
@@ -212,15 +220,18 @@ export function AdviceCards({
       <div className="memory-actions">
         {withMemory && decisionButtons(withMemory)}
         {onAskAgain && (
-          <button
-            className="floor-btn"
-            disabled={asking}
-            onClick={onAskAgain}
-          >
+          <button className="floor-btn" disabled={asking} onClick={onAskAgain}>
             <RefreshCw size={13} /> {asking ? "Thinking…" : "Ask again"}
           </button>
         )}
       </div>
+      {floor?.automation?.enabled && !floor.automation.paused && (
+        <p className="memory-summary">
+          Autonomous service handles routine actions. Use the service overview
+          for exceptions, or pause automation before applying an advisory action
+          manually.
+        </p>
+      )}
       {advice.proposals.slice(1).map((p) => (
         <article key={p.id} className="memory-proposal">
           <h3>Also: {friendlyLabel(p, floor)}</h3>
@@ -305,7 +316,9 @@ export default function SupervisorHint({
       p.type === "seat_party" &&
       p.status === "proposed" &&
       p.memory_ids.length > 0 &&
-      floor.parties.some((x) => x.id === p.party_id && x.status === "waiting") &&
+      floor.parties.some(
+        (x) => x.id === p.party_id && x.status === "waiting",
+      ) &&
       floor.tables.some((t) => t.id === p.table_id && t.seating_eligible),
   );
   if (!proposal) return null;
@@ -315,9 +328,10 @@ export default function SupervisorHint({
   if (rule && rule.table_id === proposal.table_id) return null;
   const table = floor.tables.find((t) => t.id === proposal.table_id);
   const party = floor.parties.find((x) => x.id === proposal.party_id);
-  const lesson = advice.evidence.find(
-    (e) => proposal.memory_ids.includes(e.id) && e.kind === "correction",
-  ) ?? advice.evidence.find((e) => proposal.memory_ids.includes(e.id));
+  const lesson =
+    advice.evidence.find(
+      (e) => proposal.memory_ids.includes(e.id) && e.kind === "correction",
+    ) ?? advice.evidence.find((e) => proposal.memory_ids.includes(e.id));
   return (
     <Link to="/supervisor#advice" className="supervisor-hint">
       <span className="supervisor-hint-icon">
@@ -330,7 +344,9 @@ export default function SupervisorHint({
           {party ? ` for ${party.name}` : ""}
         </strong>
         <small>
-          {lesson ? `Based on a past lesson: ${factText(lesson.text)}` : "Based on a past lesson"}
+          {lesson
+            ? `Based on a past lesson: ${factText(lesson.text)}`
+            : "Based on a past lesson"}
         </small>
       </span>
       <span className="supervisor-hint-cta">

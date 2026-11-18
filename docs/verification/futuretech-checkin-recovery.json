@@ -1,0 +1,7 @@
+{
+  "status": "pass",
+  "checks": [
+    "A committed check-in survives a lost reply and browser reload without duplication",
+    "An unreceived request can be retried with the original idempotency key after reload"
+  ]
+}

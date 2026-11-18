@@ -1,0 +1,52 @@
+
+perf /127.0.0.1:5176/autonomy @ 1440px
+  PASS  host CPU load (before/after)               24/12 %        
+  PASS  total transfer                             310.6 KiB      html 0.9K  css 23.9K  js 110.5K  font 47.4K  other 127.9K
+  PASS  requests                                   13             11 by load
+  PASS  images bytes                               0 KiB          0 files
+  PASS  JS parsed                                  343.9 KiB      5 files, 110.5K gz
+  PASS  CSS                                        23.9 KiB       2 files
+  PASS  font families                              1              Inter Variable
+  PASS  font files                                 1              47.4K
+  PASS  font bytes                                 47.4 KiB       
+  PASS  images without width+height                0              
+  PASS  below-fold images not lazy                 0              
+  PASS  oversized images (natural > 2.2x shown)    0              
+  PASS  WebGL live at load                         0              
+  PASS  WebGL live at bottom                       0              
+  PASS  WebGL peak live                            0              0 contexts made in all
+  PASS  long tasks                                 0              runs 3, 0..0, max 0ms
+  PASS  blocking time                              0 ms           runs 3, 0..0 ms; at load 0ms
+  PASS  FCP (CPU, relative)                        52 ms          runs 3, 52..96
+  PASS  LCP (CPU, relative)                        348 ms         runs 3, 348..368, p
+  PASS  layout shift                               0.034          runs 3, 0.034..0.034; at load 0.034
+  PASS  modules loaded, never mounted              0              
+  PASS  broken requests                            0              
+  PASS  page height                                2.8 screens    DOM 588 nodes
+
+perf /127.0.0.1:5176/autonomy @ 390px
+  PASS  host CPU load (before/after)               24/12 %        
+  PASS  total transfer                             373.1 KiB      html 0.9K  css 23.9K  js 110.5K  font 47.4K  other 190.4K
+  PASS  requests                                   13             10 by load
+  PASS  images bytes                               0 KiB          0 files
+  PASS  JS parsed                                  343.9 KiB      5 files, 110.5K gz
+  PASS  CSS                                        23.9 KiB       2 files
+  PASS  font families                              1              Inter Variable
+  PASS  font files                                 1              47.4K
+  PASS  font bytes                                 47.4 KiB       
+  PASS  images without width+height                0              
+  PASS  below-fold images not lazy                 0              
+  PASS  oversized images (natural > 2.2x shown)    0              
+  PASS  WebGL live at load                         0              
+  PASS  WebGL live at bottom                       0              
+  PASS  WebGL peak live                            0              0 contexts made in all
+  PASS  long tasks                                 0              runs 3, 0..0, max 0ms
+  PASS  blocking time                              0 ms           runs 3, 0..0 ms; at load 0ms
+  PASS  FCP (CPU, relative)                        48 ms          runs 3, 48..48
+  PASS  LCP (CPU, relative)                        344 ms         runs 3, 344..348, p.auto-error
+  PASS  layout shift                               0.000          runs 3, 0.000..0.000; at load 0.000
+  PASS  modules loaded, never mounted              0              
+  PASS  broken requests                            0              
+  PASS  page height                                5.2 screens    DOM 588 nodes
+
+SUMMARY /127.0.0.1:5176/autonomy: 0 FAIL, 0 WARN  -> PASS

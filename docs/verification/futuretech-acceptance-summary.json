@@ -1,0 +1,137 @@
+{
+  "status": "pass",
+  "backend": {
+    "tests": 240,
+    "failures": 0,
+    "errors": 0
+  },
+  "frontend": {
+    "tests": 17,
+    "production_build": "pass"
+  },
+  "real_inference": [
+    {
+      "check": "Real inference sees initial empty tables",
+      "clip_seconds": 0.5,
+      "status": "pass"
+    },
+    {
+      "check": "Opening checks automatically assigned",
+      "clip_seconds": 0.7,
+      "status": "pass"
+    },
+    {
+      "check": "Two parties automatically allocated without approvals",
+      "clip_seconds": 0.7,
+      "status": "pass"
+    },
+    {
+      "check": "Oversized party escalated as an exception",
+      "clip_seconds": 0.7,
+      "status": "pass"
+    },
+    {
+      "check": "Real vision confirms both arrivals",
+      "clip_seconds": 28.1,
+      "status": "pass"
+    },
+    {
+      "check": "Short vacancy does not depart the first party",
+      "clip_seconds": 44.0,
+      "status": "pass"
+    },
+    {
+      "check": "Sustained vacancy automatically closes departure",
+      "clip_seconds": 82.9,
+      "status": "pass"
+    },
+    {
+      "check": "Turnover cleaning automatically dispatched",
+      "clip_seconds": 82.9,
+      "status": "pass"
+    },
+    {
+      "check": "Cleaner completion automatically seats the next party",
+      "clip_seconds": 83.0,
+      "status": "pass"
+    }
+  ],
+  "browser": {
+    "status": "pass",
+    "checks": [
+      "Staff can report a problem from the job",
+      "Manager sees and acknowledges the reported exception",
+      "Cleaner completion makes the verified table ready",
+      "Guest self check-in updates to an automatic table assignment",
+      "Guest reload restores the ticket without duplicate registration",
+      "Manager can pause and resume autonomous operation",
+      "Overview, staff, guest and settings views fit 1440, 1024, 768, 390 and 320px"
+    ],
+    "notes": "UI inputs are staged; the camera processes the controlled demo footage."
+  },
+  "real_memory": {
+    "started_at": "2026-11-18T09:07:43.576532+00:00",
+    "status": "pass",
+    "memory_profile": "cloud",
+    "disclosure": "Real Hindsight retention and recall with synthetic structured floor inputs. No video, fake memory, or hosted reasoning. No restaurant business-impact claim.",
+    "checks": [
+      "Correction retained by real Hindsight",
+      "Real recall returned an active matching preference",
+      "Controller selected T3 instead of baseline T2 and cited the real recalled fact",
+      "A disputed correction stopped influencing the next allocation"
+    ],
+    "bank_id": "floor-copilot-autonomy-verification-754dfd34d9",
+    "source_id": "491c1e42-fc08-4b7e-9395-f3bb9c5744b5",
+    "baseline_table": "T2",
+    "selected_table": "T3",
+    "evidence": {
+      "source_id": "491c1e42-fc08-4b7e-9395-f3bb9c5744b5",
+      "fact_id": "cb09c862-3afd-4bc7-a84d-f1a265dc6336",
+      "reason": "Matching correction recalled from Hindsight."
+    },
+    "manager_approvals": 0,
+    "finished_at": "2026-11-18T09:07:50.431745+00:00"
+  },
+  "disclosures": [
+    "Vision uses a controlled labelled stock montage.",
+    "Staff physical-work reports are staged.",
+    "Real Hindsight uses an isolated synthetic memory bank.",
+    "The generic marketing-page visual gate is not reported as passing; applicable contrast corrections and actual dashboard responsiveness were verified."
+  ],
+  "simulation": {
+    "disclosure": "Four simulated hours, synthetic observations and scripted physical task reports. No real vision or memory provider.",
+    "status": "pass",
+    "ticks": 2880,
+    "simulated_hours": 4,
+    "generated_parties": 225,
+    "completed_dining_sessions": 187,
+    "completed_staff_tasks": 407,
+    "peak_queue": 30,
+    "automatic_actions": 1390,
+    "manager_approvals": 0,
+    "camera_outages": 2,
+    "invariants": [
+      "Unique table allocations",
+      "Capacity limits",
+      "Party/table consistency",
+      "Staff role matching",
+      "Deduplicated active exceptions",
+      "Bounded decision log"
+    ]
+  },
+  "check_in_fault_recovery": {
+    "status": "pass",
+    "checks": [
+      "A committed check-in survives a lost reply and browser reload without duplication",
+      "An unreceived request can be retried with the original idempotency key after reload"
+    ]
+  },
+  "prepared_demo": {
+    "url": "http://127.0.0.1:5174/autonomy",
+    "data_directory": "backend/data/futuretech-autonomy-demo",
+    "video_paused": true,
+    "memory_profile": "cloud",
+    "synthetic_service": true,
+    "original_shift_database_modified": false
+  }
+}

@@ -23,6 +23,7 @@ from pydantic import ValidationError
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.copilot_api import router as copilot_router
+from app.autonomy import Autonomy
 from app.operations import Operations, OperationError
 from app.supervisor import Supervisor, ServiceUnavailable
 from app.supervisor_api import router as supervisor_router
@@ -120,7 +121,11 @@ def create_app(
 
         supervisor = Supervisor(operations, settings, refresh=refresh_supervisor_floor)
         app.state.supervisor = supervisor
+        autonomy = Autonomy(operations, refresh=pipeline.refresh_operations, supervisor=supervisor)
+        app.state.autonomy = autonomy
         supervisor.start()
+        if settings.autonomy_worker_enabled:
+            autonomy.start()
         app.state.hints = None  # loaded when the table editor first asks for it
         shutdown_requested.clear()
 
@@ -138,6 +143,7 @@ def create_app(
         finally:
             logger.info("Shutting down")
             shutdown_requested.set()
+            autonomy.close()
             supervisor.close()
             pipeline.stop()
             streams.shutdown()

@@ -20,7 +20,9 @@ class ServiceMixin:
             kind=kind,
             source=source,
             note=note,
-            role="cleaner" if kind == "cleaning" else "waiter",
+            role=("cleaner" if kind == "cleaning" else
+                  "host" if kind == "seating" and any(p["role"] == "host" for p in self.state["staff"])
+                  else "waiter"),
             status="open",
             assigned_to=None,
             priority="normal",
@@ -67,6 +69,9 @@ class ServiceMixin:
                 )
                 changed = True
             for task in active:
+                if task["kind"] == "seating" and (table["status"] != "occupied" or table["party_id"] != task.get("party_id")):
+                    task.update(status="cancelled", completed_at=now)
+                    changed = True
                 if task["kind"] == "cleaning" and table["status"] == "ready":
                     task.update(status="completed", completed_at=now)
                     changed = True
@@ -132,22 +137,31 @@ class ServiceMixin:
                 )
             self.save()
 
-    def update_task(self, task_id, action, staff_id=None):
+    def update_task(self, task_id, action, staff_id=None, note="", assignment_revision=None, assigned_staff_id=None):
         with self.lock:
+            self.advance_clock()
             task = next((t for t in self.state["tasks"] if t["id"] == task_id), None)
             if task is None:
                 self.fail("Task not found.")
+            if assignment_revision is not None and (assignment_revision != task.get("assignment_revision", 0) or assigned_staff_id != task["assigned_to"]):
+                self.fail("This job was reassigned. Refresh your job list before acting.")
             if task["status"] in ("completed", "cancelled"):
                 self.fail("This task is already closed.")
             if action == "assign":
                 person = next(
                     (p for p in self.state["staff"] if p["id"] == staff_id), None
                 )
-                if person is None or person["role"] != task["role"]:
+                if person is None or person["role"] != task["role"] or not person.get("available", True):
                     self.fail("Choose a staff member with the matching role.")
-                task["assigned_to"] = person["id"]
+                task.update(assigned_to=person["id"], assigned_at=self.state["now"], status="open", acknowledged_at=None, assignment_revision=task.get("assignment_revision", 0) + 1)
             elif action in ("priority_high", "priority_normal"):
                 task["priority"] = action.removeprefix("priority_")
+            elif action == "report_problem":
+                if not note.strip():
+                    self.fail("Describe the problem so the manager can help.")
+                task.update(problem=note.strip()[:240], problem_reported_at=self.state["now"], priority="high")
+            elif action == "resolve_problem":
+                task.pop("problem", None)
             elif action == "acknowledge":
                 task.update(status="acknowledged", acknowledged_at=self.state["now"])
             elif action == "start":
@@ -160,7 +174,16 @@ class ServiceMixin:
                     self.action(task["table_id"], "clean")
                     return
                 table = self.table(task["table_id"])
-                table["last_service_at"] = self.state["now"]
+                if task["kind"] == "seating":
+                    party = next((p for p in self.state["parties"] if p["id"] == task.get("party_id")), None)
+                    if not party or table["party_id"] != party["id"]:
+                        self.fail("This seating allocation has changed.")
+                    # An in-person arrival report is evidence; do not fabricate
+                    # vision presence or permit automatic departure from it.
+                    party["arrival_confirmed"] = True
+                    party["arrival_origin"] = "staff"
+                else:
+                    table["last_service_at"] = self.state["now"]
                 task.update(status="completed", completed_at=self.state["now"])
             elif action == "cancel":
                 if task["kind"] == "cleaning":
@@ -187,6 +210,18 @@ class ServiceMixin:
             self.state["staff"].append(
                 dict(id=str(uuid.uuid4()), name=name.strip()[:60], role=role)
             )
+            self.save()
+
+    def set_staff_availability(self, staff_id, available):
+        with self.lock:
+            person = next((p for p in self.state["staff"] if p["id"] == staff_id), None)
+            if person is None:
+                self.fail("Staff member not found.")
+            person["available"] = available
+            if available:
+                for task in self.state["tasks"]:
+                    task["attempted_staff"] = [key for key in task.get("attempted_staff", []) if key != staff_id]
+            self.event(f"{person['name']} is {'available' if available else 'unavailable'}.", "staff")
             self.save()
 
     def observe_entrance(self, detections, polygon, now):

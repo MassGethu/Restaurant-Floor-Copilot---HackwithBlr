@@ -1,0 +1,13 @@
+{
+  "status": "pass",
+  "checks": [
+    "Staff can report a problem from the job",
+    "Manager sees and acknowledges the reported exception",
+    "Cleaner completion makes the verified table ready",
+    "Guest self check-in updates to an automatic table assignment",
+    "Guest reload restores the ticket without duplicate registration",
+    "Manager can pause and resume autonomous operation",
+    "Overview, staff, guest and settings views fit 1440, 1024, 768, 390 and 320px"
+  ],
+  "notes": "UI inputs are staged; the camera processes the controlled demo footage."
+}

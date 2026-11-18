@@ -559,7 +559,7 @@ export default function TableEditor({
                         renameTable(table.id, event.target.value)
                       }
                       onFocus={() => !draft && setSelectedId(table.id)}
-                      className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 py-0.5 text-sm font-medium text-slate-800 hover:border-slate-200 focus:border-slate-300 focus:bg-white focus:outline-none"
+                      className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 py-0.5 text-sm font-medium text-slate-800 hover:border-slate-200 focus:border-slate-300 focus:bg-white focus-visible:outline-2 focus-visible:outline-green-700"
                       aria-label={`Name of ${table.id}`}
                     />
                     <button

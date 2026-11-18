@@ -1,0 +1,198 @@
+{
+  "verification": "Real YOLO on a labelled stock montage; staff actions are staged API inputs.",
+  "checks": [
+    {
+      "check": "Real inference sees initial empty tables",
+      "clip_seconds": 0.5,
+      "status": "pass"
+    },
+    {
+      "check": "Opening checks automatically assigned",
+      "clip_seconds": 0.7,
+      "status": "pass"
+    },
+    {
+      "check": "Two parties automatically allocated without approvals",
+      "clip_seconds": 0.7,
+      "status": "pass"
+    },
+    {
+      "check": "Oversized party escalated as an exception",
+      "clip_seconds": 0.7,
+      "status": "pass"
+    },
+    {
+      "check": "Real vision confirms both arrivals",
+      "clip_seconds": 28.1,
+      "status": "pass"
+    },
+    {
+      "check": "Short vacancy does not depart the first party",
+      "clip_seconds": 44.0,
+      "status": "pass"
+    },
+    {
+      "check": "Sustained vacancy automatically closes departure",
+      "clip_seconds": 82.9,
+      "status": "pass"
+    },
+    {
+      "check": "Turnover cleaning automatically dispatched",
+      "clip_seconds": 82.9,
+      "status": "pass"
+    },
+    {
+      "check": "Cleaner completion automatically seats the next party",
+      "clip_seconds": 83.0,
+      "status": "pass"
+    }
+  ],
+  "status": "pass",
+  "manager_approvals": 0,
+  "staff_inputs": "Two opening-clean reports and one turnover-clean report; no seating or departure approval calls.",
+  "automatic_actions": 13,
+  "action_log": [
+    {
+      "id": "c1636a48-729a-47fb-b287-f5adf850ebf0",
+      "kind": "dispatch",
+      "explanation": "Assigned seating to Waiter 1.",
+      "scenario_time": 83.0,
+      "recorded_at": 1794992128.456049,
+      "task_id": "dd741b65-4b15-44b1-8e12-b7dc3280f18e",
+      "table_id": "T1"
+    },
+    {
+      "id": "3801df46-8854-4860-9449-300c70e6dea4",
+      "kind": "seat",
+      "explanation": "Assigned Demo next pair to Table 1; arrival pending.",
+      "scenario_time": 83.0,
+      "recorded_at": 1794992128.455839,
+      "table_id": "T1",
+      "party_id": "f523b782-f989-471c-89cd-7e562b637e1c",
+      "evidence": null
+    },
+    {
+      "id": "8714bad2-0960-4317-b5fe-b3aea179a15d",
+      "kind": "dispatch",
+      "explanation": "Assigned cleaning to Cleaner 1.",
+      "scenario_time": 82.90000009536743,
+      "recorded_at": 1794992127.4502752,
+      "task_id": "a99f441a-47e7-4086-b7ab-52127be2b26b",
+      "table_id": "T1"
+    },
+    {
+      "id": "4b3c5897-dc86-4f5f-b455-3aee1604dc72",
+      "kind": "departure",
+      "explanation": "Sustained vacancy at Table 1; cleaning dispatched.",
+      "scenario_time": 82.90000009536743,
+      "recorded_at": 1794992127.450218,
+      "table_id": "T1"
+    },
+    {
+      "id": "2e08b549-710a-44dd-b982-0f7bb2b48902",
+      "kind": "arrival_confirmed",
+      "explanation": "Arrival at Table 2 confirmed by vision.",
+      "scenario_time": 28.59999990463257,
+      "recorded_at": 1794992073.202624,
+      "table_id": "T2",
+      "party_id": "d22bf4a4-0e38-4845-9885-7278993cab48"
+    },
+    {
+      "id": "9a564775-9273-4494-92ff-0067567aea4e",
+      "kind": "arrival_confirmed",
+      "explanation": "Arrival at Table 1 confirmed by vision.",
+      "scenario_time": 15.5,
+      "recorded_at": 1794992060.139906,
+      "table_id": "T1",
+      "party_id": "4b2260b3-75f2-4ece-a04e-a49093940aa1"
+    },
+    {
+      "id": "98b3963d-5d98-49f9-9707-c7ea2aa6bf31",
+      "kind": "dispatch",
+      "explanation": "Assigned seating to Waiter 1.",
+      "scenario_time": 0.7000000476837158,
+      "recorded_at": 1794992045.0716522,
+      "task_id": "e3d76913-a6a6-4c9e-af08-b59c5450df99",
+      "table_id": "T2"
+    },
+    {
+      "id": "623e83d3-8d6c-4dc1-af25-053d4e1d3a8e",
+      "kind": "dispatch",
+      "explanation": "Assigned seating to Waiter 1.",
+      "scenario_time": 0.7000000476837158,
+      "recorded_at": 1794992045.071649,
+      "task_id": "5e5aedb4-5f92-4e0d-9763-91bba8c4755f",
+      "table_id": "T1"
+    },
+    {
+      "id": "a6daf675-b705-4c2b-87b8-4c3d89b39848",
+      "kind": "escalation",
+      "explanation": "Party needs a seating exception",
+      "scenario_time": 0.7000000476837158,
+      "recorded_at": 1794992045.07164,
+      "exception_key": "capacity:de43cfef-9449-43ee-b654-fda03d6099af"
+    },
+    {
+      "id": "ccb9d58e-61fa-477f-8f93-f0c461b111cb",
+      "kind": "seat",
+      "explanation": "Assigned Demo four to Table 2; arrival pending.",
+      "scenario_time": 0.7000000476837158,
+      "recorded_at": 1794992045.071424,
+      "table_id": "T2",
+      "party_id": "d22bf4a4-0e38-4845-9885-7278993cab48",
+      "evidence": null
+    },
+    {
+      "id": "0aaf84d8-58de-4683-8854-34ea9580ac19",
+      "kind": "seat",
+      "explanation": "Assigned Demo pair to Table 1; arrival pending.",
+      "scenario_time": 0.7000000476837158,
+      "recorded_at": 1794992045.070763,
+      "table_id": "T1",
+      "party_id": "4b2260b3-75f2-4ece-a04e-a49093940aa1",
+      "evidence": null
+    },
+    {
+      "id": "0067e0ec-1be8-4ec3-b0ac-efe2819d5f87",
+      "kind": "dispatch",
+      "explanation": "Assigned cleaning to Cleaner 1.",
+      "scenario_time": 0.7000000476837158,
+      "recorded_at": 1794992044.06528,
+      "task_id": "c7d34274-1675-41f4-a12d-4f7977b4f5fd",
+      "table_id": "T2"
+    },
+    {
+      "id": "07d1f373-0e7e-44c7-b80f-1960542ae3ff",
+      "kind": "dispatch",
+      "explanation": "Assigned cleaning to Cleaner 1.",
+      "scenario_time": 0.7000000476837158,
+      "recorded_at": 1794992044.065274,
+      "task_id": "19815747-dd55-4174-aef2-ab45f0b80516",
+      "table_id": "T1"
+    }
+  ],
+  "active_exceptions": [
+    {
+      "id": "457b75e4-63d4-4a3b-985e-5d4a8db521fb",
+      "key": "capacity:de43cfef-9449-43ee-b654-fda03d6099af",
+      "title": "Party needs a seating exception",
+      "detail": "Demo large party has 9 guests; largest standard table seats 4. Review extra chairs or a combined table.",
+      "severity": "warning",
+      "status": "open",
+      "created_at": 0.7000000476837158,
+      "resolved_at": null,
+      "party_id": "de43cfef-9449-43ee-b654-fda03d6099af"
+    }
+  ],
+  "completed_sessions": [
+    {
+      "table_id": "T1",
+      "capacity": 2,
+      "started_at": 0.7000000476837158,
+      "ended_at": 82.90000009536743,
+      "duration_seconds": 82.20000004768372,
+      "duration_known": true,
+      "origin": "automation"
+    }
+  ]
+}

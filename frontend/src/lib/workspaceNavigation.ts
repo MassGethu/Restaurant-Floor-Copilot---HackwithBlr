@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Activity,
   Brain,
   ClipboardList,
   Clock3,
@@ -27,7 +28,8 @@ export const operationsViews = {
   },
   arrivals: {
     label: "Door arrivals",
-    description: "The camera spotted people at the door. Add them to the waiting list or dismiss.",
+    description:
+      "The camera spotted people at the door. Add them to the waiting list or dismiss.",
   },
   availability: {
     label: "Table timing",
@@ -43,7 +45,8 @@ export const operationsViews = {
   },
   policy: {
     label: "Seating & wait times",
-    description: "Who gets seated first, and how long meals and cleaning usually take.",
+    description:
+      "Who gets seated first, and how long meals and cleaning usually take.",
   },
 };
 
@@ -58,10 +61,16 @@ export const navigation: { label: string; items: Destination[] }[] = [
   {
     label: "During service",
     items: [
+      {
+        to: "/autonomy",
+        label: "Service overview",
+        shortLabel: "Service",
+        icon: Activity,
+      },
       { to: "/floor", label: "Floor", icon: LayoutGrid },
       {
-        to: "/operations",
-        label: operationsViews.staff.label,
+        to: "/staff",
+        label: "Staff jobs",
         shortLabel: "Tasks",
         icon: ClipboardList,
       },
@@ -97,6 +106,13 @@ export const settingsPages: {
   icon: LucideIcon;
   group: "Restaurant" | "Camera" | "Planning tools";
 }[] = [
+  {
+    to: "/operations",
+    label: "Roster & assignments",
+    description: "Manage the team and intervene in task assignments.",
+    icon: ClipboardList,
+    group: "Restaurant",
+  },
   {
     to: "/operations?tab=policy",
     label: operationsViews.policy.label,

@@ -1,0 +1,23 @@
+{
+  "browser": {
+    "status": "pass",
+    "checks": [
+      "Seven routes fit 1440, 1024, 768, 390 and 320px; all rendered buttons have names.",
+      "Activity expansion and collapse work.",
+      "Review exceptions jumps below the sticky header.",
+      "Staff filter and availability control remain reachable.",
+      "Mobile navigation dialog opens and closes.",
+      "Restyled guest form submits and restores its ticket on reload."
+    ],
+    "pageErrors": []
+  },
+  "frontend_tests": 18,
+  "production_build": "pass",
+  "performance": "0 FAIL, 0 WARN at desktop and mobile",
+  "marketing_gate": "GATE: OPEN 38 (rounds used up)",
+  "notes": "See docs/UI_REVIEW.md for every open finding. No waivers.",
+  "additional_accessibility": {
+    "menu_expanded_state": "pass",
+    "mobile_QR_link_name": "pass"
+  }
+}

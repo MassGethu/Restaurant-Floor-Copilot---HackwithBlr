@@ -12,9 +12,19 @@ const TableSetupPage = lazy(() => import("./pages/TableSetupPage"));
 const SupervisorPage = lazy(() => import("./pages/SupervisorPage"));
 const OperationsPage = lazy(() => import("./pages/OperationsPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const AutonomyPage = lazy(() => import("./pages/AutonomyPage"));
+const StaffPage = lazy(() => import("./pages/StaffPage"));
+const WelcomePage = lazy(() => import("./pages/WelcomePage"));
+const CheckInPage = lazy(() => import("./pages/CheckInPage"));
 
 const loading = (page: ReactNode) => (
-  <Suspense fallback={<p className="text-sm text-slate-400">Loading…</p>}>
+  <Suspense
+    fallback={
+      <p className="text-sm text-slate-400" role="status">
+        Loading…
+      </p>
+    }
+  >
     {page}
   </Suspense>
 );
@@ -22,8 +32,12 @@ const loading = (page: ReactNode) => (
 export default function App() {
   return (
     <Routes>
+      <Route path="welcome" element={loading(<WelcomePage />)} />
+      <Route path="check-in" element={loading(<CheckInPage />)} />
       <Route element={<Layout />}>
-        <Route index element={<Navigate to="/floor" replace />} />
+        <Route index element={<Navigate to="/autonomy" replace />} />
+        <Route path="autonomy" element={loading(<AutonomyPage />)} />
+        <Route path="staff" element={loading(<StaffPage />)} />
         <Route path="floor" element={<FloorPage />} />
         <Route path="videos" element={<VideosPage />} />
         <Route path="live" element={<LiveMonitorPage />} />

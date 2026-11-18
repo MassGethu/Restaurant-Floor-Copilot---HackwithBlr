@@ -1,10 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   ChevronRight,
   LayoutGrid,
   Menu,
   Plus,
+  QrCode,
   X,
 } from "lucide-react";
 import { Link, Outlet, useLocation } from "react-router-dom";
@@ -18,6 +19,7 @@ import "./workspace.css";
 export default function Layout() {
   const { pathname, search, hash } = useLocation();
   const menu = useRef<HTMLDialogElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   let currentPath = pathname.toLowerCase().replace(/\/+$/, "");
   if (currentPath === "/operations") {
     const view = operationsView(search);
@@ -62,20 +64,23 @@ export default function Layout() {
         Skip to content
       </a>
       <aside className="workspace-sidebar">
-        <Link className="workspace-brand" to="/floor">
+        <Link className="workspace-brand" to="/autonomy">
           <span className="workspace-mark">
             <LayoutGrid size={19} aria-hidden="true" />
           </span>
           <span>
             <strong>Floor Copilot</strong>
-            <small>Restaurant workspace</small>
+            <small>THE SERVICE WORKSPACE</small>
           </span>
         </Link>
         <nav aria-label="Main navigation">{links()}</nav>
-        <Link className="workspace-handover" to="/supervisor#handover">
-          <span>Shift handover</span>
-          <ArrowUpRight size={16} aria-hidden="true" />
-        </Link>
+        <div className="workspace-sidebar-footer">
+          <span className="sidebar-desk-label">HUMAN ON THE LOOP</span>
+          <Link className="workspace-handover" to="/supervisor#handover">
+            <span>Shift handover</span>
+            <ArrowUpRight size={16} aria-hidden="true" />
+          </Link>
+        </div>
       </aside>
 
       <div className="workspace-content">
@@ -93,10 +98,27 @@ export default function Layout() {
               <strong>{current?.label ?? "Floor"}</strong>
             )}
           </div>
-          <Link className="workspace-add" to="/floor#add-party">
-            <Plus size={17} aria-hidden="true" />
-            Add party
-          </Link>
+          <div className="workspace-topbar-actions">
+            <span className="workspace-date">
+              {new Intl.DateTimeFormat(undefined, {
+                month: "short",
+                day: "numeric",
+                weekday: "short",
+              }).format(new Date())}
+            </span>
+            <Link
+              className="workspace-qr-link"
+              to="/welcome"
+              aria-label="Guest check-in QR"
+            >
+              <QrCode size={16} aria-hidden="true" />
+              <span>Guest check-in</span>
+            </Link>
+            <Link className="workspace-add" to="/floor#add-party">
+              <Plus size={17} aria-hidden="true" />
+              Add party
+            </Link>
+          </div>
         </header>
         <main className="workspace-main" id="workspace-main" tabIndex={-1}>
           <Outlet />
@@ -117,7 +139,12 @@ export default function Layout() {
         <button
           type="button"
           aria-haspopup="dialog"
-          onClick={() => menu.current?.showModal()}
+          aria-controls="workspace-menu"
+          aria-expanded={menuOpen}
+          onClick={() => {
+            setMenuOpen(true);
+            menu.current?.showModal();
+          }}
         >
           <Menu size={19} aria-hidden="true" />
           Menu
@@ -126,8 +153,10 @@ export default function Layout() {
 
       <dialog
         className="workspace-menu"
+        id="workspace-menu"
         ref={menu}
         aria-labelledby="workspace-menu-title"
+        onClose={() => setMenuOpen(false)}
         onClick={(event) => {
           if (event.target === event.currentTarget) menu.current?.close();
         }}

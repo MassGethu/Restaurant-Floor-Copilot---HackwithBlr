@@ -1,0 +1,55 @@
+1
+00:00:01,942 --> 00:00:14,082
+This is Restaurant Floor Copilot, a host desk for walk-in restaurants. A camera watches the tables, the app keeps the waiting list, and it suggests who to seat where. A person always makes the final call.
+
+2
+00:00:14,784 --> 00:00:25,474
+First, the camera. This is a staged clip of a four-table restaurant. A pre-trained YOLO model detects people, and the outlines mark where each table is. All of this runs locally.
+
+3
+00:00:26,176 --> 00:00:35,596
+The camera can tell a table is empty, but not whether it's clean. So the host checks, and taps Mark clean and free. Tables one, two and three are now ready.
+
+4
+00:00:36,297 --> 00:00:48,137
+A couple walks in. The host adds them to the waiting list. The app suggests Table one, the smallest free table that fits, so the bigger tables stay free for bigger groups. The host taps Seat them.
+
+5
+00:00:48,837 --> 00:00:54,207
+Next, a party of four. Using the simple seating rules, Table two is the best fit.
+
+6
+00:00:54,973 --> 00:01:01,813
+But tonight is a delivery rush, and the manager has noted that on the AI Supervisor page. Let's ask it for advice.
+
+7
+00:01:14,763 --> 00:01:32,933
+Here's the key result. Without memory, the AI picks Table two. With memory, it picks Table three. Why? A manager taught it a lesson: Table two sits next to the pickup counter, and guests get interrupted during delivery rushes. Hindsight recalled that lesson, and the advice cites it as evidence.
+
+8
+00:01:33,873 --> 00:01:39,973
+Back on the floor, a banner shows that the AI disagrees with the simple rules, with the reason one click away.
+
+9
+00:01:40,673 --> 00:01:49,773
+The manager agrees and taps Do it. The server re-checks that Table three is still free and big enough, then seats the party. Nothing happens without a human approving it.
+
+10
+00:01:50,475 --> 00:02:00,025
+Later, the couple at Table one leaves. The host confirms they've gone, and the app opens a cleaning task, because a table can't be reused until someone has cleaned it.
+
+11
+00:02:00,725 --> 00:02:08,645
+On Staff tasks, the cleaning job is assigned to a cleaner. When they're done, they confirm it, and Table one is ready for the next party.
+
+12
+00:02:09,346 --> 00:02:17,186
+At the end of the shift, the AI Supervisor prepares a handover for the next manager: what's still open, plus the lessons worth knowing.
+
+13
+00:02:17,886 --> 00:02:26,416
+Reports show how the service went. Settings holds the one-time setup, like the seating rules, wait times, and drawing tables on the camera view.
+
+14
+00:02:27,117 --> 00:02:34,867
+Restaurant Floor Copilot. The camera watches, the app suggests, the AI remembers what worked, and staff always decide.

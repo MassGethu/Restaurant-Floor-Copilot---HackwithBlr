@@ -84,6 +84,9 @@ class Supervisor:
         self.last_attempt = 0
         # table_id -> what Hindsight recalled about extra chairs at that table.
         self.chair_memory = {}
+        self.autonomy_evidence = []
+        self.autonomy_recalled_at = 0.0
+        self.autonomy_recall_signature = None
         with self.lock:
             self.ops.db.execute(
                 "CREATE TABLE IF NOT EXISTS supervisor_state (restaurant TEXT PRIMARY KEY, payload TEXT NOT NULL)"
@@ -1158,9 +1161,11 @@ class Supervisor:
     def run(self):
         while not self.stopping.wait(1):
             try:
+                self.capture_automation_events()
                 self.capture_task_outcomes()
                 self.sync_once()
                 self.refresh_chair_memory()
+                self.refresh_autonomy_memory()
                 if self.stopping.is_set():
                     break
                 if self.refresh:
@@ -1202,6 +1207,67 @@ class Supervisor:
                 self.last_error = (
                     f"Background memory unavailable ({type(exc).__name__})."
                 )
+
+    def refresh_autonomy_memory(self):
+        """Retrieve preferences independently of hosted reasoning or approval UI."""
+        if not self.memory_configured:
+            return
+        with self.lock:
+            if not self.ops.state["automation"]["enabled"] or self.ops.state["automation"]["paused"]:
+                return
+            layout = self.layout()
+            scopes = self.applicable_preferences(layout)
+            if not scopes:
+                self.autonomy_evidence = []
+                return
+            signature = digest([layout, scopes, self.current_shift()["id"], self.current_shift()["context"]])
+            if signature == self.autonomy_recall_signature and time.time() - self.autonomy_recalled_at < 30:
+                return
+            if signature != self.autonomy_recall_signature:
+                self.autonomy_evidence = []
+            self.autonomy_recall_signature = signature
+            query = "Restaurant seating preferences for current conditions: " + json.dumps(self.public_floor())
+        self.autonomy_recalled_at = time.time()
+        try:
+            raw = self.memory.recall(query, layout)
+            with self.lock:
+                self.autonomy_evidence = self.evidence(raw, layout) if layout == self.layout() else []
+        except Exception:
+            with self.lock:
+                self.autonomy_evidence = []
+            raise
+
+    def capture_automation_events(self):
+        """Retain deduplicated operational facts without guest names or free text."""
+        with self.lock:
+            known = {x["id"] for x in self.state["experiences"]}
+            for event in reversed(self.ops.state["automation_log"]):
+                record_id = "auto-" + event["id"]
+                if record_id in known or event["kind"] not in ("seat", "departure", "arrival_confirmed", "recovery", "intervention"):
+                    continue
+                evidence = event.get("evidence") or {}
+                self.add_record("action" if event["kind"] == "seat" else "task_outcome", {
+                    "note": f"Autonomous service recorded {event['kind']} at {event.get('table_id', 'floor')}.",
+                    "event_kind": event["kind"], "table_id": event.get("table_id"),
+                    "session_id": self.ops.state["session_id"], "scenario_time": event["scenario_time"],
+                    "qualification": "Recorded allocation or lifecycle event; allocation is not confirmed arrival and does not establish causal improvement.",
+                }, source="automation", record_id=record_id,
+                    depends_on=[evidence["source_id"]] if evidence.get("source_id") else [])
+            # Ordinary staff completion is an observed workflow result, even
+            # when no model or manager assigned the job.
+            for task in self.ops.state["tasks"]:
+                if task.get("assignment_origin") != "automation" or task["status"] not in ("completed", "cancelled"):
+                    continue
+                record_id = "auto-task-" + task["id"]
+                if record_id in known:
+                    continue
+                self.add_record("task_outcome", {
+                    "note": f"Automatically dispatched {task['kind']} task was {task['status']} at {task['table_id']}.",
+                    "task_id": task["id"], "table_id": task["table_id"], "status": task["status"],
+                    "session_id": self.ops.state["session_id"],
+                    "elapsed_seconds": max(0, (task["completed_at"] if task.get("completed_at") is not None else self.ops.state["now"]) - task["created_at"]),
+                    "qualification": "Staff workflow report or vision lifecycle event; not proof of causal improvement or independently observed cleaning.",
+                }, source="operational_event", record_id=record_id)
 
     def capture_task_outcomes(self):
         """Record an observed lifecycle event once, without inferring intervention success."""

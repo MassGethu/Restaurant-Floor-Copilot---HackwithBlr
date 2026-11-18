@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     agent_base_url: str = "https://api.groq.com"
     agent_model: str = "openai/gpt-oss-120b"
     supervisor_proactive: bool = False
+    autonomy_worker_enabled: bool = True
     memory_timeout_seconds: float = Field(default=30, ge=1, le=120)
 
     @property

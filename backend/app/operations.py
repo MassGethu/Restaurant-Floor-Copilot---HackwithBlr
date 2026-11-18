@@ -1,4 +1,4 @@
-"""Persistent restaurant state. Vision supplies evidence; staff approve readiness.
+"""Persistent restaurant state. Vision and staff supply operational evidence.
 
 All transitions and seating checks run under one lock and SQLite transaction.
 The snapshot is small (one restaurant) and versioned to reject stale approvals.
@@ -57,6 +57,9 @@ class Operations(ServiceMixin):
             "counters",
             "staff_mode",
             "service_epoch",
+            "automation",
+            "exceptions",
+            "automation_log",
         ):
             self.state.setdefault(key, defaults[key])
         self._entrance_tracks = {}
@@ -65,6 +68,9 @@ class Operations(ServiceMixin):
         self.fresh = False
         self.source = "NO SOURCE"
         self.model = "loading"
+        for table in self.state["tables"]:
+            table.pop("observed_at", None)
+            table.pop("observed_since", None)
 
     @staticmethod
     def empty():
@@ -84,6 +90,12 @@ class Operations(ServiceMixin):
             counters=dict(manager_overrides=0),
             staff_mode=False,
             service_epoch=None,
+            automation=dict(enabled=True, paused=False, departure_seconds=12,
+                            task_timeout_seconds=180, acknowledgement_timeout_seconds=45, seating_timeout_seconds=90,
+                            max_tasks_per_staff=3, actions=0, last_tick_at=None,
+                            last_error=None),
+            exceptions=[],
+            automation_log=[],
             staff=[
                 dict(id="waiter-1", name="Waiter 1", role="waiter"),
                 dict(id="cleaner-1", name="Cleaner 1", role="cleaner"),
@@ -173,6 +185,9 @@ class Operations(ServiceMixin):
             self.fresh = False
             self.source = "RECONNECTING"
             self._entrance_tracks.clear()
+            for table in self.state["tables"]:
+                table.pop("observed_at", None)
+                table.pop("observed_since", None)
             if self.state["service_epoch"] is not None and not self.state["staff_mode"]:
                 ready = [t for t in self.state["tables"] if t["status"] == "ready"]
                 for table in ready:
@@ -246,7 +261,7 @@ class Operations(ServiceMixin):
             if reset or self.state["video_id"] != video_id:
                 saved_settings = {
                     key: copy.deepcopy(self.state[key])
-                    for key in ("policy", "staff", "assumptions")
+                    for key in ("policy", "staff", "assumptions", "automation")
                 }
                 if self.state["tables"]:
                     with self.db:
@@ -256,6 +271,7 @@ class Operations(ServiceMixin):
                         )
                 self.state = self.empty()
                 self.state.update(saved_settings)
+                self.state["automation"].update(actions=0, last_tick_at=None, last_error=None)
                 self._entrance_tracks = {}
                 self._arrival_cooldowns = {}
                 self.state["video_id"] = video_id
@@ -350,7 +366,9 @@ class Operations(ServiceMixin):
                 table["people_count"] = state.people_count
                 previous = table["observed"]
                 table["observed"] = observed
-                if previous != observed:
+                table["observed_at"] = now
+                if previous != observed or "observed_since" not in table:
+                    table["observed_since"] = now
                     changed = True
                 if observed == "present":
                     if table.get("departure_review") or table.get("review_dismissed"):
@@ -364,7 +382,12 @@ class Operations(ServiceMixin):
                             note="Camera sees someone after the staff check. Verify the table again.",
                         )
                         changed = True
-                if self.state["staff_mode"] or table["status"] == "cleaning_required":
+                opening_check = table["status"] == "needs_verification" and any(
+                    task["table_id"] == table["id"] and task["kind"] == "cleaning"
+                    and task["status"] in ("open", "acknowledged", "in_progress")
+                    for task in self.state["tasks"]
+                )
+                if self.state["staff_mode"] or table["status"] == "cleaning_required" or opening_check:
                     continue
                 if table["manual_hold"] or table.get("verification_hold", False):
                     continue
@@ -883,6 +906,9 @@ class Operations(ServiceMixin):
         *,
         decision_key=None,
         extra_chairs=0,
+        origin="staff",
+        evidence=None,
+        dispatch=False,
     ):
         with self.lock:
             self.advance_clock()
@@ -909,6 +935,8 @@ class Operations(ServiceMixin):
                 raise OperationError(
                     "The party or table is no longer eligible for seating."
                 )
+            if origin == "automation" and self.state["now"] - table.get("observed_at", -10000) > 5:
+                self.fail("Automatic seating requires recent evidence for this table.")
             recs = self.recommendations()
             recommendation = next((r for r in recs if r["party_id"] == party_id), None)
             if not override and not extra_chairs and (
@@ -941,7 +969,7 @@ class Operations(ServiceMixin):
                 seated_at=self.state["now"],
                 extra_chairs=extra_chairs,
             )
-            if override:
+            if override and origin == "staff":
                 self.state["counters"]["manager_overrides"] += 1
             table.update(
                 status="occupied",
@@ -954,14 +982,39 @@ class Operations(ServiceMixin):
                 hold_until=None,
                 departure_review=False,
                 review_dismissed=False,
-                note=f"{party['name']} seated by staff; awaiting visual confirmation.",
+                note=(f"{party['name']} assigned automatically; awaiting arrival."
+                      if origin == "automation" else
+                      f"{party['name']} seated by staff; awaiting visual confirmation."),
             )
-            prefix = "Manager override: " if override else ""
+            party["seating_origin"] = origin
+            party["arrival_confirmed"] = False
+            prefix = ("Recalled operating preference: " if origin == "automation" else "Manager override: ") if override else ""
             if extra_chairs:
                 chairs = "chair" if extra_chairs == 1 else "chairs"
-                prefix = f"Manager approved {extra_chairs} extra {chairs}: "
-            self.event(f"{prefix}{party['name']} seated at {table['name']}.", "staff")
+                prefix = (f"Recalled space check permits {extra_chairs} extra {chairs}: "
+                          if origin == "automation" else f"Manager approved {extra_chairs} extra {chairs}: ")
+            autonomous_service = dispatch and self.state["automation"]["enabled"] and not self.state["automation"]["paused"]
+            if origin == "automation" or autonomous_service:
+                task = self.ensure_task(table_id, "seating", origin,
+                                        f"Guide {party['name']} ({party['size']} guests) to {table['name']}.")
+                task.update(party_id=party_id, extra_chairs=extra_chairs)
+                if origin == "automation":
+                    self.record_automation("seat", f"Assigned {party['name']} to {table['name']} using {self.state['policy']['strategy']} policy; arrival pending.",
+                                           table_id=table_id, party_id=party_id, evidence=evidence,
+                                           policy=self.state["policy"]["strategy"], party_size=party["size"], capacity=table["capacity"], extra_chairs=extra_chairs)
+                else:
+                    self.record_automation("intervention", f"Manager allocated {party['name']} to {table['name']}; staff guidance dispatched.",
+                                           table_id=table_id, party_id=party_id)
+            self.event(f"{prefix}{party['name']} {'assigned to' if origin == 'automation' else 'seated at'} {table['name']}.", origin)
             self.save()
+
+    def record_automation(self, kind, explanation, **details):
+        entry = dict(id=str(uuid.uuid4()), kind=kind, explanation=explanation,
+                     scenario_time=self.state["now"], recorded_at=time.time(), **details)
+        self.state["automation_log"].insert(0, entry)
+        del self.state["automation_log"][500:]
+        self.state["automation"]["actions"] += 1
+        return entry
 
     def estimates(self):
         from app.simulation import simulate

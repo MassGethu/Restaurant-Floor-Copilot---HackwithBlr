@@ -88,8 +88,17 @@ class TaskInput(BaseModel):
         "cancel",
         "priority_high",
         "priority_normal",
+        "report_problem",
+        "resolve_problem",
     ]
     staff_id: str | None = None
+    assignment_revision: int | None = Field(default=None, ge=0)
+    assigned_staff_id: str | None = None
+    note: str = Field(default="", max_length=240)
+
+
+class StaffAvailabilityInput(BaseModel):
+    available: bool
 
 
 class StaffInput(BaseModel):
@@ -114,6 +123,81 @@ class SimulationInput(BaseModel):
     table_id: str
     delay_minutes: int = Field(default=0, ge=0, le=120)
     horizon_minutes: int = Field(default=120, ge=1, le=240)
+
+
+class AutomationInput(BaseModel):
+    acknowledgement_timeout_seconds: int | None = Field(default=None, ge=10, le=600)
+    enabled: bool | None = None
+    paused: bool | None = None
+    departure_seconds: int | None = Field(default=None, ge=5, le=120)
+    task_timeout_seconds: int | None = Field(default=None, ge=30, le=1800)
+    seating_timeout_seconds: int | None = Field(default=None, ge=30, le=600)
+    max_tasks_per_staff: int | None = Field(default=None, ge=1, le=10)
+
+
+class ExceptionInput(BaseModel):
+    action: Literal["acknowledge", "retry"]
+    note: str = Field(default="", max_length=240)
+
+
+@router.post("/automation")
+def automation(body: AutomationInput, request: Request):
+    request.app.state.autonomy.configure(body.model_dump(exclude_none=True))
+    return snapshot(request)
+
+
+@router.post("/exceptions/{exception_id}")
+def exception_action(exception_id: str, body: ExceptionInput, request: Request):
+    request.app.state.autonomy.intervene(exception_id, body.action, body.note)
+    return snapshot(request)
+
+
+@router.get("/network")
+def network_address():
+    import socket
+    address = None
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.connect(("10.255.255.255", 1))
+            address = sock.getsockname()[0]
+    except OSError:
+        pass
+    return {"lan_address": address}
+
+
+@router.get("/check-in")
+def check_in_status(request: Request):
+    """Guest display: deliberately excludes names, staff, memory, and manager state."""
+    app = request.app.state
+    with app.operations.lock:
+        state = app.operations.state
+        return dict(session_id=state["session_id"], accepting=bool(state["tables"]),
+                    waiting=sum(p["status"] == "waiting" for p in state["parties"]),
+                    max_party_size=20)
+
+
+@router.post("/check-in", status_code=201)
+def check_in(body: PartyInput, request: Request):
+    if not body.request_id or not body.session_id:
+        raise HTTPException(422, "A check-in request and current session are required.")
+    party = request.app.state.operations.add_party(body.name, body.size,
+                request_id=body.request_id, session_id=body.session_id)
+    return dict(party_id=party["id"], name=party["name"], size=party["size"], status=party["status"])
+
+
+@router.get("/check-in/{request_id}")
+def check_in_ticket(request_id: str, request: Request):
+    app = request.app.state
+    with app.operations.lock:
+        app.operations.advance_clock()
+        party = next((p for p in app.operations.state["parties"] if p.get("request_id") == request_id), None)
+        if party is None:
+            raise HTTPException(404, "Check-in not found for this service.")
+        table = next((t for t in app.operations.state["tables"] if t["id"] == party["table_id"]), None)
+        return dict(party_id=party["id"], name=party["name"], size=party["size"], status=party["status"],
+                    table_name=table["name"] if table else None,
+                    arrival_confirmed=party.get("arrival_confirmed", False),
+                    waiting_seconds=max(0, app.operations.state["now"] - party["arrived_at"]))
 
 
 @router.get("")
@@ -208,14 +292,18 @@ def cancel_party(party_id: str, request: Request):
 def seat(body: SeatInput, request: Request):
     # Refresh inference health before validating an approval.
     snapshot(request)
-    request.app.state.operations.seat(
-        body.party_id,
-        body.table_id,
-        body.version,
-        override=body.override,
-        decision_key=body.decision_key,
-        extra_chairs=body.extra_chairs,
-    )
+    app = request.app.state
+    with app.operations.lock:
+        baseline = next((r["table_id"] for r in app.operations.recommendations() if r["party_id"] == body.party_id), None)
+        app.operations.seat(
+            body.party_id, body.table_id, body.version, override=body.override,
+            decision_key=body.decision_key, extra_chairs=body.extra_chairs,
+            dispatch=bool(app.autonomy.worker and app.autonomy.worker.is_alive()),
+        )
+        if body.override and baseline and baseline != body.table_id:
+            app.supervisor.capture(
+                "Manager intervened in seating and selected a different eligible table. This records a preference, not a successful outcome.",
+                party_id=body.party_id, table_id=body.table_id, baseline_table_id=baseline)
     if body.extra_chairs and body.room_checked:
         request.app.state.supervisor.record_space(
             body.table_id, body.extra_chairs, room=True
@@ -261,7 +349,14 @@ def request_service(table_id: str, body: ServiceInput, request: Request):
 @router.post("/tasks/{task_id}")
 def task_action(task_id: str, body: TaskInput, request: Request):
     snapshot(request)
-    request.app.state.operations.update_task(task_id, body.action, body.staff_id)
+    request.app.state.operations.update_task(task_id, body.action, body.staff_id, body.note, body.assignment_revision, body.assigned_staff_id)
+    return snapshot(request)
+
+
+@router.post("/staff/{staff_id}/availability")
+def staff_availability(staff_id: str, body: StaffAvailabilityInput, request: Request):
+    request.app.state.operations.set_staff_availability(staff_id, body.available)
+    request.app.state.autonomy.tick()
     return snapshot(request)
 
 
