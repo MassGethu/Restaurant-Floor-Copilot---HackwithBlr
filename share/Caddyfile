@@ -1,15 +1,12 @@
-# Serves the built dashboard and the backend API on one local address,
-# behind a login, for share_online.sh. Cloudflare Tunnel points at this.
+# Serves the built dashboard and the backend API on one local address for
+# share_online.sh. Cloudflare Tunnel points at this. There is no login:
+# anyone with the (random, temporary) link can use the app.
 {
 	admin off
 	auto_https off
 }
 
 :{$SHARE_PORT:8090} {
-	basic_auth {
-		{$SHARE_USER} {$SHARE_HASH}
-	}
-
 	# API, live MJPEG stream and WebSockets go to the backend unbuffered.
 	@backend path /api/* /ws/*
 	handle @backend {
